@@ -1,0 +1,231 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Fonts */
+    --font-sans: "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "Amazon Ember Mono", "JetBrains Mono", Consolas, monospace;
+
+    /* AWS Cloudscape Design System — Dark Mode (Default) */
+    --aws-header-bg: #0F141A;
+    --aws-page-bg: #0F1B2A;
+    --aws-card-bg: #161E2D;
+    --aws-sidebar-bg: #161E2D;
+    --aws-drawer-bg: #192534;
+    --aws-border: #354150;
+    --aws-border-subtle: #242f3d;
+    --aws-input-border: #545B64;
+    --aws-text-primary: #EAEDED;
+    --aws-text-muted: #879596;
+    --aws-interactive: #539FE5;
+    --aws-interactive-hover: #7bb5ed;
+    --aws-brand: #FF9900;
+    --aws-brand-hover: #EC7211;
+
+    /* Official AWS Architecture Category Colors (Dark Mode) */
+    --aws-cat-compute: #ED7100;
+    --aws-cat-storage: #3F8624;
+    --aws-cat-database: #527FFF;
+    --aws-cat-networking: #8C4FFF;
+    --aws-cat-security: #DD344C;
+    --aws-cat-integration: #E7157B;
+    --aws-cat-management: #E7157B;
+
+    /* Status Colors */
+    --aws-status-success: #1D8102;
+    --aws-status-info: #539FE5;
+    --aws-status-warning: #FF9900;
+    --aws-status-error: #DD344C;
+    --aws-status-inactive: #879596;
+
+    /* React Flow Grid & Canvas */
+    --aws-canvas-bg: #0F1B2A;
+    --aws-canvas-grid: #354150;
+    --aws-minimap-mask: rgba(15, 27, 42, 0.75);
+
+    color-scheme: dark;
+  }
+
+  [data-theme="light"],
+  .aws-theme-light {
+    /* AWS Cloudscape Design System — Light Mode */
+    --aws-header-bg: #232F3E; /* Top Global Header is always dark */
+    --aws-page-bg: #F2F3F3;
+    --aws-card-bg: #FFFFFF;
+    --aws-sidebar-bg: #FFFFFF;
+    --aws-drawer-bg: #FFFFFF;
+    --aws-border: #D5DBDB;
+    --aws-border-subtle: #E9EBED;
+    --aws-input-border: #7D8998;
+    --aws-text-primary: #16191F;
+    --aws-text-muted: #545B64;
+    --aws-interactive: #0972D3;
+    --aws-interactive-hover: #035aa6;
+    --aws-brand: #FF9900;
+    --aws-brand-hover: #EC7211;
+
+    /* Official AWS Architecture Category Colors (Light Mode) */
+    --aws-cat-compute: #ED7100;
+    --aws-cat-storage: #3F8624;
+    --aws-cat-database: #3B48CC; /* Exact Light Mode AWS Database color */
+    --aws-cat-networking: #8C4FFF;
+    --aws-cat-security: #DD344C;
+    --aws-cat-integration: #E7157B;
+    --aws-cat-management: #E7157B;
+
+    /* Status Colors */
+    --aws-status-success: #1D8102;
+    --aws-status-info: #0972D3;
+    --aws-status-warning: #FF9900;
+    --aws-status-error: #DD344C;
+    --aws-status-inactive: #545B64;
+
+    /* React Flow Grid & Canvas */
+    --aws-canvas-bg: #F2F3F3;
+    --aws-canvas-grid: #D5DBDB;
+    --aws-minimap-mask: rgba(242, 243, 243, 0.75);
+
+    color-scheme: light;
+  }
+
+  body {
+    background-color: var(--aws-page-bg);
+    color: var(--aws-text-primary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 20px;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  /* Monospace typography */
+  code, kbd, samp, pre {
+    font-family: var(--font-mono);
+  }
+}
+
+/* Cloudscape Enterprise Density Standards */
+.text-xs, .text-\[12px\] {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.text-sm, .text-\[14px\] {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.text-base, .text-\[16px\] {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+/* Cloudscape Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #545B64;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #879596;
+}
+
+/* React Flow custom node resets */
+.react-flow__node {
+  font-family: var(--font-sans);
+}
+
+/* Mermaid diagram custom container */
+.mermaid-container svg {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  background-color: transparent !important;
+}
+
+/* Technical Dossier Typography */
+.vault-prose h2 {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 700;
+  color: var(--aws-text-primary);
+  border-bottom: 1px solid var(--aws-border);
+  padding-bottom: 6px;
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.vault-prose h3 {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 700;
+  color: var(--aws-text-primary);
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.vault-prose p {
+  color: var(--aws-text-primary);
+  line-height: 20px;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.vault-prose ul {
+  list-style-type: disc;
+  padding-left: 20px;
+  margin-bottom: 12px;
+  color: var(--aws-text-primary);
+  font-size: 14px;
+}
+
+.vault-prose li {
+  margin-bottom: 6px;
+  line-height: 20px;
+}
+
+.vault-prose strong {
+  color: var(--aws-text-primary);
+  font-weight: 700;
+}
+
+.vault-prose code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background-color: var(--aws-card-bg);
+  color: var(--aws-interactive);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--aws-border);
+}
+
+.vault-prose pre {
+  margin: 12px 0;
+}
+
+.vault-prose pre code {
+  display: block;
+  padding: 12px;
+  background-color: #0F141A;
+  border: 1px solid var(--aws-border);
+  border-radius: 4px;
+  overflow-x: auto;
+  color: #EAEDED;
+  font-size: 12px;
+  line-height: 18px;
+}

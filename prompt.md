@@ -1,0 +1,1 @@
+"Using aws-compass-core, cloud-architect, and mermaid-diagrams, generate the full 6-part markdown documentation for [Service Name 1, Service Name 2] and add them to seedServices.ts."
