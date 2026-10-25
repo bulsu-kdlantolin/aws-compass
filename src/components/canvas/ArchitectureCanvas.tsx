@@ -20,7 +20,6 @@ import {
   ChevronDown,
   BoxSelect,
   Download,
-  Copy,
   Check,
   Grid,
   ZoomIn,
@@ -36,6 +35,8 @@ import { ProtocolEdge } from './ProtocolEdge';
 import { NodeInspectorDrawer } from './NodeInspectorDrawer';
 import { getAWSCategoryColor } from '../../utils/awsCategoryColors';
 import { CloudscapeSelect, type CloudscapeSelectOption } from '../ui/CloudscapeSelect';
+import { CloudscapeSearchInput } from '../ui/CloudscapeSearchInput';
+import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
 import type { AWSService, GroupBoundaryType } from '../../types/aws';
 
 // Hoist static node & edge registrations
@@ -91,6 +92,7 @@ const ArchitectureCanvasInner: React.FC = () => {
   const deleteSnapshot = useCanvasStore((s) => s.deleteSnapshot);
   const savedDiagrams = useCanvasStore((s) => s.savedDiagrams);
   const activeDiagramName = useCanvasStore((s) => s.activeDiagramName);
+  const saveStatus = useCanvasStore((s) => s.saveStatus);
   const initializeCanvas = useCanvasStore((s) => s.initializeCanvas);
 
   const [activeTemplateId, setActiveTemplateId] = useState<string>('three-tier-web');
@@ -99,7 +101,6 @@ const ArchitectureCanvasInner: React.FC = () => {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showSnapshotMenu, setShowSnapshotMenu] = useState(false);
   const [serviceSearch, setServiceSearch] = useState('');
-  const [copiedSpec, setCopiedSpec] = useState(false);
   const [snapshotNameInput, setSnapshotNameInput] = useState('');
   const [snapshotSaveSuccess, setSnapshotSaveSuccess] = useState(false);
   const [gridVariant, setGridVariant] = useState<BackgroundVariant>(BackgroundVariant.Dots);
@@ -237,13 +238,12 @@ const ArchitectureCanvasInner: React.FC = () => {
     setShowExportMenu(false);
   }, [nodes, edges, activeDiagramName]);
 
-  const handleCopySpec = useCallback(async () => {
+  const markdownSpec = useMemo(() => {
     const serviceNodes = nodes.filter((n) => !n.data.isBoundary);
     const boundaryNodes = nodes.filter((n) => n.data.isBoundary);
 
-    const markdownSpec = [
+    return [
       `# Architecture Blueprint: ${activeDiagramName}`,
-      `Generated: ${new Date().toLocaleString()}`,
       '',
       `## Summary`,
       `- **Services Count**: ${serviceNodes.length}`,
@@ -260,11 +260,6 @@ const ArchitectureCanvasInner: React.FC = () => {
         return `- ${src} --[${e.protocol || 'HTTPS/REST'}]--> ${tgt}`;
       }),
     ].join('\n');
-
-    await navigator.clipboard.writeText(markdownSpec);
-    setCopiedSpec(true);
-    setTimeout(() => setCopiedSpec(false), 2000);
-    setShowExportMenu(false);
   }, [nodes, edges, activeDiagramName]);
 
   const filteredQuickAddServices = useMemo(() => {
@@ -304,7 +299,7 @@ const ArchitectureCanvasInner: React.FC = () => {
           }}
           className="h-12 border-b px-4 flex items-center justify-between gap-3 shrink-0 z-10"
         >
-          {/* Left: Template Selector */}
+          {/* Left: Template Selector & Non-blocking Auto-Save Status */}
           <div className="flex items-center gap-3">
             <span className="text-[12px] font-bold text-[var(--aws-text-muted)] hidden sm:inline">
               Blueprint:
@@ -315,6 +310,35 @@ const ArchitectureCanvasInner: React.FC = () => {
               onChange={handleSelectTemplate}
               className="w-56 sm:w-64"
             />
+
+            {/* Canvas Auto-Save Feedback */}
+            <div
+              className="hidden md:flex items-center text-[11px] font-mono px-2 py-0.5 rounded min-w-[130px]"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {saveStatus === 'saving' && (
+                <span className="inline-flex items-center gap-1.5 text-[var(--aws-text-muted)] animate-in fade-in duration-150">
+                  <svg
+                    className="w-3.5 h-3.5 animate-spin text-[var(--aws-interactive)]"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                  <span>Saving changes…</span>
+                </span>
+              )}
+              {saveStatus === 'saved' && (
+                <span className="inline-flex items-center gap-1.5 text-[#1D8102] font-semibold animate-in fade-in duration-150">
+                  <Check className="w-3.5 h-3.5 text-[#1D8102]" strokeWidth={2.25} aria-hidden="true" />
+                  <span>Changes saved</span>
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Right: Actions and Controls */}
@@ -349,18 +373,13 @@ const ArchitectureCanvasInner: React.FC = () => {
                   }}
                   className="absolute top-9 left-0 w-64 rounded-[4px] border p-2 z-50 space-y-2 animate-in fade-in duration-100"
                 >
-                  <input
-                    type="text"
+                  <CloudscapeSearchInput
                     value={serviceSearch}
-                    onChange={(e) => setServiceSearch(e.target.value)}
+                    onChange={setServiceSearch}
                     placeholder="Filter services..."
                     autoFocus
-                    style={{
-                      backgroundColor: 'var(--aws-page-bg)',
-                      borderColor: 'var(--aws-input-border)',
-                      color: 'var(--aws-text-primary)',
-                    }}
-                    className="w-full h-7 px-2 rounded-[4px] border text-[12px] outline-none"
+                    size="sm"
+                    className="w-full"
                   />
                   <div className="max-h-56 overflow-y-auto space-y-0.5">
                     {filteredQuickAddServices.map((svc) => (
@@ -491,7 +510,7 @@ const ArchitectureCanvasInner: React.FC = () => {
                         borderColor: 'var(--aws-input-border)',
                         color: 'var(--aws-text-primary)',
                       }}
-                      className="flex-1 h-7 px-2 rounded-[4px] border text-[12px] outline-none"
+                      className="flex-1 h-7 px-2.5 rounded-[4px] border text-[12px] outline-none caret-[var(--aws-interactive)] transition-[border-color,box-shadow] duration-150 ease-out focus:border-[var(--aws-interactive)] focus:ring-2 focus:ring-[var(--aws-interactive)]/40"
                     />
                     <button
                       type="submit"
@@ -499,7 +518,7 @@ const ArchitectureCanvasInner: React.FC = () => {
                         backgroundColor: 'var(--aws-interactive)',
                         color: '#FFFFFF',
                       }}
-                      className="h-7 px-2.5 rounded-[4px] text-[12px] font-medium cursor-pointer"
+                      className="h-7 px-2.5 rounded-[4px] text-[12px] font-medium cursor-pointer enabled:active:scale-[0.96] transition-[background-color,transform] duration-150 ease-out"
                     >
                       Save
                     </button>
@@ -636,14 +655,14 @@ const ArchitectureCanvasInner: React.FC = () => {
                     <span>Export JSON spec</span>
                     <Download className="w-3.5 h-3.5 text-[var(--aws-text-muted)]" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleCopySpec}
-                    className="w-full text-left px-2.5 py-1.5 rounded-[4px] text-[12px] text-[var(--aws-text-primary)] hover:bg-[var(--aws-card-bg)] flex items-center justify-between cursor-pointer"
-                  >
-                    <span>{copiedSpec ? 'Copied markdown' : 'Copy markdown spec'}</span>
-                    {copiedSpec ? <Check className="w-3.5 h-3.5 text-[#1D8102]" /> : <Copy className="w-3.5 h-3.5 text-[var(--aws-text-muted)]" />}
-                  </button>
+                  <div className="pt-0.5">
+                    <CloudscapeCopyButton
+                      textToCopy={markdownSpec}
+                      label="Copy markdown spec"
+                      copiedLabel="Copied markdown"
+                      className="w-full justify-between !border-transparent hover:!border-[var(--aws-interactive)] !bg-transparent hover:!bg-[var(--aws-card-bg)] !text-[12px] !py-1.5"
+                    />
+                  </div>
                 </div>
               )}
             </div>

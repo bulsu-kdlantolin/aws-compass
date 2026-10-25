@@ -1,7 +1,9 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import mermaid from 'mermaid';
-import { AlertCircle, Check, Copy } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useCompassStore } from '../../store/useCompassStore';
+import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
+import { CloudscapeSkeleton } from '../ui/CloudscapeSkeleton';
 
 interface MermaidViewerProps {
   chart: string;
@@ -14,7 +16,7 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, className =
   const diagramId = `mermaid-${rawId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const [svgContent, setSvgContent] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [isRendering, setIsRendering] = useState<boolean>(true);
   const theme = useCompassStore((s) => s.theme);
 
   useEffect(() => {
@@ -94,11 +96,13 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, className =
 
         if (!isCancelled) {
           setSvgContent(svg);
+          setIsRendering(false);
         }
       } catch (err: unknown) {
         if (!isCancelled) {
           const message = err instanceof Error ? err.message : 'Invalid Mermaid diagram syntax';
           setError(message);
+          setIsRendering(false);
         }
       }
     };
@@ -110,44 +114,43 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, className =
     };
   }, [chart, diagramId, theme]);
 
-  const handleCopyCode = async () => {
-    try {
-      await navigator.clipboard.writeText(chart.trim());
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // ignore clipboard error
-    }
-  };
-
   return (
     <div
       style={{
         backgroundColor: 'var(--aws-page-bg)',
         borderColor: 'var(--aws-border)',
       }}
-      className={`relative group rounded-lg border p-4 my-4 overflow-hidden transition-colors ${className}`}
+      className={`relative group rounded-[6px] border p-4 my-4 overflow-hidden transition-[background-color,border-color] duration-150 ease-out ${className}`}
     >
       {/* Top right utility bar */}
-      <div className="absolute top-2 right-2 flex items-center gap-2 opacity-70 group-hover:opacity-100 transition-opacity z-10">
-        <button
-          type="button"
-          onClick={handleCopyCode}
-          style={{
-            backgroundColor: 'var(--aws-card-bg)',
-            borderColor: 'var(--aws-border)',
-            color: 'var(--aws-text-primary)',
-          }}
-          className="flex items-center gap-1 text-xs px-2 py-1 rounded border transition-colors cursor-pointer hover:border-[var(--aws-brand)]"
-          title="Copy Mermaid Code"
-        >
-          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-          <span>{copied ? 'Copied' : 'Mermaid'}</span>
-        </button>
+      <div className="absolute top-2.5 right-2.5 flex items-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity duration-150 z-10">
+        <CloudscapeCopyButton
+          textToCopy={chart.trim()}
+          label="Mermaid"
+          copiedLabel="Copied"
+          ariaLabel="Copy Mermaid code"
+        />
       </div>
 
-      {error ? (
-        <div className="flex items-start gap-2 text-rose-500 text-xs p-3 rounded bg-rose-500/10 border border-rose-500/30">
+      {isRendering ? (
+        <div
+          role="status"
+          aria-busy="true"
+          aria-live="polite"
+          className="flex flex-col items-center justify-center w-full min-h-[160px] p-6 space-y-3"
+        >
+          <span className="sr-only">Rendering architecture diagram...</span>
+          <div className="flex items-center gap-3 w-full max-w-sm justify-center">
+            <CloudscapeSkeleton variant="rect" width="100px" height="38px" className="rounded-[4px]" />
+            <CloudscapeSkeleton variant="text" width="50px" height="2px" />
+            <CloudscapeSkeleton variant="rect" width="100px" height="38px" className="rounded-[4px]" />
+          </div>
+          <div className="flex items-center gap-3 w-full max-w-xs justify-center pt-2">
+            <CloudscapeSkeleton variant="text" width="130px" height="10px" />
+          </div>
+        </div>
+      ) : error ? (
+        <div className="flex items-start gap-2 text-[#DD344C] text-[12px] p-3 rounded-[4px] bg-[#DD344C]/10 border border-[#DD344C]/30">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold mb-1">Mermaid Render Warning</p>

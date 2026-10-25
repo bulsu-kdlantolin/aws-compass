@@ -171,7 +171,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
                   }
                 : undefined
             }
-            className={`flex items-center gap-1.5 px-3 h-7 text-[12px] rounded-[3px] transition-all cursor-pointer font-medium ${
+            className={`flex items-center gap-1.5 px-3 h-7 text-[12px] rounded-[3px] transition-[background-color,color] duration-150 ease-out cursor-pointer font-medium ${
               workspaceMode === 'vault'
                 ? 'font-bold'
                 : 'text-[#879596] hover:text-[#EAEDED] hover:bg-[#161E2D]'
@@ -192,7 +192,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
                   }
                 : undefined
             }
-            className={`flex items-center gap-1.5 px-3 h-7 text-[12px] rounded-[3px] transition-all cursor-pointer font-medium ${
+            className={`flex items-center gap-1.5 px-3 h-7 text-[12px] rounded-[3px] transition-[background-color,color] duration-150 ease-out cursor-pointer font-medium ${
               workspaceMode === 'canvas'
                 ? 'font-bold'
                 : 'text-[#879596] hover:text-[#EAEDED] hover:bg-[#161E2D]'
@@ -206,25 +206,37 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
 
       {/* Right: Theme Toggle, Study Stats & Actions */}
       <div className="flex items-center gap-2">
-        {/* Light / Dark Mode Toggle */}
+        {/* Light / Dark Mode Toggle with better-ui 2-icon grid cross-fade */}
         <button
           type="button"
           onClick={toggleTheme}
-          className="flex items-center gap-1.5 px-2 h-8 text-[12px] rounded-[4px] bg-[#0F141A] border border-[#354150] hover:border-[#FF9900] text-[#EAEDED] transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-2.5 h-8 text-[12px] rounded-[4px] bg-[#0F141A] border border-[#354150] hover:border-[#FF9900] text-[#EAEDED] transition-[border-color,background-color] duration-150 ease-out cursor-pointer enabled:active:scale-[0.96]"
           title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           aria-label="Toggle theme mode"
         >
-          {theme === 'dark' ? (
-            <>
+          <span className="grid place-items-center w-4 h-4 shrink-0" aria-hidden="true">
+            <span
+              className={`[grid-area:1/1] transition-[opacity,filter,transform] duration-300 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:scale-100 motion-reduce:blur-[0px] ${
+                theme === 'dark'
+                  ? 'scale-100 opacity-100 blur-[0px]'
+                  : 'scale-[0.25] opacity-0 blur-[4px] pointer-events-none'
+              }`}
+            >
               <Sun className="w-4 h-4 text-[#FF9900]" strokeWidth={1.75} />
-              <span className="hidden sm:inline text-[12px]">Light</span>
-            </>
-          ) : (
-            <>
+            </span>
+            <span
+              className={`[grid-area:1/1] transition-[opacity,filter,transform] duration-300 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:scale-100 motion-reduce:blur-[0px] ${
+                theme === 'dark'
+                  ? 'scale-[0.25] opacity-0 blur-[4px] pointer-events-none'
+                  : 'scale-100 opacity-100 blur-[0px]'
+              }`}
+            >
               <Moon className="w-4 h-4 text-[#539FE5]" strokeWidth={1.75} />
-              <span className="hidden sm:inline text-[12px]">Dark</span>
-            </>
-          )}
+            </span>
+          </span>
+          <span className="hidden sm:inline text-[12px] font-medium">
+            {theme === 'dark' ? 'Light' : 'Dark'}
+          </span>
         </button>
 
         {/* Study Progress Counts */}

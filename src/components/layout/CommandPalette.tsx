@@ -319,41 +319,46 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
         <div
           style={{
             backgroundColor: 'var(--aws-card-bg)',
-            borderColor: 'var(--aws-border)',
+            borderBottomColor: 'var(--aws-border)',
           }}
-          className="relative flex items-center px-4 border-b"
+          className="relative flex items-center px-4 border-b transition-[border-color,box-shadow] duration-150 ease-out focus-within:border-[var(--aws-interactive)]"
         >
-          <Search className="w-5 h-5 text-[var(--aws-interactive)] shrink-0 mr-3 pointer-events-none" />
+          <Search className="w-5 h-5 text-[var(--aws-interactive)] shrink-0 mr-3 pointer-events-none" strokeWidth={1.75} aria-hidden="true" />
           <input
             ref={inputRef}
             type="text"
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Type a command, service name (e.g. 'lambda', 's3'), or blueprint..."
+            spellCheck={false}
+            autoComplete="off"
             style={{ color: 'var(--aws-text-primary)' }}
-            className="w-full py-3.5 bg-transparent text-sm placeholder:text-[var(--aws-text-muted)] outline-none"
+            className="w-full py-3.5 bg-transparent text-sm placeholder:text-[var(--aws-text-muted)] outline-none caret-[var(--aws-interactive)]"
           />
-          {search ? (
-            <button
-              type="button"
-              onClick={() => handleSearchChange('')}
-              style={{ color: 'var(--aws-text-muted)' }}
-              className="p-1 hover:text-[var(--aws-text-primary)] rounded cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          ) : (
-            <kbd
-              style={{
-                backgroundColor: 'var(--aws-page-bg)',
-                borderColor: 'var(--aws-border)',
-                color: 'var(--aws-text-muted)',
-              }}
-              className="hidden sm:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-mono font-bold border rounded shadow-sm"
-            >
-              ESC
-            </kbd>
-          )}
+          <div className="flex items-center shrink-0 ml-2">
+            {search ? (
+              <button
+                type="button"
+                onClick={() => handleSearchChange('')}
+                style={{ color: 'var(--aws-text-muted)' }}
+                className="p-1 hover:text-[var(--aws-text-primary)] rounded cursor-pointer transition-[opacity,filter,transform] duration-200 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:scale-100 motion-reduce:blur-[0px]"
+                aria-label="Clear search input"
+              >
+                <X className="w-4 h-4" strokeWidth={2} />
+              </button>
+            ) : (
+              <kbd
+                style={{
+                  backgroundColor: 'var(--aws-page-bg)',
+                  borderColor: 'var(--aws-border)',
+                  color: 'var(--aws-text-muted)',
+                }}
+                className="hidden sm:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-mono font-bold border rounded shadow-xs"
+              >
+                ESC
+              </kbd>
+            )}
+          </div>
         </div>
 
         {/* Results List */}

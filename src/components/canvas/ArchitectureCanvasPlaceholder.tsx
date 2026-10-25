@@ -71,7 +71,7 @@ export const ArchitectureCanvasPlaceholder: React.FC = () => {
             {/* Node 1: API Gateway */}
             <div
               onClick={() => handleInspectService('api-gateway')}
-              className="p-3.5 rounded-lg border border-purple-500/30 bg-purple-950/20 hover:border-purple-400 hover:bg-purple-950/40 transition-all cursor-pointer text-left group"
+              className="p-3.5 rounded-lg border border-purple-500/30 bg-purple-950/20 hover:border-purple-400 hover:bg-purple-950/40 transition-[background-color,border-color] duration-150 ease-out cursor-pointer text-left group"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">
@@ -103,7 +103,7 @@ export const ArchitectureCanvasPlaceholder: React.FC = () => {
             {/* Node 2: Lambda */}
             <div
               onClick={() => handleInspectService('lambda')}
-              className="p-3.5 rounded-lg border border-pink-500/30 bg-pink-950/20 hover:border-pink-400 hover:bg-pink-950/40 transition-all cursor-pointer text-left group"
+              className="p-3.5 rounded-lg border border-pink-500/30 bg-pink-950/20 hover:border-pink-400 hover:bg-pink-950/40 transition-[background-color,border-color] duration-150 ease-out cursor-pointer text-left group"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-300">

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Copy, Check, Terminal } from 'lucide-react';
+import React from 'react';
+import { Terminal } from 'lucide-react';
+import { CloudscapeCopyButton } from './CloudscapeCopyButton';
 
 export interface CloudscapeCodeBlockProps {
   code: string;
@@ -14,14 +15,6 @@ export const CloudscapeCodeBlock: React.FC<CloudscapeCodeBlockProps> = ({
   title = 'aws-cli',
   className = '',
 }) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <div
       style={{
@@ -44,25 +37,13 @@ export const CloudscapeCodeBlock: React.FC<CloudscapeCodeBlockProps> = ({
           <span>{title || language}</span>
         </div>
 
-        <button
-          type="button"
-          onClick={handleCopy}
-          style={{ color: '#879596' }}
-          className="flex items-center gap-1 hover:text-[#EAEDED] cursor-pointer transition-colors"
-          title="Copy to clipboard"
-        >
-          {copied ? (
-            <>
-              <Check className="w-3.5 h-3.5 text-[#1D8102]" />
-              <span className="text-[#1D8102] font-semibold text-[11px]">Copied</span>
-            </>
-          ) : (
-            <>
-              <Copy className="w-3.5 h-3.5" />
-              <span className="text-[11px]">Copy</span>
-            </>
-          )}
-        </button>
+        <CloudscapeCopyButton
+          textToCopy={code}
+          label="Copy"
+          copiedLabel="Copied"
+          ariaLabel="Copy code to clipboard"
+          className="!bg-transparent !border-transparent hover:!border-[#354150] hover:!bg-[#192534] !text-[#879596] hover:!text-[#EAEDED]"
+        />
       </div>
 
       {/* Code Text Content */}

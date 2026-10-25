@@ -7,8 +7,6 @@ import {
   RotateCcw,
   Save,
   Check,
-  Copy,
-  Search,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
@@ -23,6 +21,10 @@ import { CloudscapeStatusIndicator } from '../ui/CloudscapeStatusIndicator';
 import { CloudscapeContainer } from '../ui/CloudscapeContainer';
 import { CloudscapeAlert } from '../ui/CloudscapeAlert';
 import { CloudscapeCodeBlock } from '../ui/CloudscapeCodeBlock';
+import { CloudscapeSearchInput } from '../ui/CloudscapeSearchInput';
+import { CloudscapeSelect, type CloudscapeSelectOption } from '../ui/CloudscapeSelect';
+import { CloudscapeTextarea } from '../ui/CloudscapeTextarea';
+import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
 
 /* -------------------------------------------------------------------------- */
 /*                           CLOUDSCAPE RESOURCE TABLE                        */
@@ -45,6 +47,13 @@ const ConceptVaultTable: React.FC<{
     services.forEach((s) => set.add(s.category));
     return ['All', ...Array.from(set).sort()];
   }, [services]);
+
+  const categoryOptions: CloudscapeSelectOption[] = useMemo(() => {
+    return categories.map((cat) => ({
+      value: cat,
+      label: cat === 'All' ? 'All categories' : cat,
+    }));
+  }, [categories]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -184,44 +193,24 @@ const ConceptVaultTable: React.FC<{
             }}
             className="px-4 py-3 border-b flex flex-wrap items-center justify-between gap-3 shrink-0"
           >
-            <div className="flex items-center gap-2.5 flex-1 max-w-md">
-              <div className="relative flex-1">
-                <Search
-                  className="w-4 h-4 text-[var(--aws-text-muted)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                  strokeWidth={1.75}
-                />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Filter by name, ID, or description..."
-                  style={{
-                    backgroundColor: 'var(--aws-page-bg)',
-                    borderColor: 'var(--aws-input-border)',
-                    color: 'var(--aws-text-primary)',
-                  }}
-                  className="w-full text-[12px] leading-[16px] pl-8 pr-3 py-1.5 rounded-[4px] border focus:border-[var(--aws-brand)] outline-none transition-colors"
-                />
-              </div>
+            <div className="flex items-center gap-2.5 flex-1 max-w-lg">
+              <CloudscapeSearchInput
+                value={search}
+                onChange={setSearch}
+                placeholder="Filter by name, ID, or description..."
+                ariaLabel="Filter services"
+                className="flex-1"
+                size="md"
+              />
 
               {/* Category Select */}
-              <select
+              <CloudscapeSelect
                 value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                aria-label="Filter by category"
-                style={{
-                  backgroundColor: 'var(--aws-page-bg)',
-                  borderColor: 'var(--aws-input-border)',
-                  color: 'var(--aws-text-primary)',
-                }}
-                className="text-[12px] leading-[16px] px-2.5 py-1.5 rounded-[4px] border focus:border-[var(--aws-brand)] outline-none cursor-pointer"
-              >
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat === 'All' ? 'All categories' : cat}
-                  </option>
-                ))}
-              </select>
+                options={categoryOptions}
+                onChange={setCategoryFilter}
+                ariaLabel="Filter by category"
+                className="w-48 shrink-0"
+              />
             </div>
 
             <span
@@ -436,6 +425,13 @@ interface ServiceDossierContentProps {
   onUpdateDoc: (id: string, markdownDoc: string) => Promise<void>;
 }
 
+const STUDY_STATUS_OPTIONS: CloudscapeSelectOption[] = [
+  { value: 'not-started', label: 'Unstudied' },
+  { value: 'in-progress', label: 'In progress' },
+  { value: 'mastered', label: 'Mastered' },
+  { value: 'review', label: 'Review' },
+];
+
 const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
   service,
   onBackToTable,
@@ -445,7 +441,6 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editorContent, setEditorContent] = useState(service.markdownDoc);
   const [savedSuccess, setSavedSuccess] = useState(false);
-  const [copiedArn, setCopiedArn] = useState(false);
 
   const handleSaveDoc = async () => {
     await onUpdateDoc(service.id, editorContent);
@@ -461,14 +456,6 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
       await onUpdateDoc(service.id, original.markdownDoc);
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 2000);
-    }
-  };
-
-  const handleCopyArn = async () => {
-    if (service.arnExample) {
-      await navigator.clipboard.writeText(service.arnExample);
-      setCopiedArn(true);
-      setTimeout(() => setCopiedArn(false), 2000);
     }
   };
 
@@ -618,7 +605,7 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
                     backgroundColor: 'var(--aws-brand)',
                     color: '#0F141A',
                   }}
-                  className="flex items-center gap-1 px-3 py-1 rounded-[4px] font-bold transition-all cursor-pointer hover:bg-[var(--aws-brand-hover)]"
+                  className="flex items-center gap-1 px-3 py-1 rounded-[4px] font-bold transition-[background-color,transform] duration-150 ease-out enabled:active:scale-[0.96] cursor-pointer hover:bg-[var(--aws-brand-hover)]"
                 >
                   {savedSuccess ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
                   <span>{savedSuccess ? 'Saved' : 'Save changes'}</span>
@@ -630,18 +617,14 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 flex-1 overflow-hidden">
               <div
                 style={{ borderRightColor: 'var(--aws-border)' }}
-                className="flex flex-col h-full border-r"
+                className="flex flex-col h-full border-r overflow-hidden"
               >
-                <textarea
+                <CloudscapeTextarea
                   value={editorContent}
-                  onChange={(e) => setEditorContent(e.target.value)}
-                  style={{
-                    backgroundColor: 'var(--aws-page-bg)',
-                    color: 'var(--aws-text-primary)',
-                  }}
-                  className="w-full flex-1 p-4 font-mono text-[12px] leading-relaxed outline-none resize-none overflow-y-auto"
-                  spellCheck={false}
+                  onChange={setEditorContent}
                   placeholder="Enter markdown document with mermaid diagrams..."
+                  spellCheck={false}
+                  className="w-full h-full border-0 rounded-none font-mono text-[12px] p-4"
                 />
               </div>
 
@@ -761,24 +744,15 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
                     >
                       Study status
                     </span>
-                    <select
+                    <CloudscapeSelect
                       value={service.studyStatus}
-                      onChange={(e) =>
-                        onUpdateStatus(service.id, e.target.value as StudyStatus)
+                      options={STUDY_STATUS_OPTIONS}
+                      onChange={(val) =>
+                        onUpdateStatus(service.id, val as StudyStatus)
                       }
-                      aria-label="Update study status"
-                      style={{
-                        backgroundColor: 'var(--aws-page-bg)',
-                        borderColor: 'var(--aws-input-border)',
-                        color: 'var(--aws-text-primary)',
-                      }}
-                      className="text-[12px] px-2 py-1 rounded-[4px] border outline-none cursor-pointer focus:border-[var(--aws-brand)]"
-                    >
-                      <option value="not-started">Unstudied</option>
-                      <option value="in-progress">In progress</option>
-                      <option value="mastered">Mastered</option>
-                      <option value="review">Review</option>
-                    </select>
+                      ariaLabel="Update study status"
+                      className="w-36"
+                    />
                   </div>
                 </div>
 
@@ -802,18 +776,12 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
                         {service.arnExample}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleCopyArn}
-                      className="text-[var(--aws-text-muted)] hover:text-[var(--aws-interactive)] transition-colors cursor-pointer shrink-0"
-                      title="Copy ARN pattern"
-                    >
-                      {copiedArn ? (
-                        <Check className="w-3.5 h-3.5 text-[#1D8102]" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
+                    <CloudscapeCopyButton
+                      textToCopy={service.arnExample}
+                      ariaLabel="Copy ARN pattern"
+                      showLabel={false}
+                      className="shrink-0"
+                    />
                   </div>
                 )}
               </CloudscapeContainer>

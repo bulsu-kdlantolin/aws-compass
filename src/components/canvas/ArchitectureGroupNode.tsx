@@ -82,7 +82,7 @@ export const ArchitectureGroupNode = memo((props: NodeProps) => {
   return (
     <div
       style={{ width: `${width}px`, height: `${height}px` }}
-      className={`relative rounded-xl border-2 transition-all group ${config.border} ${config.bg} select-none`}
+      className={`relative rounded-xl border-2 transition-[border-color,background-color] duration-150 ease-out group ${config.border} ${config.bg} select-none`}
     >
       {/* Group Header Badge (Draw.io layout spec) */}
       <div className="absolute -top-3 left-3 z-10 flex items-center gap-1.5 pointer-events-auto">

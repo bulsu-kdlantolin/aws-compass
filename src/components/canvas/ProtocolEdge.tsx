@@ -133,7 +133,7 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
                 borderColor: protocolStyle.stroke,
                 color: 'var(--aws-text-primary)',
               }}
-              className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] border text-[11px] font-mono shadow-xs cursor-pointer transition-all hover:scale-105"
+              className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] border text-[11px] font-mono shadow-xs cursor-pointer motion-safe:transition-[border-color,background-color,transform] duration-150 ease-out motion-safe:hover:scale-105"
               title={`Protocol: ${protocol} (${protocolStyle.flowType} flow). Click to change.`}
             >
               <span

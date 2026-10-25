@@ -110,8 +110,8 @@ export const AWSServiceNode = memo((props: NodeProps) => {
             ? '0 0 0 2px #FF9900, 0 4px 12px rgba(255, 153, 0, 0.3)'
             : '0 2px 8px rgba(0, 0, 0, 0.15)',
         }}
-        className={`relative w-12 h-12 rounded-[4px] flex items-center justify-center transition-all ${
-          isCurrentSelected ? 'scale-105' : 'hover:scale-105'
+        className={`relative w-12 h-12 rounded-[4px] flex items-center justify-center motion-safe:transition-[box-shadow,transform] duration-150 ease-out ${
+          isCurrentSelected ? 'motion-safe:scale-105' : 'motion-safe:hover:scale-105'
         }`}
       >
         <AWSServiceIcon serviceId={nodeData.serviceId} size={48} variant="service" />

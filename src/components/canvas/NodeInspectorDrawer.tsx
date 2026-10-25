@@ -3,8 +3,6 @@ import Markdown from 'react-markdown';
 import {
   ExternalLink,
   BookOpen,
-  Check,
-  Copy,
   Sparkles,
   ArrowRight,
   ArrowLeft,
@@ -21,6 +19,8 @@ import { CloudscapeSplitPanel } from '../ui/CloudscapeSplitPanel';
 import { CloudscapeTabs } from '../ui/CloudscapeTabs';
 import { CloudscapeStatusIndicator } from '../ui/CloudscapeStatusIndicator';
 import { CloudscapeCodeBlock } from '../ui/CloudscapeCodeBlock';
+import { CloudscapeTextarea } from '../ui/CloudscapeTextarea';
+import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
 
 const NodeNotesEditor: React.FC<{
   initialNotes: string;
@@ -28,24 +28,17 @@ const NodeNotesEditor: React.FC<{
 }> = ({ initialNotes, onSave }) => {
   const [notes, setNotes] = useState(initialNotes);
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const val = e.target.value;
+  const handleChange = (val: string) => {
     setNotes(val);
     onSave(val);
   };
 
   return (
-    <textarea
+    <CloudscapeTextarea
       value={notes}
       onChange={handleChange}
       rows={3}
       placeholder="Specify the specific purpose of this instance in your architecture (e.g. Ingress proxy, Redis cluster, payment queue)..."
-      style={{
-        backgroundColor: 'var(--aws-page-bg)',
-        borderColor: 'var(--aws-input-border)',
-        color: 'var(--aws-text-primary)',
-      }}
-      className="w-full border rounded-[4px] p-2.5 text-[12px] leading-[16px] focus:border-[var(--aws-interactive)] outline-none resize-none"
     />
   );
 };
@@ -73,7 +66,6 @@ export const NodeInspectorDrawer: React.FC = () => {
   const [, startTransition] = useTransition();
 
   const [activeTab, setActiveTab] = useState<'details' | 'dossier'>('details');
-  const [copiedArn, setCopiedArn] = useState(false);
 
   const currentNode = nodes.find((n) => n.id === selectedNodeId);
   const service = services.find((s) => s.id === currentNode?.data.serviceId);
@@ -88,14 +80,6 @@ export const NodeInspectorDrawer: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isInspectorOpen, closeInspector]);
-
-  const handleCopyArn = async () => {
-    if (service?.arnExample) {
-      await navigator.clipboard.writeText(service.arnExample);
-      setCopiedArn(true);
-      setTimeout(() => setCopiedArn(false), 2000);
-    }
-  };
 
   const handleOpenFullVault = () => {
     if (service) {
@@ -272,15 +256,12 @@ export const NodeInspectorDrawer: React.FC = () => {
                   <span className="font-bold text-[var(--aws-text-primary)]">
                     ARN specification pattern
                   </span>
-                  <button
-                    type="button"
-                    onClick={handleCopyArn}
-                    style={{ color: 'var(--aws-interactive)' }}
-                    className="flex items-center gap-1 hover:underline cursor-pointer"
-                  >
-                    {copiedArn ? <Check className="w-3.5 h-3.5 text-[#1D8102]" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedArn ? 'Copied' : 'Copy'}</span>
-                  </button>
+                  <CloudscapeCopyButton
+                    textToCopy={service.arnExample}
+                    label="Copy"
+                    copiedLabel="Copied"
+                    ariaLabel="Copy ARN pattern"
+                  />
                 </div>
                 <div
                   style={{

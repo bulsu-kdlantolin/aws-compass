@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Search, X, ChevronRight, Filter } from 'lucide-react';
+import { ChevronRight, Filter } from 'lucide-react';
 import { useCompassStore } from '../../store/useCompassStore';
 import type { AWSCategory, ServiceTier, StudyStatus } from '../../types/aws';
 import { ServiceCard } from './ServiceCard';
+import { CloudscapeSearchInput } from '../ui/CloudscapeSearchInput';
+import { CloudscapeSelect, type CloudscapeSelectOption } from '../ui/CloudscapeSelect';
 
 const CATEGORIES: AWSCategory[] = [
   'Compute',
@@ -14,6 +16,14 @@ const CATEGORIES: AWSCategory[] = [
 ];
 
 const TIERS: ServiceTier[] = [1, 2, 3];
+
+const STATUS_FILTER_OPTIONS: CloudscapeSelectOption[] = [
+  { value: 'All', label: 'All statuses' },
+  { value: 'not-started', label: 'Unstudied' },
+  { value: 'in-progress', label: 'In progress' },
+  { value: 'mastered', label: 'Mastered' },
+  { value: 'review', label: 'Review' },
+];
 
 export const ServiceCatalog: React.FC = () => {
   const {
@@ -126,31 +136,14 @@ export const ServiceCatalog: React.FC = () => {
         }}
         className="p-2.5 border-b space-y-2"
       >
-        <div className="relative">
-          <Search className="w-4 h-4 text-[var(--aws-text-muted)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" strokeWidth={1.75} />
-          <input
-            type="text"
-            value={filter.search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search services..."
-            style={{
-              backgroundColor: 'var(--aws-page-bg)',
-              borderColor: 'var(--aws-input-border)',
-              color: 'var(--aws-text-primary)',
-            }}
-            className="w-full text-[12px] pl-8 pr-7 py-1.5 rounded-[4px] border focus:border-[var(--aws-brand)] focus:outline-none placeholder:text-[var(--aws-text-muted)] transition-colors"
-          />
-          {filter.search && (
-            <button
-              type="button"
-              onClick={() => setSearch('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] p-0.5 cursor-pointer"
-              title="Clear search"
-            >
-              <X className="w-3.5 h-3.5" strokeWidth={1.75} />
-            </button>
-          )}
-        </div>
+        <CloudscapeSearchInput
+          value={filter.search}
+          onChange={setSearch}
+          placeholder="Search services..."
+          shortcut="Ctrl+K"
+          size="sm"
+          className="w-full"
+        />
 
         {/* Filters Row: Tier & Status */}
         <div className="flex items-center justify-between gap-1.5 text-[11px]">
@@ -179,7 +172,7 @@ export const ServiceCatalog: React.FC = () => {
                           borderColor: 'var(--aws-border)',
                         }
                   }
-                  className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-mono font-medium border transition-colors cursor-pointer"
+                  className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-mono font-medium border enabled:active:scale-[0.96] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer"
                 >
                   {tierVal === 'All' ? 'All' : `T${tierVal}`}
                 </button>
@@ -188,23 +181,13 @@ export const ServiceCatalog: React.FC = () => {
           </div>
 
           {/* Status Filter */}
-          <select
+          <CloudscapeSelect
             value={filter.studyStatus}
-            onChange={(e) => setStudyStatusFilter(e.target.value as StudyStatus | 'All')}
-            aria-label="Filter by study status"
-            style={{
-              backgroundColor: 'var(--aws-page-bg)',
-              color: 'var(--aws-text-primary)',
-              borderColor: 'var(--aws-input-border)',
-            }}
-            className="rounded-[3px] px-1.5 py-0.5 text-[10px] outline-none cursor-pointer border focus:border-[var(--aws-brand)]"
-          >
-            <option value="All">All statuses</option>
-            <option value="not-started">Unstudied</option>
-            <option value="in-progress">In progress</option>
-            <option value="mastered">Mastered</option>
-            <option value="review">Review</option>
-          </select>
+            options={STATUS_FILTER_OPTIONS}
+            onChange={(val) => setStudyStatusFilter(val as StudyStatus | 'All')}
+            ariaLabel="Filter by study status"
+            className="w-32 text-[11px]"
+          />
         </div>
       </div>
 

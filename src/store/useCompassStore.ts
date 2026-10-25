@@ -28,6 +28,7 @@ import {
   updateServiceStatus as dbUpdateServiceStatus,
 } from '../db/compassDb';
 import { ARCHITECTURE_TEMPLATES } from '../components/canvas/canvasTemplates';
+import { disableTransitionsTemporarily } from '../utils/themeTransitions';
 
 let debounceSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -123,6 +124,7 @@ export const useCompassStore = create<CompassState>((set, get) => ({
 
   setTheme: (theme: ThemeMode) => {
     if (typeof window !== 'undefined') {
+      disableTransitionsTemporarily();
       localStorage.setItem('aws-compass-theme', theme);
       document.documentElement.setAttribute('data-theme', theme);
       if (theme === 'dark') {

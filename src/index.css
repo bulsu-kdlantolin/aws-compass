@@ -229,3 +229,57 @@
   font-size: 12px;
   line-height: 18px;
 }
+
+/* Cloudscape Skeleton Shimmer Loader with Reduced-Motion Fallback */
+:root {
+  --aws-skeleton-base: #192534;
+  --aws-skeleton-shimmer: #26384f;
+}
+
+[data-theme="light"],
+.aws-theme-light {
+  --aws-skeleton-base: #E1E4E5;
+  --aws-skeleton-shimmer: #F2F4F5;
+}
+
+.cloudscape-skeleton {
+  background-color: var(--aws-skeleton-base);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cloudscape-skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--aws-skeleton-base) 0%,
+      var(--aws-skeleton-shimmer) 50%,
+      var(--aws-skeleton-base) 100%
+    );
+    background-size: 200% 100%;
+    animation: cloudscape-shimmer 1.8s ease-in-out infinite;
+  }
+
+  @keyframes cloudscape-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloudscape-skeleton {
+    animation: cloudscape-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes cloudscape-pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+}
+

@@ -25,15 +25,28 @@ import { ARCHITECTURE_TEMPLATES } from '../components/canvas/canvasTemplates';
 import { SEED_BLUEPRINTS } from '../db/seedBlueprints';
 
 let debounceSaveTimer: ReturnType<typeof setTimeout> | null = null;
+let resetSavedStatusTimer: ReturnType<typeof setTimeout> | null = null;
+
+export type CanvasSaveStatus = 'idle' | 'saving' | 'saved';
 
 /**
  * Debounced background sync to the Dexie.js diagrams table.
  * Avoids disk I/O on every drag frame per aws-compass-core specification.
  */
-function scheduleDebouncedAutoSave(nodes: CanvasNodeItem[], edges: CanvasEdgeItem[]) {
+function scheduleDebouncedAutoSave(
+  nodes: CanvasNodeItem[],
+  edges: CanvasEdgeItem[],
+  set: (state: Partial<CanvasState> | ((prev: CanvasState) => Partial<CanvasState>)) => void
+) {
+  set({ saveStatus: 'saving' });
+
   if (debounceSaveTimer) {
     clearTimeout(debounceSaveTimer);
   }
+  if (resetSavedStatusTimer) {
+    clearTimeout(resetSavedStatusTimer);
+  }
+
   debounceSaveTimer = setTimeout(async () => {
     try {
       await dbSaveDiagram({
@@ -45,8 +58,12 @@ function scheduleDebouncedAutoSave(nodes: CanvasNodeItem[], edges: CanvasEdgeIte
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
+      set({ saveStatus: 'saved' });
+      resetSavedStatusTimer = setTimeout(() => {
+        set({ saveStatus: 'idle' });
+      }, 2500);
     } catch {
-      // Ignore background persistence errors
+      set({ saveStatus: 'idle' });
     }
   }, 800);
 }
@@ -58,6 +75,7 @@ export interface CanvasState {
   activeDiagramId: string;
   activeDiagramName: string;
   savedDiagrams: Diagram[];
+  saveStatus: CanvasSaveStatus;
 
   // Inspector & Selection State
   selectedNodeId: string | null;
@@ -99,6 +117,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   activeDiagramId: 'serverless-api',
   activeDiagramName: 'Serverless Event-Driven API',
   savedDiagrams: [],
+  saveStatus: 'idle',
 
   selectedNodeId: null,
   isInspectorOpen: false,
@@ -126,7 +145,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   onNodesChange: (changes: NodeChange<CanvasNodeItem>[]) => {
     set((state) => {
       const updatedNodes = applyNodeChanges(changes, state.nodes);
-      scheduleDebouncedAutoSave(updatedNodes, state.edges);
+      scheduleDebouncedAutoSave(updatedNodes, state.edges, set);
       return { nodes: updatedNodes };
     });
   },
@@ -134,7 +153,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   onEdgesChange: (changes: EdgeChange<CanvasEdgeItem>[]) => {
     set((state) => {
       const updatedEdges = applyEdgeChanges(changes, state.edges);
-      scheduleDebouncedAutoSave(state.nodes, updatedEdges);
+      scheduleDebouncedAutoSave(state.nodes, updatedEdges, set);
       return { edges: updatedEdges };
     });
   },
@@ -156,19 +175,19 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     set((state) => {
       const updatedEdges = [...state.edges, newEdge];
-      scheduleDebouncedAutoSave(state.nodes, updatedEdges);
+      scheduleDebouncedAutoSave(state.nodes, updatedEdges, set);
       return { edges: updatedEdges };
     });
   },
 
   setNodes: (nodes: CanvasNodeItem[]) => {
     set({ nodes });
-    scheduleDebouncedAutoSave(nodes, get().edges);
+    scheduleDebouncedAutoSave(nodes, get().edges, set);
   },
 
   setEdges: (edges: CanvasEdgeItem[]) => {
     set({ edges });
-    scheduleDebouncedAutoSave(get().nodes, edges);
+    scheduleDebouncedAutoSave(get().nodes, edges, set);
   },
 
   addServiceNode: (service: AWSService, position: { x: number; y: number }) => {
@@ -189,7 +208,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     set((state) => {
       const updatedNodes = [...state.nodes, newNode];
-      scheduleDebouncedAutoSave(updatedNodes, state.edges);
+      scheduleDebouncedAutoSave(updatedNodes, state.edges, set);
       return {
         nodes: updatedNodes,
         selectedNodeId: newNode.id,
@@ -230,7 +249,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     set((state) => {
       // Prepend group node so it renders beneath child service nodes
       const updatedNodes = [newGroupNode, ...state.nodes];
-      scheduleDebouncedAutoSave(updatedNodes, state.edges);
+      scheduleDebouncedAutoSave(updatedNodes, state.edges, set);
       return {
         nodes: updatedNodes,
         selectedNodeId: newGroupNode.id,
@@ -243,7 +262,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       const updatedNodes = state.nodes.map((n) =>
         n.id === nodeId ? { ...n, data: { ...n.data, customNotes } } : n
       );
-      scheduleDebouncedAutoSave(updatedNodes, state.edges);
+      scheduleDebouncedAutoSave(updatedNodes, state.edges, set);
       return { nodes: updatedNodes };
     });
   },
@@ -253,7 +272,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       const updatedNodes = state.nodes.map((n) =>
         n.data.serviceId === serviceId ? { ...n, data: { ...n.data, status } } : n
       );
-      scheduleDebouncedAutoSave(updatedNodes, state.edges);
+      scheduleDebouncedAutoSave(updatedNodes, state.edges, set);
       return { nodes: updatedNodes };
     });
   },
@@ -271,7 +290,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             }
           : e
       );
-      scheduleDebouncedAutoSave(state.nodes, updatedEdges);
+      scheduleDebouncedAutoSave(state.nodes, updatedEdges, set);
       return { edges: updatedEdges };
     });
   },
@@ -282,7 +301,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       const updatedEdges = state.edges.filter(
         (e) => e.source !== nodeId && e.target !== nodeId
       );
-      scheduleDebouncedAutoSave(updatedNodes, updatedEdges);
+      scheduleDebouncedAutoSave(updatedNodes, updatedEdges, set);
       return {
         nodes: updatedNodes,
         edges: updatedEdges,
@@ -295,7 +314,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   removeEdge: (edgeId: string) => {
     set((state) => {
       const updatedEdges = state.edges.filter((e) => e.id !== edgeId);
-      scheduleDebouncedAutoSave(state.nodes, updatedEdges);
+      scheduleDebouncedAutoSave(state.nodes, updatedEdges, set);
       return { edges: updatedEdges };
     });
   },
@@ -307,7 +326,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       selectedNodeId: null,
       isInspectorOpen: false,
     });
-    scheduleDebouncedAutoSave([], []);
+    scheduleDebouncedAutoSave([], [], set);
   },
 
   loadTemplate: (templateId: string) => {
@@ -322,7 +341,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         selectedNodeId: null,
         isInspectorOpen: false,
       });
-      scheduleDebouncedAutoSave(blueprint.nodes, blueprint.edges);
+      scheduleDebouncedAutoSave(blueprint.nodes, blueprint.edges, set);
       return;
     }
 
@@ -337,7 +356,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         selectedNodeId: null,
         isInspectorOpen: false,
       });
-      scheduleDebouncedAutoSave(template.nodes, template.edges);
+      scheduleDebouncedAutoSave(template.nodes, template.edges, set);
     }
   },
 
@@ -378,7 +397,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         selectedNodeId: null,
         isInspectorOpen: false,
       });
-      scheduleDebouncedAutoSave(diagram.nodes, diagram.edges);
+      scheduleDebouncedAutoSave(diagram.nodes, diagram.edges, set);
     }
   },
 

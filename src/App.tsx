@@ -5,7 +5,8 @@ import { ServiceCatalog } from './components/catalog/ServiceCatalog';
 import { ConceptVault } from './components/vault/ConceptVault';
 import { ArchitectureCanvas } from './components/canvas/ArchitectureCanvas';
 import { CommandPalette } from './components/layout/CommandPalette';
-import { Compass } from 'lucide-react';
+import { DisableThemeTransitions } from './components/ui/DisableThemeTransitions';
+import { CloudscapeAppSkeleton } from './components/ui/CloudscapeSkeleton';
 
 export const App: React.FC = () => {
   const { isDbLoaded, isSidebarOpen, workspaceMode, initialize } = useCompassStore();
@@ -29,22 +30,10 @@ export const App: React.FC = () => {
 
   if (!isDbLoaded) {
     return (
-      <div
-        style={{
-          backgroundColor: 'var(--aws-page-bg)',
-          color: 'var(--aws-text-primary)',
-        }}
-        className="flex flex-col items-center justify-center w-screen h-screen"
-      >
-        <div className="relative">
-          <div className="w-14 h-14 rounded-2xl bg-[var(--aws-brand)]/10 border border-[var(--aws-brand)]/30 flex items-center justify-center text-[var(--aws-brand)] shadow-xl animate-pulse">
-            <Compass className="w-8 h-8 animate-spin" style={{ animationDuration: '3s' }} />
-          </div>
-        </div>
-        <p style={{ color: 'var(--aws-text-muted)' }} className="mt-4 font-mono text-xs">
-          Loading AWS Compass Catalog...
-        </p>
-      </div>
+      <>
+        <DisableThemeTransitions />
+        <CloudscapeAppSkeleton />
+      </>
     );
   }
 
@@ -56,6 +45,7 @@ export const App: React.FC = () => {
       }}
       className="flex flex-col w-screen h-screen overflow-hidden font-sans"
     >
+      <DisableThemeTransitions />
       {/* Top Application Bar */}
       <Navbar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
 
