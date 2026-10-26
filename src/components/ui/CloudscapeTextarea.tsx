@@ -37,7 +37,7 @@ export const CloudscapeTextarea: React.FC<CloudscapeTextareaProps> = ({
         caretColor: 'var(--aws-interactive)',
         overscrollBehavior: 'contain',
       }}
-      className={`w-full font-mono text-[12px] leading-[18px] p-3 rounded-[4px] border outline-none resize-y transition-[border-color,box-shadow] duration-150 ease-out focus-visible:border-[var(--aws-interactive)] focus-visible:ring-2 focus-visible:ring-[var(--aws-interactive)]/40 focus:border-[var(--aws-interactive)] focus:ring-2 focus:ring-[var(--aws-interactive)]/40 disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-[var(--aws-text-muted)] ${className}`}
+      className={`w-full font-mono text-[12px] leading-[18px] p-3 rounded-[4px] border outline-none resize-y custom-scrollbar transition-[border-color,box-shadow] duration-150 ease-out focus-visible:border-[var(--aws-interactive)] focus-visible:ring-2 focus-visible:ring-[var(--aws-interactive)]/40 focus:border-[var(--aws-interactive)] focus:ring-2 focus:ring-[var(--aws-interactive)]/40 disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-[var(--aws-text-muted)] ${className}`}
     />
   );
 };

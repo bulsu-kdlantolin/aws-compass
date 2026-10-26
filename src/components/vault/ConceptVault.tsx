@@ -222,7 +222,7 @@ const ConceptVaultTable: React.FC<{
           </div>
 
           {/* Sticky Header Table */}
-          <div className="flex-1 overflow-y-auto scrollbar-thin">
+          <div className="flex-1 overflow-y-auto scrollbar-thin custom-scrollbar">
             <table className="w-full border-collapse text-left select-none">
               <thead
                 style={{
@@ -566,228 +566,228 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
       </div>
 
       {/* Main Workspace Body */}
-      <div className="flex-1 overflow-hidden relative">
-        {isEditing ? (
-          /* Editor Layout */
+      {isEditing ? (
+        /* Editor Layout */
+        <div
+          style={{ backgroundColor: 'var(--aws-page-bg)' }}
+          className="flex flex-col flex-1 min-h-0 overflow-hidden relative"
+        >
+          {/* Editor Action Header */}
           <div
-            style={{ backgroundColor: 'var(--aws-page-bg)' }}
-            className="flex flex-col h-full"
+            style={{
+              backgroundColor: 'var(--aws-card-bg)',
+              borderBottomColor: 'var(--aws-border)',
+            }}
+            className="flex items-center justify-between px-6 py-2 border-b text-[12px] shrink-0"
           >
-            {/* Editor Action Header */}
+            <span style={{ color: 'var(--aws-text-muted)' }}>
+              Editing 6-part concept dossier (Markdown + Mermaid)
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleResetToSeed}
+                style={{
+                  backgroundColor: 'var(--aws-page-bg)',
+                  borderColor: 'var(--aws-border)',
+                  color: 'var(--aws-text-muted)',
+                }}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] border transition-colors cursor-pointer hover:text-[var(--aws-text-primary)]"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset to seed</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveDoc}
+                style={{
+                  backgroundColor: 'var(--aws-brand)',
+                  color: '#0F141A',
+                }}
+                className="flex items-center gap-1 px-3 py-1 rounded-[4px] font-bold transition-[background-color,transform] duration-150 ease-out enabled:active:scale-[0.96] cursor-pointer hover:bg-[var(--aws-brand-hover)]"
+              >
+                {savedSuccess ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                <span>{savedSuccess ? 'Saved' : 'Save changes'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Split Editor / Preview */}
+          <div className="grid grid-cols-1 md:grid-cols-2 flex-1 min-h-0 overflow-hidden">
             <div
-              style={{
-                backgroundColor: 'var(--aws-card-bg)',
-                borderBottomColor: 'var(--aws-border)',
-              }}
-              className="flex items-center justify-between px-6 py-2 border-b text-[12px]"
+              style={{ borderRightColor: 'var(--aws-border)' }}
+              className="flex flex-col h-full border-r overflow-hidden"
             >
-              <span style={{ color: 'var(--aws-text-muted)' }}>
-                Editing 6-part concept dossier (Markdown + Mermaid)
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleResetToSeed}
-                  style={{
-                    backgroundColor: 'var(--aws-page-bg)',
-                    borderColor: 'var(--aws-border)',
-                    color: 'var(--aws-text-muted)',
-                  }}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] border transition-colors cursor-pointer hover:text-[var(--aws-text-primary)]"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>Reset to seed</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveDoc}
-                  style={{
-                    backgroundColor: 'var(--aws-brand)',
-                    color: '#0F141A',
-                  }}
-                  className="flex items-center gap-1 px-3 py-1 rounded-[4px] font-bold transition-[background-color,transform] duration-150 ease-out enabled:active:scale-[0.96] cursor-pointer hover:bg-[var(--aws-brand-hover)]"
-                >
-                  {savedSuccess ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
-                  <span>{savedSuccess ? 'Saved' : 'Save changes'}</span>
-                </button>
-              </div>
+              <CloudscapeTextarea
+                value={editorContent}
+                onChange={setEditorContent}
+                placeholder="Enter markdown document with mermaid diagrams..."
+                spellCheck={false}
+                className="w-full h-full border-0 rounded-none font-mono text-[12px] p-4"
+              />
             </div>
 
-            {/* Split Editor / Preview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 flex-1 overflow-hidden">
-              <div
-                style={{ borderRightColor: 'var(--aws-border)' }}
-                className="flex flex-col h-full border-r overflow-hidden"
-              >
-                <CloudscapeTextarea
-                  value={editorContent}
-                  onChange={setEditorContent}
-                  placeholder="Enter markdown document with mermaid diagrams..."
-                  spellCheck={false}
-                  className="w-full h-full border-0 rounded-none font-mono text-[12px] p-4"
-                />
-              </div>
-
-              <div className="flex flex-col h-full overflow-hidden">
-                <div className="flex-1 overflow-y-auto p-6 vault-prose">
-                  <Markdown
-                    components={{
-                      code(props) {
-                        const { children, className, ...rest } = props;
-                        const match = /language-(\w+)/.exec(className || '');
-                        const language = match ? match[1] : '';
-                        if (language === 'mermaid') {
-                          return <MermaidViewer chart={String(children).replace(/\n$/, '')} />;
-                        }
-                        return (
-                          <code className={className} {...rest}>
-                            {children}
-                          </code>
-                        );
-                      },
-                    }}
-                  >
-                    {editorContent}
-                  </Markdown>
-                </div>
+            <div className="flex flex-col h-full overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 vault-prose scrollbar-thin custom-scrollbar">
+                <Markdown
+                  components={{
+                    code(props) {
+                      const { children, className, ...rest } = props;
+                      const match = /language-(\w+)/.exec(className || '');
+                      const language = match ? match[1] : '';
+                      if (language === 'mermaid') {
+                        return <MermaidViewer chart={String(children).replace(/\n$/, '')} />;
+                      }
+                      return (
+                        <code className={className} {...rest}>
+                          {children}
+                        </code>
+                      );
+                    },
+                  }}
+                >
+                  {editorContent}
+                </Markdown>
               </div>
             </div>
           </div>
-        ) : (
-          /* Reading View Layout */
-          <div className="h-full overflow-y-auto p-4 sm:p-6 scrollbar-thin">
-            <div className="max-w-4xl mx-auto space-y-5">
-              {/* Cloudscape Container: Service Header & Key-Value Grid */}
-              <CloudscapeContainer
-                header={
-                  <div className="flex items-center gap-3">
-                    <AWSServiceIcon serviceId={service.id} size={32} />
-                    <div>
-                      <h2
-                        style={{ color: 'var(--aws-text-primary)' }}
-                        className="text-[18px] font-bold leading-[22px]"
-                      >
-                        {service.name}
-                      </h2>
-                      <span className="text-[11px] font-mono text-[var(--aws-text-muted)] uppercase">
-                        {service.id}
-                      </span>
-                    </div>
-                  </div>
-                }
-              >
-                {/* Key-Value Grid (Separated by hairlines, NO boxes inside boxes) */}
-                <div
-                  style={{ borderColor: 'var(--aws-border)' }}
-                  className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2"
-                >
-                  {/* Category */}
+        </div>
+      ) : (
+        /* Reading View Layout: strictly a single flex-1 overflow-y-auto scroll container under the sticky breadcrumb bar */
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 scrollbar-thin custom-scrollbar">
+          <div className="max-w-4xl mx-auto space-y-5 pb-8">
+            {/* Cloudscape Container: Service Header & Key-Value Grid */}
+            <CloudscapeContainer
+              header={
+                <div className="flex items-center gap-3">
+                  <AWSServiceIcon serviceId={service.id} size={32} />
                   <div>
-                    <span
-                      style={{ color: 'var(--aws-text-muted)' }}
-                      className="text-[12px] block font-medium"
-                    >
-                      Category
-                    </span>
-                    <span
+                    <h2
                       style={{ color: 'var(--aws-text-primary)' }}
-                      className="text-[13px] font-semibold mt-0.5 block"
+                      className="text-[18px] font-bold leading-[22px]"
                     >
-                      {service.category}
+                      {service.name}
+                    </h2>
+                    <span className="text-[11px] font-mono text-[var(--aws-text-muted)] uppercase">
+                      {service.id}
                     </span>
-                  </div>
-
-                  {/* Tier */}
-                  <div>
-                    <span
-                      style={{ color: 'var(--aws-text-muted)' }}
-                      className="text-[12px] block font-medium"
-                    >
-                      Study tier
-                    </span>
-                    <span
-                      style={{ color: 'var(--aws-text-primary)' }}
-                      className="text-[13px] font-semibold mt-0.5 block font-mono"
-                    >
-                      Tier {service.tier}{' '}
-                      <span className="text-[11px] font-sans font-normal text-[var(--aws-text-muted)]">
-                        {service.tier === 1
-                          ? '(Core)'
-                          : service.tier === 2
-                          ? '(Exam essential)'
-                          : '(Specialized)'}
-                      </span>
-                    </span>
-                  </div>
-
-                  {/* CLI Prefix */}
-                  <div>
-                    <span
-                      style={{ color: 'var(--aws-text-muted)' }}
-                      className="text-[12px] block font-medium"
-                    >
-                      CLI prefix
-                    </span>
-                    <span
-                      style={{ color: 'var(--aws-interactive)' }}
-                      className="text-[13px] font-mono mt-0.5 block font-medium"
-                    >
-                      aws {service.id}
-                    </span>
-                  </div>
-
-                  {/* Study Status */}
-                  <div>
-                    <span
-                      style={{ color: 'var(--aws-text-muted)' }}
-                      className="text-[12px] block font-medium mb-1"
-                    >
-                      Study status
-                    </span>
-                    <CloudscapeSelect
-                      value={service.studyStatus}
-                      options={STUDY_STATUS_OPTIONS}
-                      onChange={(val) =>
-                        onUpdateStatus(service.id, val as StudyStatus)
-                      }
-                      ariaLabel="Update study status"
-                      className="w-36"
-                    />
                   </div>
                 </div>
-
-                {/* ARN Example Row */}
-                {service.arnExample && (
-                  <div
-                    style={{
-                      borderTopColor: 'var(--aws-border)',
-                      backgroundColor: 'var(--aws-page-bg)',
-                    }}
-                    className="mt-3 pt-3 border-t p-2.5 rounded-[4px] flex items-center justify-between gap-3 text-[12px] font-mono"
+              }
+            >
+              {/* Key-Value Grid with 1px vertical dividers between the 4 metadata columns */}
+              <div
+                style={{ borderColor: 'var(--aws-border)' }}
+                className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2"
+              >
+                {/* Category */}
+                <div className="border-r border-[#D5DBDB] dark:border-[#354150] pr-6">
+                  <span
+                    style={{ color: 'var(--aws-text-muted)' }}
+                    className="text-[12px] block font-medium"
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-[var(--aws-text-muted)] shrink-0 font-sans">
-                        ARN pattern:
-                      </span>
-                      <span
-                        style={{ color: 'var(--aws-text-primary)' }}
-                        className="truncate select-all"
-                      >
-                        {service.arnExample}
-                      </span>
-                    </div>
-                    <CloudscapeCopyButton
-                      textToCopy={service.arnExample}
-                      ariaLabel="Copy ARN pattern"
-                      showLabel={false}
-                      className="shrink-0"
-                    />
-                  </div>
-                )}
-              </CloudscapeContainer>
+                    Category
+                  </span>
+                  <span
+                    style={{ color: 'var(--aws-text-primary)' }}
+                    className="text-[13px] font-semibold mt-0.5 block"
+                  >
+                    {service.category}
+                  </span>
+                </div>
 
-              {/* 6-Part Concept Dossier Content */}
-              <div className="vault-prose pt-2">
+                {/* Tier */}
+                <div className="border-r border-[#D5DBDB] dark:border-[#354150] pr-6">
+                  <span
+                    style={{ color: 'var(--aws-text-muted)' }}
+                    className="text-[12px] block font-medium"
+                  >
+                    Study tier
+                  </span>
+                  <span
+                    style={{ color: 'var(--aws-text-primary)' }}
+                    className="text-[13px] font-semibold mt-0.5 block font-mono"
+                  >
+                    Tier {service.tier}{' '}
+                    <span className="text-[11px] font-sans font-normal text-[var(--aws-text-muted)]">
+                      {service.tier === 1
+                        ? '(Core)'
+                        : service.tier === 2
+                        ? '(Exam essential)'
+                        : '(Specialized)'}
+                    </span>
+                  </span>
+                </div>
+
+                {/* CLI Prefix */}
+                <div className="border-r border-[#D5DBDB] dark:border-[#354150] pr-6">
+                  <span
+                    style={{ color: 'var(--aws-text-muted)' }}
+                    className="text-[12px] block font-medium"
+                  >
+                    CLI prefix
+                  </span>
+                  <span
+                    style={{ color: 'var(--aws-interactive)' }}
+                    className="text-[13px] font-mono mt-0.5 block font-medium"
+                  >
+                    aws {service.id}
+                  </span>
+                </div>
+
+                {/* Study Status */}
+                <div>
+                  <span
+                    style={{ color: 'var(--aws-text-muted)' }}
+                    className="text-[12px] block font-medium mb-1"
+                  >
+                    Study status
+                  </span>
+                  <CloudscapeSelect
+                    value={service.studyStatus}
+                    options={STUDY_STATUS_OPTIONS}
+                    onChange={(val) =>
+                      onUpdateStatus(service.id, val as StudyStatus)
+                    }
+                    ariaLabel="Update study status"
+                    className="w-36"
+                  />
+                </div>
+              </div>
+
+              {/* ARN Example Row */}
+              {service.arnExample && (
+                <div
+                  style={{
+                    borderTopColor: 'var(--aws-border)',
+                    backgroundColor: 'var(--aws-page-bg)',
+                  }}
+                  className="mt-3 pt-3 border-t p-2.5 rounded-[4px] flex items-center justify-between gap-3 text-[12px] font-mono"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-[var(--aws-text-muted)] shrink-0 font-sans">
+                      ARN pattern:
+                    </span>
+                    <span
+                      style={{ color: 'var(--aws-text-primary)' }}
+                      className="truncate select-all"
+                    >
+                      {service.arnExample}
+                    </span>
+                  </div>
+                  <CloudscapeCopyButton
+                    textToCopy={service.arnExample}
+                    ariaLabel="Copy ARN pattern"
+                    showLabel={false}
+                    className="shrink-0"
+                  />
+                </div>
+              )}
+            </CloudscapeContainer>
+
+            {/* Unified Cloudscape Container for 6-Part Concept Dossier */}
+            <div className="bg-white dark:bg-[#161E2D] border border-[#D5DBDB] dark:border-[#354150] rounded-[8px] p-6 shadow-none">
+              <div className="vault-prose">
                 <Markdown
                   components={{
                     code(props) {
@@ -829,8 +829,8 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

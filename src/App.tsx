@@ -6,7 +6,7 @@ import { ConceptVault } from './components/vault/ConceptVault';
 import { ArchitectureCanvas } from './components/canvas/ArchitectureCanvas';
 import { CommandPalette } from './components/layout/CommandPalette';
 import { DisableThemeTransitions } from './components/ui/DisableThemeTransitions';
-import { CloudscapeAppSkeleton } from './components/ui/CloudscapeSkeleton';
+import { Compass } from './components/ui/LoadingIndicators';
 
 export const App: React.FC = () => {
   const { isDbLoaded, isSidebarOpen, workspaceMode, initialize } = useCompassStore();
@@ -30,10 +30,26 @@ export const App: React.FC = () => {
 
   if (!isDbLoaded) {
     return (
-      <>
+      <div
+        style={{
+          backgroundColor: 'var(--aws-page-bg)',
+          color: 'var(--aws-text-primary)',
+        }}
+        className="w-screen h-screen flex flex-col items-center justify-center p-4 font-sans select-none"
+      >
         <DisableThemeTransitions />
-        <CloudscapeAppSkeleton />
-      </>
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex flex-col items-center gap-3.5 p-6 rounded-[8px] border border-[var(--aws-border)] bg-[var(--aws-card-bg)] shadow-lg max-w-sm w-full mx-4 animate-in fade-in duration-200"
+        >
+          <span className="sr-only">Initializing AWS Compass catalog…</span>
+          <Compass size={28} color="#FF9900" />
+          <span className="text-[13px] font-medium text-[var(--aws-text-muted)] tracking-wide">
+            Initializing AWS Compass catalog…
+          </span>
+        </div>
+      </div>
     );
   }
 

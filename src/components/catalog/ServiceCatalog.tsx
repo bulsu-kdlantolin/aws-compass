@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { ChevronRight, Filter } from 'lucide-react';
 import { useCompassStore } from '../../store/useCompassStore';
 import type { AWSCategory, ServiceTier, StudyStatus } from '../../types/aws';
@@ -39,6 +39,17 @@ export const ServiceCatalog: React.FC = () => {
 
   // Collapsible category state: all categories open by default
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+  const [isFiltering, setIsFiltering] = useState(false);
+  const filterTimerRef = useRef<number | null>(null);
+
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    setIsFiltering(true);
+    if (filterTimerRef.current) clearTimeout(filterTimerRef.current);
+    filterTimerRef.current = window.setTimeout(() => {
+      setIsFiltering(false);
+    }, 280);
+  };
 
   const toggleCategory = (cat: string) => {
     setCollapsedCategories((prev) => ({
@@ -138,9 +149,9 @@ export const ServiceCatalog: React.FC = () => {
       >
         <CloudscapeSearchInput
           value={filter.search}
-          onChange={setSearch}
-          placeholder="Search services..."
-          shortcut="Ctrl+K"
+          onChange={handleSearchChange}
+          isLoading={isFiltering}
+          placeholder="Filter catalog..."
           size="sm"
           className="w-full"
         />
@@ -221,7 +232,7 @@ export const ServiceCatalog: React.FC = () => {
       </div>
 
       {/* Tree Content */}
-      <div className="flex-1 overflow-y-auto divide-y divide-[var(--aws-border)] scrollbar-thin">
+      <div className="flex-1 overflow-y-auto divide-y divide-[var(--aws-border)] scrollbar-thin custom-scrollbar">
         {filteredServices.length === 0 ? (
           <div className="p-6 text-center text-[var(--aws-text-muted)]">
             <p className="text-[13px] font-medium text-[var(--aws-text-primary)]">

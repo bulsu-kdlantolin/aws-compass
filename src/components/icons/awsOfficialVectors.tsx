@@ -12,7 +12,7 @@ export interface AWSIconVectorDef {
 export const OFFICIAL_CATEGORY_COLORS = {
   Compute: { dark: '#ED7100', light: '#ED7100' },
   Storage: { dark: '#3F8624', light: '#3F8624' },
-  Database: { dark: '#527FFF', light: '#3B48CC' },
+  Database: { dark: '#3B48CC', light: '#3B48CC' },
   'Networking & Content Delivery': { dark: '#8C4FFF', light: '#8C4FFF' },
   Networking: { dark: '#8C4FFF', light: '#8C4FFF' },
   'Security, Identity & Compliance': { dark: '#DD344C', light: '#DD344C' },

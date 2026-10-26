@@ -145,7 +145,7 @@ export const CloudscapeSplitPanel: React.FC<CloudscapeSplitPanelProps> = ({
       </div>
 
       {/* Split Panel Content Body */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
         {children}
       </div>
     </aside>

@@ -112,6 +112,9 @@ export const AWSGroupNode = memo((props: NodeProps) => {
     removeNode(id);
   };
 
+  const nodeWidth = (props.width as number) || nodeData.width || 540;
+  const nodeHeight = (props.height as number) || nodeData.height || 340;
+
   return (
     <div
       style={{
@@ -119,21 +122,26 @@ export const AWSGroupNode = memo((props: NodeProps) => {
         borderWidth: '1.5px',
         borderStyle: rule.dashed ? 'dashed' : 'solid',
         backgroundColor: bgColor,
+        width: `${nodeWidth}px`,
+        height: `${nodeHeight}px`,
+        pointerEvents: 'none',
       }}
-      className={`relative w-full h-full min-w-[200px] min-h-[120px] rounded-none transition-colors group select-none ${
+      className={`relative min-w-[200px] min-h-[120px] rounded-none transition-colors group select-none ${
         selected ? 'ring-2 ring-[var(--aws-brand)]' : ''
       }`}
     >
       {/* Resizer Controls */}
-      <NodeResizer
-        minWidth={180}
-        minHeight={100}
-        isVisible={selected}
-        lineClassName="!border-[var(--aws-brand)]"
-        handleClassName="!w-2.5 !h-2.5 !bg-[var(--aws-brand)] !border-none !rounded-none shadow-xs"
-      />
+      <div className="pointer-events-auto">
+        <NodeResizer
+          minWidth={180}
+          minHeight={100}
+          isVisible={selected}
+          lineClassName="!border-[var(--aws-brand)]"
+          handleClassName="!w-2.5 !h-2.5 !bg-[var(--aws-brand)] !border-none !rounded-none shadow-xs"
+        />
+      </div>
 
-      {/* Flush Top-Left Official Group Badge */}
+      {/* Flush Top-Left Official Group Badge (h-8 px-2.5 flex items-center gap-2) */}
       <div
         style={{
           borderBottomColor: borderColor,
@@ -141,7 +149,7 @@ export const AWSGroupNode = memo((props: NodeProps) => {
           backgroundColor: 'var(--aws-card-bg)',
           color: textColor,
         }}
-        className="absolute top-0 left-0 z-10 flex items-center gap-1.5 px-2 py-1 border-b border-r text-[12px] leading-[16px] font-bold font-sans pointer-events-auto shadow-xs"
+        className="absolute top-0 left-0 z-10 h-8 px-2.5 flex items-center gap-2 border-b border-r text-[12px] leading-[16px] font-bold font-sans pointer-events-auto cursor-move shadow-xs select-none"
       >
         <AWSServiceIcon groupId={rule.groupId} size={20} variant="group" />
         <span className="truncate">{nodeData.boundaryLabel || rule.label}</span>

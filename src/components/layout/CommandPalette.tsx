@@ -16,6 +16,7 @@ import { useCompassStore } from '../../store/useCompassStore';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { AWSServiceIcon } from '../canvas/AWSIcons';
 import { SEED_BLUEPRINTS } from '../../db/seedBlueprints';
+import { ClassicV2 } from '../ui/LoadingIndicators';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -260,9 +261,17 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
     );
   }, [actions, search]);
 
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimerRef = useRef<number | null>(null);
+
   const handleSearchChange = (val: string) => {
     setSearch(val);
     setSelectedIndex(0);
+    setIsSearching(true);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = window.setTimeout(() => {
+      setIsSearching(false);
+    }, 280);
   };
 
   // Scroll active item into view
@@ -335,7 +344,12 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
             style={{ color: 'var(--aws-text-primary)' }}
             className="w-full py-3.5 bg-transparent text-sm placeholder:text-[var(--aws-text-muted)] outline-none caret-[var(--aws-interactive)]"
           />
-          <div className="flex items-center shrink-0 ml-2">
+          <div className="flex items-center shrink-0 ml-2 gap-2">
+            {isSearching && (
+              <span className="flex items-center justify-center text-[var(--aws-text-muted)] animate-in fade-in duration-150" aria-hidden="true">
+                <ClassicV2 size={14} color="var(--aws-text-muted)" />
+              </span>
+            )}
             {search ? (
               <button
                 type="button"
@@ -367,7 +381,7 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
           style={{
             borderColor: 'var(--aws-border)',
           }}
-          className="flex-1 overflow-y-auto p-2 divide-y divide-[var(--aws-border)] scrollbar-thin"
+          className="flex-1 overflow-y-auto p-2 divide-y divide-[var(--aws-border)] scrollbar-thin custom-scrollbar"
         >
           {filteredActions.length === 0 ? (
             <div className="p-8 text-center" style={{ color: 'var(--aws-text-muted)' }}>

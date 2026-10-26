@@ -7,7 +7,7 @@ import type { ThemeMode } from '../types/aws';
 export const AWS_CATEGORY_COLORS = {
   Compute: '#ED7100',
   Storage: '#3F8624',
-  DatabaseDark: '#527FFF',
+  DatabaseDark: '#3B48CC',
   DatabaseLight: '#3B48CC',
   Networking: '#8C4FFF',
   'Security/IAM': '#DD344C',
@@ -18,14 +18,14 @@ export const AWS_CATEGORY_COLORS = {
 /**
  * Returns the exact hex color for any AWS Category based on active theme
  */
-export function getAWSCategoryColor(category: string, theme: ThemeMode = 'dark'): string {
+export function getAWSCategoryColor(category: string, _theme: ThemeMode = 'dark'): string {
   switch (category) {
     case 'Compute':
       return AWS_CATEGORY_COLORS.Compute;
     case 'Storage':
       return AWS_CATEGORY_COLORS.Storage;
     case 'Database':
-      return theme === 'light' ? AWS_CATEGORY_COLORS.DatabaseLight : AWS_CATEGORY_COLORS.DatabaseDark;
+      return AWS_CATEGORY_COLORS.DatabaseLight;
     case 'Networking':
       return AWS_CATEGORY_COLORS.Networking;
     case 'Security/IAM':

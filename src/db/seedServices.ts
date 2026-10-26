@@ -287,34 +287,29 @@ Amazon VPC provides a logically isolated virtual network within the AWS cloud wh
 
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
-flowchart TD
-    Internet([Public Internet]) <--> IGW[Internet Gateway]
+flowchart LR
+    Client([Internet Client]) -->|HTTPS| IGW[Internet Gateway]
     
     subgraph VPC ["Amazon VPC (10.0.0.0/16)"]
-        subgraph PublicSubnet ["Public Subnet (10.0.1.0/24)"]
-            ALB[Application Load Balancer]
-            NATGW[NAT Gateway]
+        subgraph PublicSubnet ["Public Ingress Subnet"]
+            IGW -->|Route| ALB[Application Load Balancer]
+            NAT[NAT Gateway]
         end
         
-        subgraph PrivateSubnet ["Private App Subnet (10.0.2.0/24)"]
-            EC2App[EC2 / ECS Tasks]
-            VpceInterface[PrivateLink Interface Endpoint]
+        subgraph PrivateSubnet ["Private App Subnet"]
+            ALB -->|HTTP:8080| AppCluster[EC2 / ECS Tasks]
+            AppCluster -->|Outbound| NAT
         end
         
-        subgraph IsolatedSubnet ["Isolated Data Subnet (10.0.3.0/24)"]
-            AuroraDB[(Amazon Aurora Multi-AZ)]
+        subgraph DataSubnet ["Isolated Data Subnet"]
+            AppCluster -->|TCP:5432| Aurora[(Amazon Aurora)]
         end
         
-        VpceGateway[S3 Gateway Endpoint]
+        AppCluster -->|PrivateLink| S3EP[S3 Gateway Endpoint]
     end
     
-    IGW <--> ALB
-    ALB -->|Stateful Port 8080| EC2App
-    EC2App -->|Egress Internet via NAT| NATGW
-    NATGW --> IGW
-    EC2App -->|Internal Database Traffic| AuroraDB
-    EC2App -->|Private AWS API Traffic| VpceGateway
-    VpceGateway --> S3[Amazon S3 Bucket]
+    S3EP -->|SigV4| S3Bucket[(Amazon S3)]
+    NAT -->|Egress| IGW
 \`\`\`
 
 ## 4. Canvas Connections
@@ -467,11 +462,23 @@ Amazon ECS coordinates production Docker container deployments and lifecycle sca
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
 flowchart LR
-    ALB[Application Load Balancer] --> TargetGroup[ALB Target Group]
-    TargetGroup --> Task1[ECS Task 1 (awsvpc)]
-    TargetGroup --> Task2[ECS Task 2 (awsvpc)]
-    Task1 --> ECR[Amazon ECR Image]
-    Task1 --> CW[CloudWatch Logs]
+    Client([Client Traffic]) -->|HTTPS| ALB[Application Load Balancer]
+    
+    subgraph VPC ["VPC Cluster Boundary"]
+        subgraph PublicTier ["Public Subnet"]
+            ALB -->|Forward| TG[Target Group]
+        end
+        
+        subgraph PrivateTier ["Private App Subnet"]
+            TG -->|HTTP:8080| Task1[ECS Task 1]
+            TG -->|HTTP:8080| Task2[ECS Task 2]
+        end
+    end
+    
+    subgraph ManagedAWS ["AWS Managed Services"]
+        Task1 -->|PullImage| ECR[Amazon ECR]
+        Task1 -->|StreamLogs| CW[Amazon CloudWatch]
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -567,10 +574,18 @@ AWS Fargate runs containers on-demand with dedicated kernel isolation without re
 
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
-flowchart TD
-    ECS[ECS Service] --> Fargate[AWS Fargate Provisioning]
-    Fargate --> TaskA[Isolated MicroVM Task A]
-    Fargate --> TaskB[Isolated MicroVM Task B]
+flowchart LR
+    ECS[ECS Control Plane] -->|Provision| Fargate[AWS Fargate Fleet]
+    
+    subgraph VPC ["Customer Private Subnet"]
+        Fargate -->|ENI| TaskA[Fargate Task A (Firecracker)]
+        Fargate -->|ENI| TaskB[Fargate Task B (Firecracker)]
+    end
+    
+    subgraph Telemetry ["Observability"]
+        TaskA -->|LogEvents| CW[CloudWatch Logs]
+        TaskB -->|Metrics| ContainerInsights[Container Insights]
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -608,7 +623,14 @@ Amazon Lightsail delivers low-cost pre-configured virtual private servers with b
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
 flowchart LR
-    User --> LightsailDNS[Lightsail DNS] --> Instance[Lightsail VPS Instance]
+    Client([Web User]) -->|DNS Query| DNS[Lightsail DNS]
+    DNS -->|HTTPS:443| IP[Static IP Attachment]
+    
+    subgraph LightsailEnv ["Amazon Lightsail Managed Environment"]
+        IP -->|Forward| VPS[Lightsail VPS Instance]
+        VPS -->|LocalMount| BlockStorage[(Attached Block Disk)]
+        VPS -->|Automated| Snapshot[(Nightly Snapshots)]
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -651,8 +673,14 @@ Amazon EBS delivers persistent, low-latency, point-in-time snapshot-capable bloc
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
 flowchart LR
-    EC2[EC2 Instance] -->|NVMe Dedicated Bus| EBS[EBS Volume (gp3/io2)]
-    EBS -->|Async Snapshot| S3[Amazon S3 Backup Tier]
+    subgraph ComputeAZ ["Availability Zone A"]
+        EC2[Amazon EC2 Instance] -->|NVMeBus| EBS[EBS Volume (gp3/io2)]
+    end
+    
+    subgraph BackupPerimeter ["AWS Regional Storage"]
+        EBS -->|Snapshot| S3[(Amazon S3 Snapshots)]
+        S3 -->|FastRestore| EBSNew[Restored EBS Volume]
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -695,11 +723,22 @@ Amazon EFS provides a serverless POSIX-compliant Network File System (NFSv4) tha
 
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
-flowchart TD
-    EC2_A[EC2 Node AZ-A] --> MountTargetA[Mount Target AZ-A]
-    EC2_B[EC2 Node AZ-B] --> MountTargetB[Mount Target AZ-B]
-    MountTargetA --> EFS[Shared Elastic File System]
-    MountTargetB --> EFS
+flowchart LR
+    subgraph VPC ["Amazon VPC (Shared Filesystem)"]
+        subgraph SubnetA ["Availability Zone A"]
+            EC2A[EC2 Node A] -->|NFSv4:2049| MTA[Mount Target AZ-A]
+        end
+        
+        subgraph SubnetB ["Availability Zone B"]
+            EC2B[EC2 Node B] -->|NFSv4:2049| MTB[Mount Target AZ-B]
+        end
+    end
+    
+    subgraph EFSFleet ["EFS Distributed Storage"]
+        MTA -->|Mount| EFS[(Elastic File System)]
+        MTB -->|Mount| EFS
+        EFS -->|Lifecycle| InfrequentTier[(EFS IA Tier)]
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -738,8 +777,19 @@ Amazon S3 Glacier provides secure, durable archival storage costing fractions of
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
 flowchart LR
-    S3Standard[S3 Standard] -->|Lifecycle Rule: 90 Days| GlacierFlex[Glacier Flexible]
-    GlacierFlex -->|Lifecycle Rule: 365 Days| DeepArchive[Glacier Deep Archive]
+    subgraph HotTier ["S3 Hot Storage"]
+        S3Std[S3 Standard] -->|90 Days| S3IA[S3 Standard-IA]
+    end
+    
+    subgraph GlacierTier ["Cold Archival Tiers"]
+        S3IA -->|180 Days| Flex[(Glacier Flexible Retrieval)]
+        Flex -->|365 Days| Deep[(Glacier Deep Archive)]
+    end
+    
+    subgraph RestorePipeline ["Object Retrieval"]
+        Deep -->|Bulk:48h| RestoreOut[Restored Payload]
+        Flex -->|Expedited:5m| RestoreOut
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -778,8 +828,19 @@ AWS Storage Gateway bridges on-premises physical or virtual infrastructure to AW
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
 flowchart LR
-    OnPrem[On-Premises App] -->|SMB / NFS / iSCSI| Gateway[Storage Gateway Appliance]
-    Gateway -->|Private Link / Direct Connect| S3[Amazon S3]
+    subgraph OnPremises ["Corporate On-Premises Datacenter"]
+        App[Enterprise App] -->|NFS/SMB/iSCSI| GW[Storage Gateway Appliance]
+    end
+    
+    subgraph HybridTransit ["Hybrid Transit"]
+        GW -->|DirectConnect| DX[AWS Direct Connect]
+    end
+    
+    subgraph AWSCloud ["AWS Cloud Storage"]
+        DX -->|PrivateLink| S3Bucket[(Amazon S3 Data Lake)]
+        DX -->|EBS Snapshots| VolumeGateway[(EBS Volume Gateway)]
+        DX -->|VTL Backup| Glacier[(Glacier Virtual Tape)]
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -951,11 +1012,22 @@ Amazon Aurora delivers enterprise-grade MySQL and PostgreSQL performance (up to 
 
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
-flowchart TD
-    App[App Compute] --> Writer[Aurora Writer Node AZ-A]
-    Writer --> StorageQuorum[Distributed Storage Fleet (6 copies across 3 AZs)]
-    StorageQuorum -.-> Reader1[Aurora Reader AZ-B]
-    StorageQuorum -.-> Reader2[Aurora Reader AZ-C]
+flowchart LR
+    subgraph VPC ["Application VPC"]
+        App[App Services] -->|ReadWrite| Writer[Aurora Writer Node AZ-A]
+        App -->|ReadOnly| ReaderEndpoint[Aurora Reader Endpoint]
+    end
+    
+    subgraph ClusterAZs ["Multi-AZ Aurora Cluster"]
+        ReaderEndpoint -->|Route| Reader1[Aurora Reader AZ-B]
+        ReaderEndpoint -->|Route| Reader2[Aurora Reader AZ-C]
+    end
+    
+    subgraph DistributedStorageFleet ["Distributed Storage Engine (6 Copies / 3 AZs)"]
+        Writer -->|LogStream| StorageQuorum[(Shared Cluster Volume)]
+        StorageQuorum -.->|DiskRead| Reader1
+        StorageQuorum -.->|DiskRead| Reader2
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -998,10 +1070,18 @@ Amazon ElastiCache caches high-frequency read queries and session state in memor
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
 flowchart LR
-    App[Application] --> Cache{ElastiCache Hit?}
-    Cache -->|Yes| FastData[Return Sub-ms Data]
-    Cache -->|No| DB[Query Primary RDS]
-    DB --> Cache
+    subgraph AppTier ["Compute Tier"]
+        App[Application Workload]
+    end
+    
+    subgraph IngestCache ["In-Memory Cache (Sub-ms)"]
+        App -->|CacheGet| Cache[ElastiCache Redis / Valkey]
+    end
+    
+    subgraph DatabaseTier ["Persistent Datastore"]
+        App -->|CacheMiss| DB[(Primary RDS Multi-AZ)]
+        DB -->|Backfill| Cache
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -1038,11 +1118,20 @@ Amazon Redshift delivers mass-parallel processing (MPP) columnar data warehousin
 
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
-flowchart TD
-    BI[BI Tool / QuickSight] --> Leader[Redshift Leader Node]
-    Leader --> Compute1[Compute Node Slice 1]
-    Leader --> Compute2[Compute Node Slice 2]
-    Compute1 --> S3Lake[(S3 Data Lake Spectrum)]
+flowchart LR
+    Client([QuickSight / SQL BI]) -->|JDBC:5439| Leader[Redshift Leader Node]
+    
+    subgraph RedshiftCluster ["Redshift RA3 Warehouse"]
+        Leader -->|QueryPlan| Node1[Compute Node 1]
+        Leader -->|QueryPlan| Node2[Compute Node 2]
+        Node1 -->|LocalSSD| CacheManaged[(Managed SSD Cache)]
+        Node2 -->|LocalSSD| CacheManaged
+    end
+    
+    subgraph ExternalLake ["Lake Formation / S3"]
+        Node1 -->|Spectrum| S3Data[(Amazon S3 Data Lake)]
+        Node2 -->|Spectrum| S3Data
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -1146,10 +1235,17 @@ Amazon CloudFront speeds up web distribution by caching content at hundreds of g
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
 flowchart LR
-    User[End User] -->|HTTPS Edge Anycast| PoP[CloudFront Edge Location]
-    PoP -->|Cache Hit| FastResponse[Return Cached Asset]
-    PoP -->|Cache Miss (OAC)| S3[Amazon S3 Origin]
-    PoP -->|API Bypass / Dynamic| ALB[Application Load Balancer]
+    Client([Global Users]) -->|AnycastDNS| EdgePoP[CloudFront Edge Location]
+    
+    subgraph EdgePerimeter ["AWS Edge Network"]
+        EdgePoP -->|WAFInspect| WAFRule[AWS WAF]
+        WAFRule -->|CacheHit| EdgeCache[(Edge Cache Store)]
+    end
+    
+    subgraph OriginPerimeter ["Private VPC & Storage Origins"]
+        EdgePoP -->|SigV4:OAC| S3Origin[(Private S3 Bucket)]
+        EdgePoP -->|OriginShield| ALB[Public Application Load Balancer]
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -1191,10 +1287,19 @@ Elastic Load Balancing automatically distributes application traffic across mult
 
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
-flowchart TD
-    Client[Client Traffic] --> ALB[Application Load Balancer Layer 7]
-    ALB -->|/api/*| TG_API[API Target Group ECS Tasks]
-    ALB -->|/static/*| TG_Web[Web Target Group EC2 Instances]
+flowchart LR
+    Client([Internet Client]) -->|HTTPS:443| ACM[ACM TLS Certificate]
+    ACM -->|Terminated| ALB[Application Load Balancer Layer 7]
+    
+    subgraph RoutingRules ["ALB Path & Header Routing"]
+        ALB -->|Path: /api/*| TGAPI[API Target Group]
+        ALB -->|Path: /web/*| TGWeb[Web Frontend Group]
+    end
+    
+    subgraph PrivateAppTier ["Private Subnets"]
+        TGAPI -->|HTTP:8080| ECSTasks[ECS Fargate Tasks]
+        TGWeb -->|HTTP:80| EC2ASG[EC2 Auto Scaling Group]
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -1334,12 +1439,22 @@ AWS Secrets Manager stores, retrieves, and automatically rotates database passwo
 
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
-flowchart TD
-    App[App Container] -->|GetSecretValue| SM[AWS Secrets Manager]
-    SM -->|Decrypt with KMS| App
-    Schedule[Rotation Schedule] --> Rotator[Lambda Rotator]
-    Rotator --> RDS[(RDS Database Password Change)]
-    Rotator --> SM
+flowchart LR
+    subgraph ComputeBoundary ["Application Boundary"]
+        App[App Instance / Container]
+    end
+    
+    subgraph SecretsBoundary ["Secrets Management"]
+        App -->|GetSecret| SM[AWS Secrets Manager]
+        SM -->|Decrypt| KMS[AWS KMS Key]
+        KMS -->|Plaintext| SM
+    end
+    
+    subgraph AutomatedRotation ["Automated 30-Day Rotation"]
+        Cron[EventBridge Schedule] -->|Trigger| Rotator[Lambda Rotation Function]
+        Rotator -->|UpdateSecret| SM
+        Rotator -->|SetPassword| DB[(RDS Database Target)]
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -1377,9 +1492,18 @@ AWS WAF inspects HTTP/HTTPS requests at Layer 7 to block SQL injection, cross-si
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
 flowchart LR
-    Client --> WAF{AWS WAF Layer 7 Inspection}
-    WAF -->|Blocked: SQLi / Rate Limit| Drop[403 Forbidden]
-    WAF -->|Allowed Request| CloudFrontOrALB[CloudFront / ALB / API Gateway]
+    Client([Incoming Request]) -->|HTTPS| WebACL[AWS WAF Web ACL]
+    
+    subgraph InspectionEngine ["Managed Rule Groups"]
+        WebACL -->|Evaluate| CommonRules[AWS Core Rule Set]
+        WebACL -->|Evaluate| SQLiRules[Known Bad Inputs / SQLi]
+        WebACL -->|Evaluate| RateLimit[Rate Limiting Shield]
+    end
+    
+    subgraph TrafficDisposition ["Enforcement Outcome"]
+        WebACL -->|Blocked| BlockAction[403 Forbidden / CAPTCHA]
+        WebACL -->|Allowed| IngressService[CloudFront / ALB / API Gateway]
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -1417,8 +1541,18 @@ AWS Shield provides automated Layer 3 and 4 DDoS defense (Shield Standard, free 
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
 flowchart LR
-    DDoS[DDoS Volumetric Traffic] --> Scrubbing[AWS Edge Scrubbing Layer]
-    Scrubbing --> CleanTraffic[Clean Traffic to CloudFront / Route53]
+    Attacker([DDoS Volumetric Traffic]) -->|SYN Flood / UDP| EdgeScrubber[AWS DDoS Mitigation Fleet]
+    
+    subgraph ShieldAdvanced ["AWS Shield Advanced Perimeter"]
+        EdgeScrubber -->|DDoS Detection| DRT[DDoS Response Team (DRT)]
+        EdgeScrubber -->|Filter| Scrubber[Deep Packet Inspection]
+    end
+    
+    subgraph ProtectedAssets ["Shield Protected Infrastructure"]
+        Scrubber -->|CleanTraffic| CF[Amazon CloudFront]
+        Scrubber -->|CleanTraffic| R53[Amazon Route 53]
+        Scrubber -->|CleanTraffic| EIP[Elastic IP / Network LB]
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -1519,11 +1653,19 @@ Amazon SNS delivers high-throughput, push-based publish/subscribe message fanout
 
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
-flowchart TD
-    Publisher[Order Checkout Service] --> SNS[SNS Topic: order-created]
-    SNS -->|Filter: region=US| SQS_US[SQS US Fulfillment]
-    SNS -->|Filter: region=EU| SQS_EU[SQS EU Fulfillment]
-    SNS --> Lambda_Analytics[Lambda Realtime Analytics]
+flowchart LR
+    Publisher([Publishing Microservice]) -->|PublishEvent| Topic[SNS Topic: orders]
+    
+    subgraph SubscriptionFilters ["Message Attribute Filter Policies"]
+        Topic -->|Filter: region=US| QUS[SQS US Queue]
+        Topic -->|Filter: region=EU| QEU[SQS EU Queue]
+        Topic -->|Filter: type=urgent| SMS[Amazon SNS SMS / Push]
+    end
+    
+    subgraph Consumers ["Concurrent Workers"]
+        QUS -->|BatchPoll| WorkerUS[US Lambda Processor]
+        QEU -->|BatchPoll| WorkerEU[EU Lambda Processor]
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -1566,10 +1708,17 @@ Amazon EventBridge coordinates real-time event-driven architectures by filtering
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
 flowchart LR
-    Stripe[Stripe SaaS / Microservice] -->|Custom Event| Bus[EventBridge Bus]
-    Bus -->|Rule: PaymentSuccess| StepFunctions[Step Functions Workflow]
-    Bus -->|Rule: FraudAlert| SNS_Security[Security Alert SNS]
-    Bus --> Archive[EventBridge Archive & Replay]
+    Source([SaaS / AWS / App Producer]) -->|PutEvents| Bus[EventBridge Event Bus]
+    
+    subgraph BusPerimeter ["Content-Filtering Engine"]
+        Bus -->|Rule: PaymentSuccess| SFN[AWS Step Functions]
+        Bus -->|Rule: SecurityThreat| SNS[Amazon SNS Alert]
+        Bus -->|Rule: Ingestion| SQS[SQS Dead Letter Buffer]
+    end
+    
+    subgraph EventAuditing ["Observability & Replay"]
+        Bus -->|AllEvents| Archive[(EventBridge Archive & Replay)]
+    end
 \`\`\`
 
 ## 4. Canvas Connections
@@ -1607,13 +1756,19 @@ AWS Step Functions orchestrates multi-step distributed application workflows wit
 
 ## 3. Enterprise Flow (Mermaid)
 \`\`\`mermaid
-flowchart TD
-    Start([Start]) --> ProcessPayment[Process Payment]
-    ProcessPayment --> CheckSuccess{Payment Valid?}
-    CheckSuccess -->|Yes| ShipOrder[Ship Order]
-    CheckSuccess -->|No| RefundRetry[Retry / Compensate]
-    ShipOrder --> Done([Complete])
-    RefundRetry --> Fail([Failed])
+flowchart LR
+    StartNode([Start Execution]) --> Validate[Validate Order Payload]
+    
+    subgraph WorkflowStateTree ["Standard / Express Workflow Engine"]
+        Validate -->|Task| Payment[Charge Customer Card]
+        Payment -->|Pass| Fulfill[Trigger Warehouse Dispatch]
+        Payment -->|Fail / Catch| Compensate[Run Saga Refund Step]
+    end
+    
+    subgraph TerminalStates ["Final States"]
+        Fulfill --> SuccessNode([Succeeded: 200])
+        Compensate --> FailNode([Failed: Compensated])
+    end
 \`\`\`
 
 ## 4. Canvas Connections

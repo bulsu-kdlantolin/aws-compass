@@ -47,7 +47,7 @@ export const CloudscapeCodeBlock: React.FC<CloudscapeCodeBlockProps> = ({
       </div>
 
       {/* Code Text Content */}
-      <pre className="p-3 m-0 overflow-x-auto text-[#EAEDED] bg-transparent">
+      <pre className="p-3 m-0 overflow-x-auto custom-scrollbar text-[#EAEDED] bg-transparent">
         <code>{code}</code>
       </pre>
     </div>

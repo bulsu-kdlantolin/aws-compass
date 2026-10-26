@@ -112,3 +112,30 @@ Containers follow official AWS Architecture Deck specifications:
 11. **NO Pill-Box Segmented Tabs**: Flush structural underline tabs with 3px active bottom indicator bar.
 12. **NO Native Unstyled Select Dropdowns**: Animated accessible listbox select (`CloudscapeSelect.tsx`).
 
+---
+
+## 9. Deterministic Canvas Layout & Handle Routing Standards
+
+1. **Dagre Auto-Layout Engine (`src/utils/canvasAutoLayout.ts`)**:
+   - Engine: `@dagrejs/dagre` configured with `rankdir: direction`, `align: 'UL'`, `nodesep: 90`, `ranksep: 160`, `edgesep: 50`, `marginx: 40`, `marginy: 40`.
+   - Grid Snapping: All node coordinates and group dimensions snapped to `16px` grid (`Math.round(pos / 16) * 16`).
+   - Compound Containers: Boundary groups dynamically envelope child nodes with `64px` top clearance (group header) and `40px` side/bottom padding.
+   - Initial Seed Blueprints: Every blueprint in `seedBlueprints.ts` and `canvasTemplates.ts` is processed deterministically through `getLayoutedElements` with zero manual coordinate guesswork.
+
+2. **Smart Directional Handle Routing (`resolveOptimalHandles`)**:
+   - Direction Vector: `dx = targetCenter.x - sourceCenter.x`, `dy = targetCenter.y - sourceCenter.y`.
+   - Horizontal Dominance (`|dx| >= |dy|`): Connects `right -> left` (when `dx >= 0`) or `left -> right` (when `dx < 0`).
+   - Vertical Dominance (`|dy| > |dx|`): Connects `bottom -> top` (when `dy >= 0`) or `top -> bottom` (when `dy < 0`).
+   - Node Handles: 4 explicit `<Handle />` anchors (`top`, `right`, `bottom`, `left`) centered on the 48x48 icon tile with `<ReactFlow connectionMode={ConnectionMode.Loose} />`.
+
+3. **Orthogonal Edges & Labels (`ProtocolEdge.tsx`)**:
+   - Routing: `getSmoothStepPath` with `borderRadius: 8` and `offset: 28`.
+   - Stroke: `1.75px` width, transitioning from `#545B64` (Light) / `#879596` (Dark) to `#0972D3` / `#539FE5` on hover/selection.
+   - Label Pill: Opaque canvas-matching background (`bg-[#F2F3F3]` / `dark:bg-[#0F1B2A]`) preventing line strike-through; collapsed on segments under `90px` until hovered.
+
+4. **Mermaid Concept Vault Standards (`MermaidViewer.tsx`)**:
+   - Theme Variables: `fontFamily: "'Amazon Ember', 'Open Sans', sans-serif"`, `fontSize: "13px"`, `flowchart: { htmlLabels: true, curve: 'linear', nodeSpacing: 60, rankSpacing: 80, padding: 16 }`.
+   - Dark Mode: `primaryColor: '#161E2D'`, `primaryTextColor: '#EAEDED'`, `primaryBorderColor: '#539FE5'`, `lineColor: '#879596'`, `clusterBkg: '#0F1B2A'`, `clusterBorder: '#354150'`.
+   - Light Mode: `primaryColor: '#FFFFFF'`, `primaryTextColor: '#16191F'`, `primaryBorderColor: '#0972D3'`, `lineColor: '#545B64'`, `clusterBkg: '#F8F9FA'`, `clusterBorder: '#D5DBDB'`.
+   - Structure: All architectural documentation diagrams use `flowchart LR` with explicit `subgraph` enclosures and concise 1–2 word edge labels.
+

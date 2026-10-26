@@ -1,5 +1,6 @@
 import type { CanvasEdgeItem, CanvasNodeItem, EdgeProtocol, GroupBoundaryType } from '../types/aws';
 import { SEED_SERVICES } from './seedServices';
+import { getLayoutedElements } from '../utils/canvasAutoLayout';
 
 export interface ArchitectureBlueprint {
   id: string;
@@ -84,13 +85,16 @@ function createBoundaryNode(
   x: number,
   y: number,
   width: number,
-  height: number
+  height: number,
+  parentId?: string
 ): CanvasNodeItem {
   return {
     id,
     type: 'awsGroup',
     position: { x, y },
     zIndex: -1,
+    parentId,
+    style: { width, height },
     data: {
       serviceId: id,
       label,
@@ -106,7 +110,7 @@ function createBoundaryNode(
   };
 }
 
-export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
+const RAW_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
   // =========================================================================
   // 1. Serverless Microservice
   // Route 53 -> CloudFront -> S3 + API Gateway -> Lambda -> DynamoDB
@@ -123,57 +127,64 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
       createBoundaryNode(
         'bound-srv-cloud',
         'aws-cloud',
-        'AWS GLOBAL CLOUD REGION · US-EAST-1',
+        'Serverless Microservice (AWS Cloud)',
         20,
         20,
-        1420,
-        520
+        1180,
+        480
       ),
       createBoundaryNode(
         'bound-srv-stack',
         'serverless',
-        'MANAGED SERVERLESS API STACK',
-        360,
-        80,
-        1040,
-        420
+        'Serverless Microservice (Stack)',
+        220,
+        60,
+        920,
+        380,
+        'bound-srv-cloud'
       ),
 
       // Nodes
       {
         id: 'node-r53',
         type: 'awsService',
-        position: { x: 60, y: 190 },
+        parentId: 'bound-srv-cloud',
+        position: { x: 40, y: 160 },
         data: resolveServiceData('route53', 'Global latency-based Anycast DNS routing'),
       },
       {
         id: 'node-cf',
         type: 'awsService',
-        position: { x: 380, y: 190 },
+        parentId: 'bound-srv-stack',
+        position: { x: 50, y: 140 },
         data: resolveServiceData('cloudfront', 'CloudFront edge distribution with TLS 1.3 termination'),
       },
       {
         id: 'node-s3',
         type: 'awsService',
-        position: { x: 680, y: 110 },
+        parentId: 'bound-srv-stack',
+        position: { x: 260, y: 65 },
         data: resolveServiceData('s3', 'Private S3 origin for SPA frontend via Origin Access Control (OAC)'),
       },
       {
         id: 'node-apigw',
         type: 'awsService',
-        position: { x: 680, y: 290 },
+        parentId: 'bound-srv-stack',
+        position: { x: 260, y: 225 },
         data: resolveServiceData('api-gateway', 'Amazon API Gateway HTTP API with JWT authorizer and rate throttling'),
       },
       {
         id: 'node-lambda',
         type: 'awsService',
-        position: { x: 960, y: 290 },
+        parentId: 'bound-srv-stack',
+        position: { x: 490, y: 225 },
         data: resolveServiceData('lambda', 'Python 3.12 / Node 20 ARM64 Graviton3 Lambda microservice handler'),
       },
       {
         id: 'node-ddb',
         type: 'awsService',
-        position: { x: 1220, y: 290 },
+        parentId: 'bound-srv-stack',
+        position: { x: 720, y: 225 },
         data: resolveServiceData('dynamodb', 'On-Demand DynamoDB table with sub-10ms single-digit read/write latency'),
       },
     ],
@@ -196,6 +207,7 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
         targetHandle: 'left',
         protocol: 'HTTPS/REST' as EdgeProtocol,
         label: 'HTTPS/REST',
+        data: { offset: 36 },
       },
       {
         id: 'e-cf-apigw',
@@ -206,6 +218,7 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
         protocol: 'HTTPS/REST' as EdgeProtocol,
         label: 'HTTPS/REST',
         animated: true,
+        data: { offset: 16 },
       },
       {
         id: 'e-apigw-lambda',
@@ -223,8 +236,9 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
         target: 'node-ddb',
         sourceHandle: 'right',
         targetHandle: 'left',
-        protocol: 'SQL/TCP' as EdgeProtocol,
-        label: 'SQL/TCP',
+        protocol: 'HTTPS/REST' as EdgeProtocol,
+        label: 'HTTPS/REST',
+        animated: true,
       },
     ],
   },
@@ -245,11 +259,11 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
       createBoundaryNode(
         'bound-vpc-outer',
         'vpc',
-        'PRODUCTION VPC (10.0.0.0/16) · MULTI-AZ',
+        '3-Tier VPC Web App (10.0.0.0/16)',
         20,
         20,
-        1460,
-        560
+        1140,
+        480
       ),
 
       // Tier 1: Public Subnet
@@ -257,10 +271,11 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
         'bound-sub-pub',
         'public-subnet',
         'TIER 1: PUBLIC INGRESS SUBNET (10.0.1.0/24)',
+        40,
         60,
-        80,
-        340,
-        450
+        320,
+        380,
+        'bound-vpc-outer'
       ),
 
       // Tier 2: App Private Subnet
@@ -268,52 +283,59 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
         'bound-sub-app',
         'private-subnet',
         'TIER 2: APPLICATION PRIVATE SUBNET (10.0.2.0/24)',
-        440,
-        80,
-        480,
-        450
+        400,
+        60,
+        320,
+        380,
+        'bound-vpc-outer'
       ),
 
       // Tier 3: Database Private Subnet
       createBoundaryNode(
         'bound-sub-data',
-        'data-subnet',
+        'private-subnet',
         'TIER 3: DATABASE ISOLATED SUBNET (10.0.3.0/24)',
-        960,
-        80,
-        480,
-        450
+        760,
+        60,
+        340,
+        380,
+        'bound-vpc-outer'
       ),
 
       // Nodes
       {
         id: 'node-igw',
         type: 'awsService',
-        position: { x: 100, y: 140 },
+        parentId: 'bound-sub-pub',
+        position: { x: 90, y: 70 },
         data: resolveServiceData('igw', 'Internet Gateway attached to VPC route table 0.0.0.0/0'),
       },
       {
         id: 'node-alb',
         type: 'awsService',
-        position: { x: 100, y: 310 },
+        parentId: 'bound-sub-pub',
+        position: { x: 90, y: 225 },
         data: resolveServiceData('alb', 'Dual-stack Application Load Balancer with TLS cert from ACM'),
       },
       {
         id: 'node-ec2-asg',
         type: 'awsService',
-        position: { x: 520, y: 220 },
+        parentId: 'bound-sub-app',
+        position: { x: 90, y: 145 },
         data: resolveServiceData('ec2', 'EC2 Auto Scaling Group (m6i.large) across 2 Availability Zones'),
       },
       {
         id: 'node-rds-primary',
         type: 'awsService',
-        position: { x: 1040, y: 170 },
+        parentId: 'bound-sub-data',
+        position: { x: 100, y: 70 },
         data: resolveServiceData('rds', 'Amazon RDS PostgreSQL Multi-AZ Primary instance (db.r6g.xlarge)'),
       },
       {
         id: 'node-rds-standby',
         type: 'awsService',
-        position: { x: 1040, y: 340 },
+        parentId: 'bound-sub-data',
+        position: { x: 100, y: 225 },
         data: resolveServiceData('aurora', 'Synchronous Standby replica with automated failover in secondary AZ'),
       },
     ],
@@ -374,7 +396,7 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
       createBoundaryNode(
         'bound-event-pipeline',
         'serverless',
-        'DECOUPLED EVENT-DRIVEN PIPELINE · SERVERLESS',
+        'Event-Driven Pipeline (Decoupled)',
         20,
         20,
         1460,
@@ -384,36 +406,42 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
       {
         id: 'node-s3-ingest',
         type: 'awsService',
+        parentId: 'bound-event-pipeline',
         position: { x: 60, y: 190 },
         data: resolveServiceData('s3', 'Ingestion bucket emitting s3:ObjectCreated:* events'),
       },
       {
         id: 'node-sns-fanout',
         type: 'awsService',
+        parentId: 'bound-event-pipeline',
         position: { x: 380, y: 190 },
         data: resolveServiceData('sns', 'Amazon SNS standard topic with fan-out subscription filtering'),
       },
       {
         id: 'node-sqs-orders',
         type: 'awsService',
+        parentId: 'bound-event-pipeline',
         position: { x: 680, y: 120 },
         data: resolveServiceData('sqs', 'SQS orders processing queue with redrive Dead-Letter Queue (DLQ)'),
       },
       {
         id: 'node-sqs-analytics',
         type: 'awsService',
+        parentId: 'bound-event-pipeline',
         position: { x: 680, y: 290 },
         data: resolveServiceData('sqs', 'SQS analytics queue for data lake streaming ingestion'),
       },
       {
         id: 'node-lambda-processor',
         type: 'awsService',
+        parentId: 'bound-event-pipeline',
         position: { x: 960, y: 120 },
         data: resolveServiceData('lambda', 'Lambda batch worker processing up to 10 records per execution batch'),
       },
       {
         id: 'node-ddb-sink',
         type: 'awsService',
+        parentId: 'bound-event-pipeline',
         position: { x: 1220, y: 120 },
         data: resolveServiceData('dynamodb', 'Processed events datastore with TTL item expiration enabled'),
       },
@@ -438,6 +466,7 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
         protocol: 'Event Trigger' as EdgeProtocol,
         label: 'Event Trigger',
         animated: true,
+        data: { offset: 36 },
       },
       {
         id: 'e-sns-sqs-analytics',
@@ -448,6 +477,7 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
         protocol: 'Event Trigger' as EdgeProtocol,
         label: 'Event Trigger',
         animated: true,
+        data: { offset: 16 },
       },
       {
         id: 'e-sqs-lambda',
@@ -465,8 +495,9 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
         target: 'node-ddb-sink',
         sourceHandle: 'right',
         targetHandle: 'left',
-        protocol: 'SQL/TCP' as EdgeProtocol,
-        label: 'SQL/TCP',
+        protocol: 'HTTPS/REST' as EdgeProtocol,
+        label: 'HTTPS/REST',
+        animated: true,
       },
     ],
   },
@@ -487,11 +518,11 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
       createBoundaryNode(
         'bound-fargate-vpc',
         'vpc',
-        'CONTAINER VPC (172.16.0.0/16)',
+        'Containerized Fargate (VPC 172.16.0.0/16)',
         20,
         20,
-        1460,
-        500
+        1000,
+        460
       ),
 
       // Public Subnet for ALB
@@ -499,10 +530,11 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
         'bound-alb-pub',
         'public-subnet',
         'PUBLIC LOAD BALANCER SUBNET (172.16.1.0/24)',
+        40,
         60,
-        70,
-        340,
-        410
+        300,
+        360,
+        'bound-fargate-vpc'
       ),
 
       // Private Subnet for Fargate Tasks
@@ -510,35 +542,40 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
         'bound-fargate-priv',
         'private-subnet',
         'PRIVATE FARGATE TASKS SUBNET (172.16.2.0/24)',
-        440,
-        70,
-        520,
-        410
+        380,
+        60,
+        300,
+        360,
+        'bound-fargate-vpc'
       ),
 
       // Infrastructure / Services
       {
         id: 'node-fargate-alb',
         type: 'awsService',
-        position: { x: 100, y: 190 },
+        parentId: 'bound-alb-pub',
+        position: { x: 80, y: 140 },
         data: resolveServiceData('alb', 'Public HTTPS Application Load Balancer with target health probes'),
       },
       {
         id: 'node-fargate-tasks',
         type: 'awsService',
-        position: { x: 500, y: 190 },
+        parentId: 'bound-fargate-priv',
+        position: { x: 80, y: 140 },
         data: resolveServiceData('fargate', 'Serverless AWS Fargate tasks running containerized microservices'),
       },
       {
         id: 'node-fargate-ecr',
         type: 'awsService',
-        position: { x: 1060, y: 110 },
+        parentId: 'bound-fargate-vpc',
+        position: { x: 740, y: 90 },
         data: resolveServiceData('ecr', 'Amazon ECR private repository holding signed, vulnerability-scanned OCI images'),
       },
       {
         id: 'node-fargate-cw',
         type: 'awsService',
-        position: { x: 1060, y: 290 },
+        parentId: 'bound-fargate-vpc',
+        position: { x: 740, y: 245 },
         data: resolveServiceData('cloudwatch', 'Amazon CloudWatch Container Insights, metrics alarms, and centralized logs'),
       },
     ],
@@ -561,6 +598,7 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
         targetHandle: 'left',
         protocol: 'VPC PrivateLink' as EdgeProtocol,
         label: 'VPC PrivateLink',
+        data: { offset: 36 },
       },
       {
         id: 'e-fargate-cw',
@@ -571,7 +609,30 @@ export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = {
         protocol: 'IAM Role Assumption' as EdgeProtocol,
         label: 'IAM Role Assumption',
         animated: true,
+        data: { offset: 16 },
       },
     ],
   },
 };
+
+/**
+ * All reference blueprints are deterministically layouted through Dagre with 16px grid snapping,
+ * dynamic boundary container bounds, and optimal directional handles.
+ */
+export const SEED_BLUEPRINTS: Record<string, ArchitectureBlueprint> = Object.entries(
+  RAW_BLUEPRINTS
+).reduce((acc, [key, bp]) => {
+  const layouted = getLayoutedElements(bp.nodes, bp.edges, bp.flowDirection || 'LR');
+  acc[key] = {
+    ...bp,
+    nodes: layouted.nodes,
+    edges: layouted.edges,
+  };
+  return acc;
+}, {} as Record<string, ArchitectureBlueprint>);
+
+// Aliases for seamless canvas template compatibility
+SEED_BLUEPRINTS['serverless-api'] = SEED_BLUEPRINTS['serverless-microservice'];
+SEED_BLUEPRINTS['three-tier-web'] = SEED_BLUEPRINTS['3-tier-vpc'];
+SEED_BLUEPRINTS['event-pipeline'] = SEED_BLUEPRINTS['event-driven-pipeline'];
+SEED_BLUEPRINTS['container-fargate'] = SEED_BLUEPRINTS['containerized-fargate'];

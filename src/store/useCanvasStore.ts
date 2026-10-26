@@ -23,6 +23,7 @@ import {
 } from '../db/compassDb';
 import { ARCHITECTURE_TEMPLATES } from '../components/canvas/canvasTemplates';
 import { SEED_BLUEPRINTS } from '../db/seedBlueprints';
+import { getLayoutedElements, resolveOptimalHandles } from '../utils/canvasAutoLayout';
 
 let debounceSaveTimer: ReturnType<typeof setTimeout> | null = null;
 let resetSavedStatusTimer: ReturnType<typeof setTimeout> | null = null;
@@ -106,21 +107,32 @@ export interface CanvasState {
   refreshSavedDiagrams: () => Promise<void>;
   initializeCanvas: () => Promise<void>;
 
+  // Auto Layout
+  autoLayout: (direction?: 'LR' | 'TB') => void;
+
   // Inspector Controls
   openInspector: (nodeId: string) => void;
   closeInspector: () => void;
 }
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
-  nodes: ARCHITECTURE_TEMPLATES['serverless-api'].nodes,
-  edges: ARCHITECTURE_TEMPLATES['serverless-api'].edges,
-  activeDiagramId: 'serverless-api',
-  activeDiagramName: 'Serverless Event-Driven API',
+  nodes: SEED_BLUEPRINTS['serverless-microservice'].nodes,
+  edges: SEED_BLUEPRINTS['serverless-microservice'].edges,
+  activeDiagramId: 'serverless-microservice',
+  activeDiagramName: 'Serverless Microservice',
   savedDiagrams: [],
   saveStatus: 'idle',
 
   selectedNodeId: null,
   isInspectorOpen: false,
+
+  autoLayout: (direction: 'LR' | 'TB' = 'LR') => {
+    const currentNodes = get().nodes;
+    const currentEdges = get().edges;
+    const result = getLayoutedElements(currentNodes, currentEdges, direction);
+    set({ nodes: result.nodes, edges: result.edges });
+    scheduleDebouncedAutoSave(result.nodes, result.edges, set);
+  },
 
   initializeCanvas: async () => {
     try {
@@ -130,6 +142,25 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       // Check if there is an active auto-saved diagram in Dexie
       const activeAutoSave = await dbGetDiagramById('active-canvas-diagram');
       if (activeAutoSave && activeAutoSave.nodes && activeAutoSave.nodes.length > 0) {
+        // If saved nodes are missing parentId for known reference blueprints, re-sync with seed blueprints
+        const isKnownBlueprint = Object.values(SEED_BLUEPRINTS).find(
+          (bp) => bp.name === activeAutoSave.name || bp.id === activeAutoSave.id
+        );
+        const hasMissingParents = activeAutoSave.nodes.some(
+          (n) => !n.data?.isBoundary && !n.parentId && (n.id.startsWith('node-igw') || n.id.startsWith('node-cf') || n.id.startsWith('node-s3'))
+        );
+
+        if (isKnownBlueprint && hasMissingParents) {
+          set({
+            nodes: isKnownBlueprint.nodes,
+            edges: isKnownBlueprint.edges,
+            activeDiagramId: isKnownBlueprint.id,
+            activeDiagramName: isKnownBlueprint.name,
+          });
+          scheduleDebouncedAutoSave(isKnownBlueprint.nodes, isKnownBlueprint.edges, set);
+          return;
+        }
+
         set({
           nodes: activeAutoSave.nodes,
           edges: activeAutoSave.edges,
@@ -145,8 +176,28 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   onNodesChange: (changes: NodeChange<CanvasNodeItem>[]) => {
     set((state) => {
       const updatedNodes = applyNodeChanges(changes, state.nodes);
-      scheduleDebouncedAutoSave(updatedNodes, state.edges, set);
-      return { nodes: updatedNodes };
+      const hasPositionChange = changes.some((c) => c.type === 'position');
+      let updatedEdges = state.edges;
+
+      if (hasPositionChange) {
+        const nodeMap = new Map(updatedNodes.map((n) => [n.id, n]));
+        updatedEdges = state.edges.map((e) => {
+          const src = nodeMap.get(e.source);
+          const tgt = nodeMap.get(e.target);
+          if (src && tgt && !src.data?.isBoundary && !tgt.data?.isBoundary) {
+            const optimal = resolveOptimalHandles(src, tgt);
+            return {
+              ...e,
+              sourceHandle: optimal.sourceHandle,
+              targetHandle: optimal.targetHandle,
+            };
+          }
+          return e;
+        });
+      }
+
+      scheduleDebouncedAutoSave(updatedNodes, updatedEdges, set);
+      return { nodes: updatedNodes, edges: updatedEdges };
     });
   },
 
@@ -160,13 +211,24 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
   onConnect: (connection: Connection) => {
     if (!connection.source || !connection.target) return;
+    const sourceNode = get().nodes.find((n) => n.id === connection.source);
+    const targetNode = get().nodes.find((n) => n.id === connection.target);
+    let sourceHandle = connection.sourceHandle;
+    let targetHandle = connection.targetHandle;
+
+    if ((!sourceHandle || !targetHandle) && sourceNode && targetNode) {
+      const optimal = resolveOptimalHandles(sourceNode, targetNode);
+      sourceHandle = sourceHandle || optimal.sourceHandle;
+      targetHandle = targetHandle || optimal.targetHandle;
+    }
+
     const defaultProtocol: EdgeProtocol = 'HTTPS/REST';
     const newEdge: CanvasEdgeItem = {
       id: `edge-${connection.source}-${connection.target}-${Date.now()}`,
       source: connection.source,
       target: connection.target,
-      sourceHandle: connection.sourceHandle,
-      targetHandle: connection.targetHandle,
+      sourceHandle: (sourceHandle as any) || 'right',
+      targetHandle: (targetHandle as any) || 'left',
       protocol: defaultProtocol,
       label: defaultProtocol,
       animated: true,
@@ -220,10 +282,13 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   addBoundaryNode: (type: GroupBoundaryType, label?: string, position?: { x: number; y: number }) => {
     const defaultLabels: Record<GroupBoundaryType, string> = {
       'aws-cloud': 'AWS Cloud Region (us-east-1)',
+      region: 'Region Boundary (us-east-1)',
       vpc: 'VPC (10.0.0.0/16)',
       'public-subnet': 'Public Subnet (10.0.1.0/24)',
       'private-subnet': 'Application Private Subnet (10.0.2.0/24)',
       'data-subnet': 'Database Isolated Subnet (10.0.3.0/24)',
+      'security-group': 'Security Group (sg-app-tier)',
+      'auto-scaling-group': 'Auto Scaling Group Cluster',
       serverless: 'Managed Serverless Boundary',
     };
 
@@ -330,8 +395,18 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   loadTemplate: (templateId: string) => {
-    // Check SEED_BLUEPRINTS first (Phase 3 reference architectures)
-    const blueprint = SEED_BLUEPRINTS[templateId];
+    const canonicalMap: Record<string, string> = {
+      'serverless-api': 'serverless-microservice',
+      'three-tier-web': '3-tier-vpc',
+      'event-pipeline': 'event-driven-pipeline',
+      'container-fargate': 'containerized-fargate',
+    };
+    const resolvedId = canonicalMap[templateId] || templateId;
+    const blueprint =
+      SEED_BLUEPRINTS[resolvedId] ||
+      SEED_BLUEPRINTS[templateId] ||
+      ARCHITECTURE_TEMPLATES[templateId];
+
     if (blueprint) {
       set({
         nodes: blueprint.nodes,
@@ -342,21 +417,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         isInspectorOpen: false,
       });
       scheduleDebouncedAutoSave(blueprint.nodes, blueprint.edges, set);
-      return;
-    }
-
-    // Fall back to ARCHITECTURE_TEMPLATES
-    const template = ARCHITECTURE_TEMPLATES[templateId];
-    if (template) {
-      set({
-        nodes: template.nodes,
-        edges: template.edges,
-        activeDiagramId: template.id,
-        activeDiagramName: template.name,
-        selectedNodeId: null,
-        isInspectorOpen: false,
-      });
-      scheduleDebouncedAutoSave(template.nodes, template.edges, set);
     }
   },
 

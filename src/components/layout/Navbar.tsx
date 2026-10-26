@@ -17,6 +17,8 @@ import {
 import { useCompassStore } from '../../store/useCompassStore';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { exportFullDatabase, importFullDatabase } from '../../db/compassDb';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
+import { Arc } from '../ui/LoadingIndicators';
 
 interface NavbarProps {
   onOpenCommandPalette?: () => void;
@@ -25,6 +27,8 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   const {
     workspaceMode,
@@ -57,6 +61,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
 
   // Full Dexie.js JSON Database Export
   const handleExportBackup = async () => {
+    setIsExporting(true);
     try {
       const jsonStr = await exportFullDatabase();
       const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -71,6 +76,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
       showNotification('Database backup exported successfully (.json)');
     } catch (err) {
       alert('Failed to export database backup: ' + (err as Error).message);
+    } finally {
+      setTimeout(() => setIsExporting(false), 300);
     }
   };
 
@@ -79,6 +86,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setIsImporting(true);
     try {
       const text = await file.text();
       const result = await importFullDatabase(text);
@@ -91,6 +99,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
       alert('Failed to import backup: ' + (err as Error).message);
     } finally {
       e.target.value = '';
+      setTimeout(() => setIsImporting(false), 300);
     }
   };
 
@@ -116,7 +125,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
         <button
           type="button"
           onClick={toggleSidebar}
-          className="p-1 rounded-[4px] hover:bg-[#354150] text-[#879596] hover:text-[#EAEDED] transition-colors cursor-pointer"
+          className="p-1 rounded-[4px] hover:bg-[#354150] text-[#879596] hover:text-[#EAEDED] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer"
           title={isSidebarOpen ? 'Hide service catalog' : 'Show service catalog'}
           aria-label={isSidebarOpen ? 'Hide service catalog' : 'Show service catalog'}
         >
@@ -148,12 +157,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
         <button
           type="button"
           onClick={onOpenCommandPalette}
-          className="flex items-center gap-2 px-2.5 h-8 text-[12px] text-[#879596] hover:text-[#EAEDED] bg-[#0F141A]/90 hover:bg-[#161E2D] border border-[#354150] hover:border-[#FF9900] rounded-[4px] transition-colors cursor-pointer group"
+          className="flex items-center justify-between gap-2 px-2.5 h-8 w-52 sm:w-72 text-[12px] text-[#879596] hover:text-[#EAEDED] bg-[#0F141A]/90 hover:bg-[#161E2D] border border-[#354150] hover:border-[#FF9900] rounded-[4px] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer group"
           title="Open command palette (Ctrl+K)"
         >
-          <Search className="w-4 h-4 text-[#FF9900]" strokeWidth={1.75} />
-          <span className="hidden md:inline">Search services...</span>
-          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-[#879596] bg-[#161E2D] border border-[#354150] rounded-[3px]">
+          <div className="flex items-center gap-2 min-w-0">
+            <Search className="w-4 h-4 text-[#FF9900] shrink-0" strokeWidth={1.75} />
+            <span className="truncate hidden sm:inline">Search docs, CLI &amp; blueprints...</span>
+            <span className="truncate sm:hidden">Search docs...</span>
+          </div>
+          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-[#879596] bg-[#161E2D] border border-[#354150] rounded-[3px] shrink-0">
             Ctrl+K
           </kbd>
         </button>
@@ -171,7 +183,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
                   }
                 : undefined
             }
-            className={`flex items-center gap-1.5 px-3 h-7 text-[12px] rounded-[3px] transition-[background-color,color] duration-150 ease-out cursor-pointer font-medium ${
+            className={`flex items-center gap-1.5 px-3 h-7 text-[12px] rounded-[3px] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer font-medium ${
               workspaceMode === 'vault'
                 ? 'font-bold'
                 : 'text-[#879596] hover:text-[#EAEDED] hover:bg-[#161E2D]'
@@ -192,7 +204,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
                   }
                 : undefined
             }
-            className={`flex items-center gap-1.5 px-3 h-7 text-[12px] rounded-[3px] transition-[background-color,color] duration-150 ease-out cursor-pointer font-medium ${
+            className={`flex items-center gap-1.5 px-3 h-7 text-[12px] rounded-[3px] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer font-medium ${
               workspaceMode === 'canvas'
                 ? 'font-bold'
                 : 'text-[#879596] hover:text-[#EAEDED] hover:bg-[#161E2D]'
@@ -210,7 +222,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
         <button
           type="button"
           onClick={toggleTheme}
-          className="flex items-center gap-1.5 px-2.5 h-8 text-[12px] rounded-[4px] bg-[#0F141A] border border-[#354150] hover:border-[#FF9900] text-[#EAEDED] transition-[border-color,background-color] duration-150 ease-out cursor-pointer enabled:active:scale-[0.96]"
+          className="flex items-center gap-1.5 px-2.5 h-8 text-[12px] rounded-[4px] bg-[#0F141A] border border-[#354150] hover:border-[#FF9900] text-[#EAEDED] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer"
           title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           aria-label="Toggle theme mode"
         >
@@ -256,20 +268,38 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
           <button
             type="button"
             onClick={handleExportBackup}
-            className="flex items-center gap-1 px-2 h-7 text-[12px] rounded-[3px] text-[#879596] hover:text-[#EAEDED] hover:bg-[#161E2D] transition-colors cursor-pointer"
+            disabled={isExporting}
+            aria-disabled={isExporting ? 'true' : undefined}
+            className="flex items-center gap-1.5 px-2 h-7 text-[12px] rounded-[3px] text-[#879596] hover:text-[#EAEDED] hover:bg-[#161E2D] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer"
             title="Export full database backup (.json)"
           >
-            <Download className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <AnimatedIcon
+              activeKey={isExporting ? 'loading' : 'idle'}
+              size={14}
+              className="w-3.5 h-3.5"
+            >
+              <Download key="idle" className="w-3.5 h-3.5" strokeWidth={1.75} />
+              <Arc key="loading" size={14} easing="stacked" cap="round" color="#EAEDED" />
+            </AnimatedIcon>
             <span className="hidden xl:inline">Export</span>
           </button>
 
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1 px-2 h-7 text-[12px] rounded-[3px] text-[#879596] hover:text-[#EAEDED] hover:bg-[#161E2D] transition-colors cursor-pointer"
+            disabled={isImporting}
+            aria-disabled={isImporting ? 'true' : undefined}
+            className="flex items-center gap-1.5 px-2 h-7 text-[12px] rounded-[3px] text-[#879596] hover:text-[#EAEDED] hover:bg-[#161E2D] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer"
             title="Import database backup (.json)"
           >
-            <Upload className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <AnimatedIcon
+              activeKey={isImporting ? 'loading' : 'idle'}
+              size={14}
+              className="w-3.5 h-3.5"
+            >
+              <Upload key="idle" className="w-3.5 h-3.5" strokeWidth={1.75} />
+              <Arc key="loading" size={14} easing="stacked" cap="round" color="#EAEDED" />
+            </AnimatedIcon>
             <span className="hidden xl:inline">Import</span>
           </button>
         </div>
@@ -278,7 +308,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
         <button
           type="button"
           onClick={handleReset}
-          className="p-1.5 h-8 w-8 flex items-center justify-center rounded-[4px] bg-[#0F141A] border border-[#354150] text-[#879596] hover:text-[#DD344C] hover:border-[#DD344C] transition-colors cursor-pointer"
+          className="p-1.5 h-8 w-8 flex items-center justify-center rounded-[4px] bg-[#0F141A] border border-[#354150] text-[#879596] hover:text-[#DD344C] hover:border-[#DD344C] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer"
           title="Reset catalog and dossiers to initial seed"
           aria-label="Reset database to seed defaults"
         >

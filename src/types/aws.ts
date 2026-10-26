@@ -41,10 +41,13 @@ export interface AWSService {
 
 export type GroupBoundaryType =
   | 'aws-cloud'
+  | 'region'
   | 'vpc'
   | 'public-subnet'
   | 'private-subnet'
   | 'data-subnet'
+  | 'security-group'
+  | 'auto-scaling-group'
   | 'serverless';
 
 export interface CanvasNodeData {
@@ -75,11 +78,13 @@ export interface CanvasNodeItem {
   data: CanvasNodeData;
   style?: Record<string, string | number>;
   zIndex?: number;
+  parentId?: string;
 }
 
 export interface CanvasEdgeData {
-  protocol: EdgeProtocol;
+  protocol?: EdgeProtocol;
   label?: string;
+  offset?: number;
   [key: string]: unknown;
 }
 

@@ -62,6 +62,30 @@ const BOUNDARY_CONFIGS: Record<GroupBoundaryType, BoundaryStyle> = {
     badge: 'MANAGED SERVERLESS',
     icon: <Layers className="w-3.5 h-3.5 text-pink-400" />,
   },
+  region: {
+    border: 'border-slate-500/30 border-dashed',
+    bg: 'bg-slate-950/10',
+    headerBg: 'bg-slate-900/80 border-slate-700',
+    text: 'text-slate-300',
+    badge: 'REGION',
+    icon: <Cloud className="w-3.5 h-3.5 text-slate-400" />,
+  },
+  'security-group': {
+    border: 'border-red-500/30 border-dashed',
+    bg: 'bg-red-950/10',
+    headerBg: 'bg-red-950/80 border-red-800/80',
+    text: 'text-red-300',
+    badge: 'SECURITY GROUP',
+    icon: <Shield className="w-3.5 h-3.5 text-red-400" />,
+  },
+  'auto-scaling-group': {
+    border: 'border-orange-500/30 border-dashed',
+    bg: 'bg-orange-950/10',
+    headerBg: 'bg-orange-950/80 border-orange-800/80',
+    text: 'text-orange-300',
+    badge: 'AUTO SCALING GROUP',
+    icon: <Layers className="w-3.5 h-3.5 text-orange-400" />,
+  },
 };
 
 export const ArchitectureGroupNode = memo((props: NodeProps) => {

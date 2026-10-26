@@ -30,64 +30,9 @@ export const AWSServiceNode = memo((props: NodeProps) => {
     <div
       onClick={handleInspectClick}
       className="relative flex flex-col items-center group select-none cursor-pointer"
-      style={{ width: '100px' }}
+      style={{ width: '140px' }}
       title={`${nodeData.label} (${nodeData.serviceId}) - Click to inspect`}
     >
-      {/* 4-Way Hover-Only Connection Handles */}
-      {/* Top Handle */}
-      <Handle
-        type="target"
-        position={Position.Top}
-        id="top"
-        style={{
-          top: '-4px',
-          backgroundColor: 'var(--aws-interactive)',
-        }}
-        className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-        title="Connect input (Top)"
-      />
-
-      {/* Right Handle */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="right"
-        style={{
-          right: '-4px',
-          top: '24px',
-          backgroundColor: 'var(--aws-interactive)',
-        }}
-        className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-        title="Connect output (Right)"
-      />
-
-      {/* Bottom Handle */}
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        id="bottom"
-        style={{
-          bottom: '24px',
-          backgroundColor: 'var(--aws-interactive)',
-        }}
-        className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-        title="Connect output (Bottom)"
-      />
-
-      {/* Left Handle */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="left"
-        style={{
-          left: '-4px',
-          top: '24px',
-          backgroundColor: 'var(--aws-interactive)',
-        }}
-        className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-        title="Connect input (Left)"
-      />
-
       {/* Delete button (hover only) */}
       <button
         type="button"
@@ -116,6 +61,44 @@ export const AWSServiceNode = memo((props: NodeProps) => {
       >
         <AWSServiceIcon serviceId={nodeData.serviceId} size={48} variant="service" />
 
+        {/* 4-Way Directional Connection Handles */}
+        <Handle
+          type="source"
+          position={Position.Top}
+          id="top"
+          isConnectable={true}
+          style={{ backgroundColor: 'var(--aws-interactive)' }}
+          className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+          title="Connect (Top)"
+        />
+        <Handle
+          type="source"
+          position={Position.Right}
+          id="right"
+          isConnectable={true}
+          style={{ backgroundColor: 'var(--aws-interactive)' }}
+          className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+          title="Connect (Right)"
+        />
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          id="bottom"
+          isConnectable={true}
+          style={{ backgroundColor: 'var(--aws-interactive)' }}
+          className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+          title="Connect (Bottom)"
+        />
+        <Handle
+          type="source"
+          position={Position.Left}
+          id="left"
+          isConnectable={true}
+          style={{ backgroundColor: 'var(--aws-interactive)' }}
+          className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+          title="Connect (Left)"
+        />
+
         {/* Study status small indicator dot in corner */}
         {nodeData.status && nodeData.status !== 'not-started' && (
           <span className="absolute -bottom-1 -right-1 bg-[var(--aws-card-bg)] rounded-full p-0.5 shadow-xs">
@@ -127,17 +110,17 @@ export const AWSServiceNode = memo((props: NodeProps) => {
       {/* Service Title (12px bold sentence case) */}
       <div
         style={{ color: 'var(--aws-text-primary)' }}
-        className="mt-2 font-bold text-[12px] leading-[16px] text-center max-w-[110px] break-words line-clamp-2"
+        className="mt-2 font-bold text-[12px] leading-[1.3] text-center w-[140px] break-words line-clamp-2"
       >
         {nodeData.label}
       </div>
 
-      {/* Resource Identifier (11px monospace) */}
+      {/* Resource Identifier / Subtitle (11px monospace, line-clamp-2) */}
       <div
         style={{ color: 'var(--aws-text-muted)' }}
-        className="font-mono text-[11px] leading-[14px] text-center max-w-[110px] truncate opacity-85"
+        className="font-mono text-[11px] leading-[1.3] text-center w-[140px] break-words line-clamp-2 opacity-85 mt-0.5"
       >
-        {nodeData.customNotes ? nodeData.customNotes.slice(0, 18) : nodeData.serviceId}
+        {nodeData.customNotes || nodeData.serviceId}
       </div>
     </div>
   );

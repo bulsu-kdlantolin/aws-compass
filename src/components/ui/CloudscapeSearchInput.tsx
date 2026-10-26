@@ -1,5 +1,6 @@
 import React, { useRef, useId } from 'react';
 import { Search, X } from 'lucide-react';
+import { ClassicV2 } from './LoadingIndicators';
 
 export interface CloudscapeSearchInputProps {
   value: string;
@@ -12,6 +13,7 @@ export interface CloudscapeSearchInputProps {
   className?: string;
   size?: 'sm' | 'md';
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  isLoading?: boolean;
 }
 
 export const CloudscapeSearchInput: React.FC<CloudscapeSearchInputProps> = ({
@@ -25,6 +27,7 @@ export const CloudscapeSearchInput: React.FC<CloudscapeSearchInputProps> = ({
   className = '',
   size = 'md',
   onKeyDown,
+  isLoading = false,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const clearButtonId = useId();
@@ -73,10 +76,20 @@ export const CloudscapeSearchInput: React.FC<CloudscapeSearchInputProps> = ({
         className="w-full bg-transparent leading-[20px] placeholder:text-[var(--aws-text-muted)] outline-none border-none p-0 focus:ring-0"
       />
 
-      {/* Right Side Controls: Shortcut Badge & Animated Clear (X) Button */}
-      <div className="flex items-center shrink-0 ml-1.5 min-w-[20px] justify-end">
-        {/* Keyboard Shortcut badge (when empty) */}
-        {!hasValue && shortcut && (
+      {/* Right Side Controls: Shortcut Badge, Filter Spinner, & Animated Clear (X) Button */}
+      <div className="flex items-center shrink-0 ml-1.5 min-w-[20px] justify-end gap-1.5">
+        {/* ClassicV2 indicator when filtering */}
+        {isLoading && (
+          <span
+            className="flex items-center justify-center text-[var(--aws-text-muted)] animate-in fade-in duration-150"
+            aria-hidden="true"
+          >
+            <ClassicV2 size={14} color="var(--aws-text-muted)" />
+          </span>
+        )}
+
+        {/* Keyboard Shortcut badge (when empty and not loading) */}
+        {!hasValue && !isLoading && shortcut && (
           <kbd
             style={{
               backgroundColor: 'var(--aws-card-bg)',

@@ -5,9 +5,12 @@ import {
   getSmoothStepPath,
   type EdgeProps,
 } from '@xyflow/react';
-import { X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown, Check } from 'lucide-react';
 import type { EdgeProtocol } from '../../types/aws';
 import { useCanvasStore } from '../../store/useCanvasStore';
+import { useCompassStore } from '../../store/useCompassStore';
+import { usePopoverStore } from '../../store/usePopoverStore';
+import { useAnimatedOpen } from '../ui/AnimatedPopover';
 
 const PROTOCOLS: EdgeProtocol[] = [
   'HTTPS/REST',
@@ -32,12 +35,12 @@ const PROTOCOL_STYLES: Record<EdgeProtocol, ProtocolStyle> = {
   },
   'IAM Role Assumption': {
     stroke: '#8C4FFF',
-    strokeDasharray: '3 3', // Dotted Control Flow per Draw.io guidelines
+    strokeDasharray: '3 3', // Dotted Control Flow
     flowType: 'Control',
   },
   'Event Trigger': {
     stroke: '#E7157B',
-    strokeDasharray: '6 4', // Dashed Ingestion Flow per Draw.io guidelines
+    strokeDasharray: '6 4', // Dashed Ingestion Flow
     flowType: 'Ingestion',
   },
   'VPC PrivateLink': {
@@ -69,17 +72,29 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
     targetPosition,
     style = {},
     markerEnd,
+    selected,
   } = props;
 
   const updateEdgeProtocol = useCanvasStore((s) => s.updateEdgeProtocol);
   const removeEdge = useCanvasStore((s) => s.removeEdge);
+  const theme = useCompassStore((s) => s.theme);
   const protocol = useCanvasStore(
     (s) => s.edges.find((e) => e.id === id)?.protocol || 'HTTPS/REST'
   );
 
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const activePopoverId = usePopoverStore((s) => s.activePopoverId);
+  const openPopover = usePopoverStore((s) => s.openPopover);
+  const closePopover = usePopoverStore((s) => s.closePopover);
+  const popoverId = `edge-protocol-${id}`;
+  const isDropdownOpen = activePopoverId === popoverId;
+  const isMounted = useAnimatedOpen(isDropdownOpen, 180);
 
-  // 90-degree orthogonal routing per AWS architecture diagram guidelines
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Dynamic orthogonal routing offset (supports multi-port fan-out offset separation)
+  const customOffset = (props.data as any)?.offset;
+  const routingOffset = typeof customOffset === 'number' ? customOffset : 28;
+
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -88,13 +103,22 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
     targetY,
     targetPosition,
     borderRadius: 8,
+    offset: routingOffset,
   });
 
   const protocolStyle = PROTOCOL_STYLES[protocol] || PROTOCOL_STYLES['HTTPS/REST'];
 
+  // Base stroke: #545B64 (Light) / #879596 (Dark), transitioning to #0972D3 / #539FE5 when selected or hovered
+  const baseStroke = theme === 'dark' ? '#879596' : '#545B64';
+  const activeStroke = theme === 'dark' ? '#539FE5' : '#0972D3';
+  const strokeColor = selected || isHovered ? activeStroke : baseStroke;
+
+  const edgeDistance = Math.hypot(targetX - sourceX, targetY - sourceY);
+  const isShortSegment = edgeDistance < 90;
+
   const handleProtocolSelect = (newProtocol: EdgeProtocol) => {
     updateEdgeProtocol(id, newProtocol);
-    setIsDropdownOpen(false);
+    closePopover(popoverId);
   };
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -103,16 +127,29 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
   };
 
   return (
-    <>
+    <g
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="group"
+    >
       <BaseEdge
         path={edgePath}
         markerEnd={markerEnd}
         style={{
           ...style,
-          stroke: protocolStyle.stroke,
-          strokeWidth: 2,
+          stroke: strokeColor,
+          strokeWidth: 1.75,
           strokeDasharray: protocolStyle.strokeDasharray,
+          transition: 'stroke 150ms ease-out',
         }}
+      />
+      {/* Invisible wider stroke to make hover / selection easier */}
+      <path
+        d={edgePath}
+        fill="none"
+        stroke="transparent"
+        strokeWidth={16}
+        className="cursor-pointer"
       />
       <EdgeLabelRenderer>
         <div
@@ -120,28 +157,35 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
             pointerEvents: 'all',
+            zIndex: 1000,
           }}
-          className="nodrag nopan group relative z-10 select-none"
+          className="nodrag nopan group relative select-none"
         >
-          {/* Protocol Badge with interactive dropdown */}
+          {/* Protocol Badge with opaque canvas-matching pill */}
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              style={{
-                backgroundColor: 'var(--aws-card-bg)',
-                borderColor: protocolStyle.stroke,
-                color: 'var(--aws-text-primary)',
-              }}
-              className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] border text-[11px] font-mono shadow-xs cursor-pointer motion-safe:transition-[border-color,background-color,transform] duration-150 ease-out motion-safe:hover:scale-105"
+              onClick={() => (isDropdownOpen ? closePopover(popoverId) : openPopover(popoverId))}
+              className={`bg-[#F2F3F3] dark:bg-[#0F1B2A] border px-2 py-0.5 rounded-[4px] text-[11px] font-mono shadow-xs cursor-pointer flex items-center gap-1.5 transition-[border-color,background-color,transform] duration-150 ease-out enabled:active:scale-[0.97] ${
+                isDropdownOpen
+                  ? 'border-[#0972D3] dark:border-[#539FE5] text-[var(--aws-text-primary)]'
+                  : 'border-[#D5DBDB] dark:border-[#354150] hover:border-[var(--aws-interactive)] text-[var(--aws-text-primary)]'
+              }`}
               title={`Protocol: ${protocol} (${protocolStyle.flowType} flow). Click to change.`}
             >
               <span
                 className="w-1.5 h-1.5 rounded-full shrink-0"
                 style={{ backgroundColor: protocolStyle.stroke }}
               />
-              <span className="font-semibold">{protocol}</span>
-              <ChevronDown className="w-3 h-3 text-[var(--aws-text-muted)]" />
+              {(!isShortSegment || isHovered) && (
+                <span className="font-semibold whitespace-nowrap">{protocol}</span>
+              )}
+              <ChevronDown
+                className="w-3 h-3 text-[var(--aws-text-muted)] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                style={{
+                  transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                }}
+              />
             </button>
 
             {/* Delete Edge Button on Hover */}
@@ -161,25 +205,31 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
           </div>
 
           {/* Protocol Selection Dropdown Menu */}
-          {isDropdownOpen && (
+          {isMounted && (
             <div
+              data-state={isDropdownOpen ? 'open' : 'closed'}
               style={{
                 backgroundColor: 'var(--aws-drawer-bg)',
                 borderColor: 'var(--aws-border)',
                 color: 'var(--aws-text-primary)',
                 boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
+                zIndex: 1000,
+                overscrollBehavior: 'contain',
               }}
-              className="absolute top-6 left-1/2 -translate-x-1/2 w-48 rounded-[4px] border p-1 z-50 animate-in fade-in duration-100"
+              className={`absolute top-7 left-1/2 -translate-x-1/2 min-w-[240px] rounded-[4px] border p-1 z-[1000] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] origin-top ${
+                isDropdownOpen
+                  ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
+                  : 'opacity-0 scale-[0.96] -translate-y-1.5 pointer-events-none'
+              }`}
             >
               <div
                 style={{
                   borderColor: 'var(--aws-border)',
                   color: 'var(--aws-text-muted)',
                 }}
-                className="px-2 py-1 text-[11px] font-mono border-b mb-1 flex items-center justify-between"
+                className="px-3 py-1.5 text-[11px] font-mono border-b mb-1 flex items-center justify-between"
               >
-                <span>Select protocol</span>
-                <span className="text-[10px]">Draw.io</span>
+                <span className="font-semibold">Select protocol</span>
               </div>
               <div className="space-y-0.5">
                 {PROTOCOLS.map((p) => {
@@ -190,26 +240,30 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
                       key={p}
                       type="button"
                       onClick={() => handleProtocolSelect(p)}
-                      style={{
-                        color: isCurrent ? 'var(--aws-interactive)' : 'var(--aws-text-primary)',
-                      }}
-                      className={`w-full text-left px-2 py-1 rounded-[4px] text-[11px] font-mono flex items-center justify-between transition-colors cursor-pointer hover:bg-[var(--aws-card-bg)] ${
-                        isCurrent ? 'font-bold' : ''
+                      className={`w-full text-left px-3 py-2 rounded-[4px] text-[11px] font-mono flex items-center justify-between gap-4 transition-colors duration-100 cursor-pointer ${
+                        isCurrent
+                          ? 'bg-[#0972D3]/10 dark:bg-[#539FE5]/15 text-[#0972D3] dark:text-[#539FE5] font-semibold'
+                          : 'text-[var(--aws-text-primary)] hover:bg-[#F2F3F3] dark:hover:bg-[#232F3E]'
                       }`}
                     >
-                      <div className="flex items-center gap-1.5 truncate">
+                      <div className="flex items-center gap-2 truncate">
                         <span
                           className="w-1.5 h-1.5 rounded-full shrink-0"
                           style={{ backgroundColor: pStyle.stroke }}
                         />
                         <span className="truncate">{p}</span>
                       </div>
-                      <span
-                        style={{ color: 'var(--aws-text-muted)' }}
-                        className="text-[10px] font-sans shrink-0 pl-1"
-                      >
-                        {pStyle.flowType}
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span
+                          style={{ color: 'var(--aws-text-muted)' }}
+                          className="text-[10px] font-sans"
+                        >
+                          {pStyle.flowType}
+                        </span>
+                        {isCurrent && (
+                          <Check className="w-3.5 h-3.5 text-[#0972D3] dark:text-[#539FE5]" aria-hidden="true" />
+                        )}
+                      </div>
                     </button>
                   );
                 })}
@@ -218,7 +272,7 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
           )}
         </div>
       </EdgeLabelRenderer>
-    </>
+    </g>
   );
 });
 
