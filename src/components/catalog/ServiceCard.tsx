@@ -8,12 +8,53 @@ interface ServiceCardProps {
   service: AWSService;
   isSelected: boolean;
   onSelect: () => void;
+  isDragging?: boolean;
+  dropPosition?: 'top' | 'bottom' | null;
+  onDragStart?: (e: React.DragEvent, service: AWSService) => void;
+  onDragOver?: (e: React.DragEvent, service: AWSService) => void;
+  onDragLeave?: (e: React.DragEvent, service: AWSService) => void;
+  onDrop?: (e: React.DragEvent, service: AWSService) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }
 
-export const ServiceCard: React.FC<ServiceCardProps> = ({ service, isSelected, onSelect }) => {
+export const ServiceCard: React.FC<ServiceCardProps> = ({
+  service,
+  isSelected,
+  onSelect,
+  isDragging = false,
+  dropPosition = null,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
+  onMoveUp,
+  onMoveDown,
+}) => {
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('application/aws-service-id', service.id);
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('application/aws-service-category', service.category);
+    e.dataTransfer.setData('text/plain', service.id);
+    e.dataTransfer.effectAllowed = 'copyMove';
+
+    if (onDragStart) {
+      onDragStart(e, service);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelect();
+    } else if (e.altKey && e.key === 'ArrowUp' && onMoveUp) {
+      e.preventDefault();
+      onMoveUp();
+    } else if (e.altKey && e.key === 'ArrowDown' && onMoveDown) {
+      e.preventDefault();
+      onMoveDown();
+    }
   };
 
   return (
@@ -21,27 +62,46 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, isSelected, o
       role="button"
       tabIndex={0}
       onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onSelect();
-        }
-      }}
+      onKeyDown={handleKeyDown}
       draggable
       onDragStart={handleDragStart}
+      onDragOver={(e) => onDragOver?.(e, service)}
+      onDragLeave={(e) => onDragLeave?.(e, service)}
+      onDrop={(e) => onDrop?.(e, service)}
+      onDragEnd={onDragEnd}
+      aria-grabbed={isDragging ? 'true' : 'false'}
       style={{
-        backgroundColor: isSelected ? 'var(--aws-card-bg)' : 'transparent',
+        backgroundColor: isSelected ? 'var(--aws-page-bg)' : 'transparent',
         borderLeftColor: isSelected ? 'var(--aws-brand)' : 'transparent',
       }}
-      className={`group h-7 px-2 flex items-center gap-1.5 cursor-pointer border-l-2 text-left select-none transition-colors duration-100 ${
-        isSelected
+      className={`group relative h-7 px-2 flex items-center gap-1.5 cursor-pointer border-l-2 text-left select-none transition-[opacity,background-color,border-color,transform] duration-100 ${
+        isDragging
+          ? 'opacity-35 scale-[0.98] ring-1 ring-[var(--aws-interactive)]/40 bg-[var(--aws-page-bg)]'
+          : isSelected
           ? 'text-[var(--aws-text-primary)] font-semibold'
-          : 'text-[var(--aws-text-primary)] hover:bg-[var(--aws-card-bg)] hover:text-[var(--aws-text-primary)]'
+          : 'text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] hover:text-[var(--aws-text-primary)]'
       }`}
-      title={`${service.name} (Drag to add to canvas, click to inspect)`}
+      title={`${service.name} (Drag to rearrange or add to canvas, Alt+Up/Down to reorder)`}
     >
+      {/* Drop Indicator - Top (Drop Before) */}
+      {dropPosition === 'top' && (
+        <div className="absolute -top-[1px] left-0 right-0 h-[2px] bg-[#FF9900] z-30 pointer-events-none flex items-center shadow-[0_0_8px_rgba(255,153,0,0.8)]">
+          <div className="w-2 h-2 rounded-full bg-[#FF9900] -ml-1 border-2 border-[var(--aws-page-bg)]" />
+        </div>
+      )}
+
+      {/* Drop Indicator - Bottom (Drop After) */}
+      {dropPosition === 'bottom' && (
+        <div className="absolute -bottom-[1px] left-0 right-0 h-[2px] bg-[#FF9900] z-30 pointer-events-none flex items-center shadow-[0_0_8px_rgba(255,153,0,0.8)]">
+          <div className="w-2 h-2 rounded-full bg-[#FF9900] -ml-1 border-2 border-[var(--aws-page-bg)]" />
+        </div>
+      )}
+
       {/* Drag handle */}
-      <span className="opacity-0 group-hover:opacity-70 text-[var(--aws-text-muted)] cursor-grab active:cursor-grabbing shrink-0">
+      <span
+        className="opacity-40 group-hover:opacity-100 text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] cursor-grab active:cursor-grabbing shrink-0 transition-opacity"
+        title="Drag to rearrange within or across categories, or drag to canvas"
+      >
         <GripVertical className="w-3 h-3" strokeWidth={1.75} />
       </span>
 

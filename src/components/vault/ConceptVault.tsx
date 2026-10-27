@@ -25,6 +25,8 @@ import { CloudscapeSearchInput } from '../ui/CloudscapeSearchInput';
 import { CloudscapeSelect, type CloudscapeSelectOption } from '../ui/CloudscapeSelect';
 import { CloudscapeTextarea } from '../ui/CloudscapeTextarea';
 import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
+import { getAWSCategoryColor } from '../../utils/awsCategoryColors';
+import { getVerifiedAWSDocsUrl } from '../../utils/awsDocs';
 
 /* -------------------------------------------------------------------------- */
 /*                           CLOUDSCAPE RESOURCE TABLE                        */
@@ -49,11 +51,29 @@ const ConceptVaultTable: React.FC<{
   }, [services]);
 
   const categoryOptions: CloudscapeSelectOption[] = useMemo(() => {
-    return categories.map((cat) => ({
-      value: cat,
-      label: cat === 'All' ? 'All categories' : cat,
-    }));
-  }, [categories]);
+    return categories.map((cat) => {
+      const count =
+        cat === 'All'
+          ? services.length
+          : services.filter((s) => s.category === cat).length;
+
+      const dotColor =
+        cat === 'All' ? 'var(--aws-interactive)' : getAWSCategoryColor(cat, 'dark');
+
+      return {
+        value: cat,
+        label: cat === 'All' ? 'All categories' : cat,
+        count,
+        icon: (
+          <span
+            className="w-1.5 h-1.5 rounded-full shrink-0"
+            style={{ backgroundColor: dotColor }}
+            aria-hidden="true"
+          />
+        ),
+      };
+    });
+  }, [categories, services]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -226,7 +246,7 @@ const ConceptVaultTable: React.FC<{
             <table className="w-full border-collapse text-left select-none">
               <thead
                 style={{
-                  backgroundColor: 'var(--aws-sidebar-bg)',
+                  backgroundColor: 'var(--aws-page-bg)',
                   borderBottomColor: 'var(--aws-border)',
                   color: 'var(--aws-text-muted)',
                 }}
@@ -493,13 +513,13 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
 
         {/* View / Edit Mode & Docs link */}
         <div className="flex items-center gap-2">
-          {/* Read / Edit Toggle */}
+          {/* Read / Edit Segmented Switch */}
           <div
             style={{
               backgroundColor: 'var(--aws-page-bg)',
               borderColor: 'var(--aws-border)',
             }}
-            className="flex items-center border rounded-[4px] p-0.5"
+            className="flex items-center p-0.5 rounded-[6px] border select-none shadow-2xs"
           >
             <button
               type="button"
@@ -513,13 +533,22 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
                     }
                   : {
                       color: 'var(--aws-text-muted)',
+                      borderColor: 'transparent',
                     }
               }
-              className="flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-[3px] border transition-colors cursor-pointer font-medium"
+              className={`flex items-center gap-1.5 px-3 py-1 text-[12px] font-medium rounded-[4px] border transition-all duration-150 cursor-pointer ${
+                !isEditing
+                  ? 'shadow-xs font-semibold'
+                  : 'hover:text-[var(--aws-text-primary)] hover:bg-black/5 dark:hover:bg-white/5'
+              }`}
             >
-              <BookOpen className="w-3.5 h-3.5" strokeWidth={1.75} />
+              <BookOpen
+                className={`w-3.5 h-3.5 ${!isEditing ? 'text-[#FF9900]' : 'opacity-70'}`}
+                strokeWidth={2}
+              />
               <span>Read</span>
             </button>
+
             <button
               type="button"
               onClick={() => {
@@ -535,33 +564,94 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
                     }
                   : {
                       color: 'var(--aws-text-muted)',
+                      borderColor: 'transparent',
                     }
               }
-              className="flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-[3px] border transition-colors cursor-pointer font-medium"
+              className={`flex items-center gap-1.5 px-3 py-1 text-[12px] font-medium rounded-[4px] border transition-all duration-150 cursor-pointer ${
+                isEditing
+                  ? 'shadow-xs font-semibold'
+                  : 'hover:text-[var(--aws-text-primary)] hover:bg-black/5 dark:hover:bg-white/5'
+              }`}
             >
-              <Edit3 className="w-3.5 h-3.5" strokeWidth={1.75} />
+              <Edit3
+                className={`w-3.5 h-3.5 ${isEditing ? 'text-[#FF9900]' : 'opacity-70'}`}
+                strokeWidth={2}
+              />
               <span>Edit</span>
             </button>
           </div>
 
-          {/* External Docs */}
-          {service.docsUrl && (
-            <a
-              href={service.docsUrl}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                backgroundColor: 'var(--aws-page-bg)',
-                borderColor: 'var(--aws-border)',
-                color: 'var(--aws-text-primary)',
-              }}
-              className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-[4px] border hover:border-[var(--aws-brand)] transition-colors"
-              title="Open official AWS documentation"
-            >
-              <span>AWS docs</span>
-              <ExternalLink className="w-3 h-3 text-[var(--aws-interactive)]" strokeWidth={1.75} />
-            </a>
-          )}
+          {/* 1px Vertical Divider */}
+          <div
+            style={{ backgroundColor: 'var(--aws-border)' }}
+            className="h-4 w-px mx-0.5"
+            aria-hidden="true"
+          />
+
+          {/* External AWS Docs Button */}
+          {(() => {
+            const docsUrl = getVerifiedAWSDocsUrl(service.id, service.docsUrl);
+            if (!docsUrl) return null;
+            return (
+              <a
+                href={docsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  backgroundColor: 'var(--aws-card-bg)',
+                  borderColor: 'var(--aws-border)',
+                  color: 'var(--aws-text-primary)',
+                }}
+                className="group flex items-center gap-1.5 text-[12px] font-medium px-3 py-1 h-[29px] rounded-[6px] border hover:border-[#FF9900] hover:text-[#FF9900] active:scale-[0.98] transition-all duration-150 cursor-pointer shadow-2xs select-none"
+                title="Open official AWS documentation in a new tab"
+                aria-label={`Open official ${service.name} documentation`}
+              >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="shrink-0 text-[#FF9900]"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M14 2V8H20"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M16 13H8"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M16 17H8"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>AWS docs</span>
+                <ExternalLink
+                  className="w-3 h-3 text-[var(--aws-text-muted)] group-hover:text-[#FF9900] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-150"
+                  strokeWidth={2}
+                />
+              </a>
+            );
+          })()}
         </div>
       </div>
 
@@ -681,7 +771,7 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
                 className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2"
               >
                 {/* Category */}
-                <div className="border-r border-[#D5DBDB] dark:border-[#354150] pr-6">
+                <div className="border-r border-[var(--aws-border)] pr-6">
                   <span
                     style={{ color: 'var(--aws-text-muted)' }}
                     className="text-[12px] block font-medium"
@@ -697,7 +787,7 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
                 </div>
 
                 {/* Tier */}
-                <div className="border-r border-[#D5DBDB] dark:border-[#354150] pr-6">
+                <div className="border-r border-[var(--aws-border)] pr-6">
                   <span
                     style={{ color: 'var(--aws-text-muted)' }}
                     className="text-[12px] block font-medium"
@@ -720,7 +810,7 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
                 </div>
 
                 {/* CLI Prefix */}
-                <div className="border-r border-[#D5DBDB] dark:border-[#354150] pr-6">
+                <div className="border-r border-[var(--aws-border)] pr-6">
                   <span
                     style={{ color: 'var(--aws-text-muted)' }}
                     className="text-[12px] block font-medium"
@@ -786,7 +876,13 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
             </CloudscapeContainer>
 
             {/* Unified Cloudscape Container for 6-Part Concept Dossier */}
-            <div className="bg-white dark:bg-[#161E2D] border border-[#D5DBDB] dark:border-[#354150] rounded-[8px] p-6 shadow-none">
+            <div
+              style={{
+                backgroundColor: 'var(--aws-card-bg)',
+                borderColor: 'var(--aws-border)',
+              }}
+              className="rounded-[8px] border p-6 shadow-none"
+            >
               <div className="vault-prose">
                 <Markdown
                   components={{

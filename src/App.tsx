@@ -6,7 +6,7 @@ import { ConceptVault } from './components/vault/ConceptVault';
 import { ArchitectureCanvas } from './components/canvas/ArchitectureCanvas';
 import { CommandPalette } from './components/layout/CommandPalette';
 import { DisableThemeTransitions } from './components/ui/DisableThemeTransitions';
-import { Compass } from './components/ui/LoadingIndicators';
+import { AWSCompassLogo } from './components/icons/AWSCompassLogo';
 
 export const App: React.FC = () => {
   const { isDbLoaded, isSidebarOpen, workspaceMode, initialize } = useCompassStore();
@@ -44,7 +44,7 @@ export const App: React.FC = () => {
           className="flex flex-col items-center gap-3.5 p-6 rounded-[8px] border border-[var(--aws-border)] bg-[var(--aws-card-bg)] shadow-lg max-w-sm w-full mx-4 animate-in fade-in duration-200"
         >
           <span className="sr-only">Initializing AWS Compass catalog…</span>
-          <Compass size={28} color="#FF9900" />
+          <AWSCompassLogo size={42} className="animate-pulse" />
           <span className="text-[13px] font-medium text-[var(--aws-text-muted)] tracking-wide">
             Initializing AWS Compass catalog…
           </span>

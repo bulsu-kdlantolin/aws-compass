@@ -6,7 +6,6 @@ import {
   PlusCircle,
   FileCode2,
   X,
-  Compass,
   ArrowRight,
   Download,
   Upload,
@@ -17,6 +16,7 @@ import { useCanvasStore } from '../../store/useCanvasStore';
 import { AWSServiceIcon } from '../canvas/AWSIcons';
 import { SEED_BLUEPRINTS } from '../../db/seedBlueprints';
 import { ClassicV2 } from '../ui/LoadingIndicators';
+import { AWSCompassLogo } from '../icons/AWSCompassLogo';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -162,7 +162,7 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
       subtitle: 'Browse 30+ AWS architecture dossiers, Mermaid flows & exam tips',
       category: 'Workspace Navigation',
       badge: 'NAV',
-      icon: <Compass className="w-4 h-4 text-sky-400" />,
+      icon: <BookOpen className="w-4 h-4 text-[#FF9900]" />,
       action: () => {
         setWorkspaceMode('vault');
         onClose();
@@ -385,7 +385,7 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
         >
           {filteredActions.length === 0 ? (
             <div className="p-8 text-center" style={{ color: 'var(--aws-text-muted)' }}>
-              <Compass className="w-8 h-8 opacity-40 mx-auto mb-2" />
+              <AWSCompassLogo size={36} className="opacity-40 mx-auto mb-2" />
               <p className="text-sm font-medium" style={{ color: 'var(--aws-text-primary)' }}>
                 No matching commands found
               </p>
@@ -405,7 +405,7 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
                   style={
                     isSelected
                       ? {
-                          backgroundColor: 'var(--aws-card-bg)',
+                          backgroundColor: 'var(--aws-page-bg)',
                           borderColor: 'var(--aws-brand)',
                           color: 'var(--aws-text-primary)',
                         }
@@ -415,7 +415,7 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
                         }
                   }
                   className={`flex items-center justify-between gap-3 px-3 py-2 rounded-[4px] cursor-pointer transition-colors border ${
-                    isSelected ? 'shadow-sm' : 'hover:bg-[var(--aws-card-bg)]'
+                    isSelected ? 'shadow-sm' : 'hover:bg-[var(--aws-page-bg)]'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">

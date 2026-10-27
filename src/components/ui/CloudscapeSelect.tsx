@@ -8,6 +8,8 @@ export interface CloudscapeSelectOption<T extends string = string> {
   label: string;
   description?: string;
   icon?: React.ReactNode;
+  badge?: React.ReactNode;
+  count?: number | string;
 }
 
 export interface CloudscapeSelectProps<T extends string = string> {
@@ -106,77 +108,89 @@ export function CloudscapeSelect<T extends string = string>({
     }
 
     switch (e.key) {
-      case 'ArrowDown': {
+      case 'ArrowDown':
         e.preventDefault();
         setHighlightedIndex((prev) => (prev + 1 < options.length ? prev + 1 : 0));
         break;
-      }
-      case 'ArrowUp': {
+
+      case 'ArrowUp':
         e.preventDefault();
         setHighlightedIndex((prev) => (prev - 1 >= 0 ? prev - 1 : options.length - 1));
         break;
-      }
-      case 'Home': {
+
+      case 'Home':
         e.preventDefault();
         setHighlightedIndex(0);
         break;
-      }
-      case 'End': {
+
+      case 'End':
         e.preventDefault();
         setHighlightedIndex(options.length - 1);
         break;
-      }
+
       case 'Enter':
-      case ' ': {
+      case ' ':
         e.preventDefault();
         if (highlightedIndex >= 0 && highlightedIndex < options.length) {
           handleSelect(options[highlightedIndex].value);
         }
         break;
-      }
+
       case 'Escape':
-      case 'Tab': {
         e.preventDefault();
         closePopover(listboxId);
         triggerRef.current?.focus();
         break;
-      }
+
+      case 'Tab':
+        closePopover(listboxId);
+        break;
+
       default:
+        // Type-ahead jump to matching character
+        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          const char = e.key.toLowerCase();
+          const matchIdx = options.findIndex((opt, idx) => {
+            if (idx <= highlightedIndex) return false;
+            return opt.label.toLowerCase().startsWith(char);
+          });
+          if (matchIdx >= 0) {
+            setHighlightedIndex(matchIdx);
+          } else {
+            const fallbackIdx = options.findIndex((opt) =>
+              opt.label.toLowerCase().startsWith(char)
+            );
+            if (fallbackIdx >= 0) setHighlightedIndex(fallbackIdx);
+          }
+        }
         break;
     }
   };
 
-  const heightClass = size === 'sm' ? 'h-7 text-[12px]' : 'h-8 text-[13px]';
+  const heightClass = size === 'sm' ? 'h-7 text-[11px]' : 'h-8 text-[12px]';
 
   return (
-    <div
-      ref={containerRef}
-      onKeyDown={handleKeyDown}
-      className={`relative inline-block font-sans select-none ${className}`}
-    >
-      {/* Trigger Button: 32px or 28px height, 4px radius, 3:1 focus ring */}
+    <div ref={containerRef} className={`relative inline-block ${className}`}>
+      {/* Refined elevated pill trigger with subtle depth */}
       <button
         ref={triggerRef}
         id={triggerId}
         type="button"
         disabled={disabled}
         onClick={() => (isOpen ? closePopover(listboxId) : openListbox())}
+        onKeyDown={handleKeyDown}
         aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={listboxId}
+        data-open={isOpen ? 'true' : 'false'}
         aria-activedescendant={
           isOpen && highlightedIndex >= 0 ? `opt-${uniqueId}-${highlightedIndex}` : undefined
         }
-        style={{
-          backgroundColor: 'var(--aws-card-bg)',
-          color: 'var(--aws-text-primary)',
-          boxShadow: isOpen ? '0 0 0 2px rgba(9, 114, 211, 0.25)' : undefined,
-        }}
-        className={`w-full ${heightClass} px-2.5 rounded-[4px] border flex items-center justify-between gap-2 cursor-pointer transition-[border-color,box-shadow,transform] duration-150 ease-out outline-none disabled:opacity-50 disabled:cursor-not-allowed enabled:active:scale-[0.97] ${
+        className={`w-full ${heightClass} px-3 rounded-[6px] border flex items-center justify-between gap-2 cursor-pointer font-medium transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out outline-none disabled:opacity-50 disabled:cursor-not-allowed enabled:active:scale-[0.97] bg-white dark:bg-[#192534] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2D40] text-[#16191F] dark:text-[#EAEDED] shadow-xs ${
           isOpen
-            ? 'border-[#0972D3] dark:border-[#539FE5]'
-            : 'border-[var(--aws-input-border)] hover:border-[var(--aws-interactive)]'
+            ? 'border-[#0972D3] dark:border-[#539FE5] ring-1 ring-[#0972D3]/20 dark:ring-[#539FE5]/20'
+            : 'border-[#D5DBDB] dark:border-[#354150] hover:border-[#0972D3] dark:hover:border-[#539FE5]'
         }`}
       >
         <span className="flex items-center gap-2 truncate text-left">
@@ -188,7 +202,7 @@ export function CloudscapeSelect<T extends string = string>({
 
         {/* 180deg rotating chevron with 200ms cubic-bezier */}
         <ChevronDown
-          className="w-4 h-4 shrink-0 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] text-[var(--aws-text-muted)]"
+          className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] text-[#545B64] dark:text-[#879596]"
           style={{
             transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
           }}
@@ -196,7 +210,7 @@ export function CloudscapeSelect<T extends string = string>({
         />
       </button>
 
-      {/* Floating Menu Popover with 180ms cubic-bezier entry/exit */}
+      {/* Floating Menu Popover with concentric rounded-[12px], p-1.5 and layered elevation */}
       {isMounted && (
         <div
           ref={listboxRef}
@@ -206,12 +220,9 @@ export function CloudscapeSelect<T extends string = string>({
           aria-label={ariaLabel || placeholder}
           data-state={isOpen ? 'open' : 'closed'}
           style={{
-            backgroundColor: 'var(--aws-drawer-bg)',
-            borderColor: 'var(--aws-border)',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
             overscrollBehavior: 'contain',
           }}
-          className={`absolute left-0 mt-1 w-full min-w-[200px] max-h-60 overflow-y-auto custom-scrollbar rounded-[4px] border p-1 z-50 transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] origin-top ${
+          className={`absolute left-0 mt-1.5 w-full min-w-[210px] max-h-64 overflow-y-auto custom-scrollbar rounded-[12px] p-1.5 border z-50 bg-white dark:bg-[#192534] border-[#D5DBDB] dark:border-[#354150] shadow-[0px_2px_6px_rgba(0,0,0,0.04),0px_8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_10px_30px_-5px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] origin-top ${
             isOpen
               ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
               : 'opacity-0 scale-[0.96] -translate-y-1.5 pointer-events-none'
@@ -229,22 +240,21 @@ export function CloudscapeSelect<T extends string = string>({
                 aria-selected={isSelected}
                 onClick={() => handleSelect(opt.value)}
                 onMouseEnter={() => setHighlightedIndex(idx)}
-                className={`px-3 py-2 rounded-[4px] flex items-center justify-between gap-4 transition-colors duration-100 cursor-pointer text-[13px] select-none ${
+                className={`px-2.5 py-1.5 rounded-[6px] flex items-center justify-between gap-3 transition-colors duration-100 cursor-pointer text-[12px] select-none ${
                   isSelected
                     ? 'bg-[#0972D3]/10 dark:bg-[#539FE5]/15 text-[#0972D3] dark:text-[#539FE5] font-semibold'
                     : isHighlighted
-                    ? 'bg-[#F2F3F3] dark:bg-[#232F3E] text-[var(--aws-text-primary)] font-normal'
-                    : 'text-[var(--aws-text-primary)] hover:bg-[#F2F3F3] dark:hover:bg-[#232F3E] font-normal'
+                    ? 'bg-[#F2F3F3] dark:bg-[#232F3E] text-[#16191F] dark:text-[#EAEDED] font-normal'
+                    : 'text-[#16191F] dark:text-[#EAEDED] hover:bg-[#F2F3F3] dark:hover:bg-[#232F3E] font-normal'
                 }`}
               >
-                <div className="flex items-center gap-2 truncate">
+                <div className="flex items-center gap-2 truncate flex-1 min-w-0">
                   {opt.icon}
                   <div className="truncate">
-                    <div className="truncate">{opt.label}</div>
+                    <div className="truncate leading-tight">{opt.label}</div>
                     {opt.description && (
                       <div
-                        style={{ color: 'var(--aws-text-muted)' }}
-                        className="text-[11px] font-normal truncate opacity-85"
+                        className="text-[11px] font-normal truncate text-[#545B64] dark:text-[#879596] opacity-90 mt-0.5"
                       >
                         {opt.description}
                       </div>
@@ -252,9 +262,20 @@ export function CloudscapeSelect<T extends string = string>({
                   </div>
                 </div>
 
-                {isSelected && (
-                  <Check className="w-3.5 h-3.5 shrink-0 text-[#0972D3] dark:text-[#539FE5]" aria-hidden="true" />
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {opt.count !== undefined && (
+                    <span className="text-[11px] font-mono tabular-nums text-[#545B64] dark:text-[#879596] font-medium">
+                      {opt.count}
+                    </span>
+                  )}
+                  {opt.badge}
+                  {isSelected && (
+                    <Check
+                      className="w-3.5 h-3.5 text-[#0972D3] dark:text-[#539FE5]"
+                      aria-hidden="true"
+                    />
+                  )}
+                </div>
               </div>
             );
           })}

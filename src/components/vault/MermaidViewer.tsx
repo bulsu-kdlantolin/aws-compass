@@ -40,6 +40,7 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, className =
         // Dynamically initialize Mermaid for active theme with official Cloudscape tokens
         mermaid.initialize({
           startOnLoad: false,
+          suppressErrorRendering: true,
           theme: 'base',
           fontFamily: "'Amazon Ember', 'Open Sans', sans-serif",
           fontSize: 14,
@@ -103,8 +104,8 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, className =
 
         // Clean any code block wrappers if passed
         const cleanedChart = chart
-          .replace(/^```mermaid\s*/i, '')
-          .replace(/```$/i, '')
+          .replace(/^\\?`{3}mermaid\s*/i, '')
+          .replace(/\\?`{3}\s*$/i, '')
           .trim();
 
         // Unique element ID for each render pass and theme change
@@ -116,6 +117,13 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, className =
           setIsRendering(false);
         }
       } catch (err: unknown) {
+        // Clean up any dangling error SVG element inserted into body by mermaid
+        if (typeof document !== 'undefined') {
+          const danglingError = document.querySelector(`[id*="${diagramId}"]`);
+          if (danglingError && !containerRef.current?.contains(danglingError)) {
+            danglingError.remove();
+          }
+        }
         if (!isCancelled) {
           const message = err instanceof Error ? err.message : 'Invalid Mermaid diagram syntax';
           setError(message);

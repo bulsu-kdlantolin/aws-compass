@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { AWSService, Diagram, StudyStatus } from '../types/aws';
 import { SEED_SERVICES } from './seedServices';
+import { VERIFIED_AWS_DOCS } from '../utils/awsDocs';
 
 /**
  * AWS Compass Dexie Database
@@ -23,11 +24,50 @@ export const db = new CompassDatabase();
 
 /**
  * Initializes the database and seeds it with default AWS services if empty.
+ * Also synchronizes canonical docsUrl and overhauled Section 3 flowchart diagrams for existing services
+ * without overwriting user's study status or custom order.
  */
 export async function initializeDatabase(): Promise<void> {
   const count = await db.services.count();
   if (count === 0) {
     await db.services.bulkPut(SEED_SERVICES);
+    return;
+  }
+
+  // Ensure docsUrl and overhauled flowchart diagrams are up-to-date
+  const existingServices = await db.services.toArray();
+  const seedMap = new Map(SEED_SERVICES.map((s) => [s.id, s]));
+  const updates: Array<{ id: string; docsUrl?: string; markdownDoc?: string }> = [];
+
+  for (const svc of existingServices) {
+    const seed = seedMap.get(svc.id);
+    const canonicalDocsUrl = VERIFIED_AWS_DOCS[svc.id];
+    let needsUpdate = false;
+    const updateData: { id: string; docsUrl?: string; markdownDoc?: string } = { id: svc.id };
+
+    if (canonicalDocsUrl && svc.docsUrl !== canonicalDocsUrl) {
+      updateData.docsUrl = canonicalDocsUrl;
+      needsUpdate = true;
+    }
+
+    // Auto-migrate diagrams: if service contains banned sequenceDiagram or differs from refreshed seed
+    if (seed && svc.markdownDoc && (svc.markdownDoc.includes('sequenceDiagram') || svc.markdownDoc !== seed.markdownDoc)) {
+      updateData.markdownDoc = seed.markdownDoc;
+      needsUpdate = true;
+    }
+
+    if (needsUpdate) {
+      updates.push(updateData);
+    }
+  }
+
+  if (updates.length > 0) {
+    await db.transaction('rw', db.services, async () => {
+      for (const update of updates) {
+        const { id, ...data } = update;
+        await db.services.update(id, data);
+      }
+    });
   }
 }
 
@@ -40,10 +80,18 @@ export async function resetDatabaseToDefaults(): Promise<void> {
 }
 
 /**
- * Retrieves all services from the database, sorted alphabetically by name.
+ * Retrieves all services from the database, sorted by custom order if set, or alphabetically by name.
  */
 export async function getAllServices(): Promise<AWSService[]> {
-  return await db.services.orderBy('name').toArray();
+  const all = await db.services.toArray();
+  return all.sort((a, b) => {
+    if (a.order !== undefined && b.order !== undefined) {
+      return a.order - b.order;
+    }
+    if (a.order !== undefined) return -1;
+    if (b.order !== undefined) return 1;
+    return a.name.localeCompare(b.name);
+  });
 }
 
 /**

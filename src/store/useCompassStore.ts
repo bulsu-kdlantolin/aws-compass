@@ -19,6 +19,7 @@ import type {
   WorkspaceMode,
 } from '../types/aws';
 import {
+  db,
   getAllServices,
   getDiagramById,
   initializeDatabase,
@@ -28,6 +29,7 @@ import {
   updateServiceStatus as dbUpdateServiceStatus,
 } from '../db/compassDb';
 import { ARCHITECTURE_TEMPLATES } from '../components/canvas/canvasTemplates';
+import { SEED_SERVICES } from '../db/seedServices';
 import { disableTransitionsTemporarily } from '../utils/themeTransitions';
 
 let debounceSaveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -53,12 +55,22 @@ function scheduleDebouncedDiagramSave(nodes: CanvasNodeItem[], edges: CanvasEdge
   }, 1000);
 }
 
+export const DEFAULT_CATEGORIES: AWSCategory[] = [
+  'Compute',
+  'Storage',
+  'Database',
+  'Networking',
+  'Security/IAM',
+  'Serverless',
+];
+
 interface CompassState {
   // Catalog State
   services: AWSService[];
   selectedServiceId: string | null;
   isDbLoaded: boolean;
   filter: ServiceFilterState;
+  categoryOrder: AWSCategory[];
 
   // Workspace Mode & Theme State
   workspaceMode: WorkspaceMode;
@@ -87,6 +99,23 @@ interface CompassState {
   updateServiceDoc: (id: string, markdownDoc: string) => Promise<void>;
   resetToDefaults: () => Promise<void>;
   refreshServices: () => Promise<void>;
+  reorderService: (
+    sourceId: string,
+    targetId: string,
+    position: 'before' | 'after',
+    targetCategory?: AWSCategory
+  ) => Promise<void>;
+  moveServiceToCategory: (
+    serviceId: string,
+    targetCategory: AWSCategory,
+    insertAt?: 'start' | 'end'
+  ) => Promise<void>;
+  reorderCategories: (
+    sourceCat: AWSCategory,
+    targetCat: AWSCategory,
+    position: 'before' | 'after'
+  ) => void;
+  resetServiceOrder: () => Promise<void>;
 
   // Canvas Actions
   setNodes: (nodes: CanvasNodeItem[]) => void;
@@ -109,6 +138,7 @@ export const useCompassStore = create<CompassState>((set, get) => ({
   services: [],
   selectedServiceId: 's3',
   isDbLoaded: false,
+  categoryOrder: DEFAULT_CATEGORIES,
   filter: {
     search: '',
     category: 'All',
@@ -165,7 +195,44 @@ export const useCompassStore = create<CompassState>((set, get) => ({
     }
 
     await initializeDatabase();
-    const services = await getAllServices();
+    let services = await getAllServices();
+
+    // Hydrate custom service ordering and categories from localStorage if present
+    if (typeof window !== 'undefined') {
+      try {
+        const savedOrderRaw = localStorage.getItem('aws-compass-service-order');
+        if (savedOrderRaw) {
+          const savedOrder: { id: string; cat?: AWSCategory }[] = JSON.parse(savedOrderRaw);
+          const map = new Map(services.map((s) => [s.id, s]));
+          const orderedServices: AWSService[] = [];
+
+          savedOrder.forEach((item) => {
+            const svc = map.get(item.id);
+            if (svc) {
+              if (item.cat) svc.category = item.cat;
+              orderedServices.push(svc);
+              map.delete(item.id);
+            }
+          });
+
+          map.forEach((svc) => orderedServices.push(svc));
+          services = orderedServices;
+        }
+      } catch {}
+    }
+
+    let categoryOrder = DEFAULT_CATEGORIES;
+    if (typeof window !== 'undefined') {
+      try {
+        const savedCatOrder = localStorage.getItem('aws-compass-category-order');
+        if (savedCatOrder) {
+          const parsed = JSON.parse(savedCatOrder) as AWSCategory[];
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            categoryOrder = parsed;
+          }
+        }
+      } catch {}
+    }
 
     // Check if there is an active saved diagram in Dexie
     let initialNodes = ARCHITECTURE_TEMPLATES['serverless-api'].nodes;
@@ -182,6 +249,7 @@ export const useCompassStore = create<CompassState>((set, get) => ({
 
     set({
       services,
+      categoryOrder,
       isDbLoaded: true,
       selectedServiceId: get().selectedServiceId || services[0]?.id || null,
       nodes: initialNodes,
@@ -245,11 +313,16 @@ export const useCompassStore = create<CompassState>((set, get) => ({
   },
 
   resetToDefaults: async () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('aws-compass-service-order');
+      localStorage.removeItem('aws-compass-category-order');
+    }
     await resetDatabaseToDefaults();
     const services = await getAllServices();
     const defaultTemplate = ARCHITECTURE_TEMPLATES['serverless-api'];
     set({
       services,
+      categoryOrder: DEFAULT_CATEGORIES,
       selectedServiceId: 's3',
       nodes: defaultTemplate.nodes,
       edges: defaultTemplate.edges,
@@ -257,6 +330,187 @@ export const useCompassStore = create<CompassState>((set, get) => ({
       selectedNodeId: null,
     });
     scheduleDebouncedDiagramSave(defaultTemplate.nodes, defaultTemplate.edges);
+  },
+
+  resetServiceOrder: async () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('aws-compass-service-order');
+      localStorage.removeItem('aws-compass-category-order');
+    }
+    const seedCategoryMap = new Map(SEED_SERVICES.map((s) => [s.id, s.category]));
+    const currentServices = await getAllServices();
+
+    const restoredServices = currentServices
+      .map((svc) => ({
+        ...svc,
+        category: seedCategoryMap.get(svc.id) || svc.category,
+        order: undefined,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    try {
+      await Promise.all(
+        restoredServices.map((s) =>
+          db.services.update(s.id, { category: s.category, order: undefined })
+        )
+      );
+    } catch (err) {
+      console.warn('Failed to reset categories in Dexie:', err);
+    }
+
+    set({
+      services: restoredServices,
+      categoryOrder: DEFAULT_CATEGORIES,
+    });
+  },
+
+  reorderService: async (
+    sourceId: string,
+    targetId: string,
+    position: 'before' | 'after',
+    targetCategory?: AWSCategory
+  ) => {
+    const currentServices = [...get().services];
+    const sourceIndex = currentServices.findIndex((s) => s.id === sourceId);
+    if (sourceIndex === -1) return;
+
+    const sourceService = { ...currentServices[sourceIndex] };
+    const targetIndex = currentServices.findIndex((s) => s.id === targetId);
+    if (targetIndex === -1) return;
+
+    const targetService = currentServices[targetIndex];
+    const effectiveCategory = targetCategory || targetService.category;
+
+    // Remove source service
+    currentServices.splice(sourceIndex, 1);
+
+    // Update category if changed
+    sourceService.category = effectiveCategory;
+    sourceService.updatedAt = Date.now();
+
+    // Re-find target index after removal
+    const newTargetIndex = currentServices.findIndex((s) => s.id === targetId);
+    const insertIndex = position === 'before' ? newTargetIndex : newTargetIndex + 1;
+
+    currentServices.splice(insertIndex, 0, sourceService);
+
+    // Re-assign order indices
+    const updatedServices = currentServices.map((svc, idx) => ({
+      ...svc,
+      order: idx,
+    }));
+
+    set({ services: updatedServices });
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(
+          'aws-compass-service-order',
+          JSON.stringify(updatedServices.map((s) => ({ id: s.id, cat: s.category })))
+        );
+      } catch {}
+    }
+
+    try {
+      await db.services.update(sourceService.id, {
+        category: effectiveCategory,
+        order: insertIndex,
+        updatedAt: Date.now(),
+      });
+      await Promise.all(
+        updatedServices.map((s) =>
+          db.services.update(s.id, { order: s.order, category: s.category })
+        )
+      );
+    } catch (err) {
+      console.warn('Failed to persist reordered services to Dexie:', err);
+    }
+  },
+
+  moveServiceToCategory: async (
+    serviceId: string,
+    targetCategory: AWSCategory,
+    insertAt: 'start' | 'end' = 'start'
+  ) => {
+    const currentServices = [...get().services];
+    const sourceIndex = currentServices.findIndex((s) => s.id === serviceId);
+    if (sourceIndex === -1) return;
+
+    const sourceService = { ...currentServices[sourceIndex] };
+    currentServices.splice(sourceIndex, 1);
+
+    sourceService.category = targetCategory;
+    sourceService.updatedAt = Date.now();
+
+    const categoryIndices: number[] = [];
+    currentServices.forEach((s, idx) => {
+      if (s.category === targetCategory) categoryIndices.push(idx);
+    });
+
+    let insertIndex = currentServices.length;
+    if (categoryIndices.length > 0) {
+      if (insertAt === 'start') {
+        insertIndex = categoryIndices[0];
+      } else {
+        insertIndex = categoryIndices[categoryIndices.length - 1] + 1;
+      }
+    }
+
+    currentServices.splice(insertIndex, 0, sourceService);
+
+    const updatedServices = currentServices.map((svc, idx) => ({
+      ...svc,
+      order: idx,
+    }));
+
+    set({ services: updatedServices });
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(
+          'aws-compass-service-order',
+          JSON.stringify(updatedServices.map((s) => ({ id: s.id, cat: s.category })))
+        );
+      } catch {}
+    }
+
+    try {
+      await db.services.update(sourceService.id, {
+        category: targetCategory,
+        order: insertIndex,
+        updatedAt: Date.now(),
+      });
+      await Promise.all(
+        updatedServices.map((s) =>
+          db.services.update(s.id, { order: s.order, category: s.category })
+        )
+      );
+    } catch (err) {
+      console.warn('Failed to persist category move to Dexie:', err);
+    }
+  },
+
+  reorderCategories: (
+    sourceCat: AWSCategory,
+    targetCat: AWSCategory,
+    position: 'before' | 'after'
+  ) => {
+    const order = [...get().categoryOrder];
+    const sourceIdx = order.indexOf(sourceCat);
+    const targetIdx = order.indexOf(targetCat);
+    if (sourceIdx === -1 || targetIdx === -1 || sourceIdx === targetIdx) return;
+
+    order.splice(sourceIdx, 1);
+    const newTargetIdx = order.indexOf(targetCat);
+    const insertIdx = position === 'before' ? newTargetIdx : newTargetIdx + 1;
+    order.splice(insertIdx, 0, sourceCat);
+
+    set({ categoryOrder: order });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('aws-compass-category-order', JSON.stringify(order));
+      } catch {}
+    }
   },
 
   refreshServices: async () => {

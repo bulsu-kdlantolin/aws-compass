@@ -417,7 +417,7 @@ const ArchitectureCanvasInner: React.FC = () => {
                   backgroundColor: '#FF9900',
                   color: '#0F141A',
                 }}
-                className={`h-8 px-3 rounded-[4px] font-bold text-[13px] flex items-center gap-1.5 hover:bg-[#EC7211] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer shadow-xs border ${
+                className={`h-8 px-3 rounded-[6px] font-bold text-[13px] flex items-center gap-1.5 hover:bg-[#EC7211] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer shadow-xs border ${
                   isAddOpen ? 'border-[#0972D3] dark:border-[#539FE5]' : 'border-transparent'
                 }`}
               >
@@ -440,7 +440,7 @@ const ArchitectureCanvasInner: React.FC = () => {
                 isOpen={isAddOpen}
                 onClose={() => closePopover('canvas-add-service')}
                 triggerRef={addTriggerRef}
-                className="top-9 left-0 w-64 p-2 space-y-2"
+                className="top-9.5 left-0 w-64 space-y-1.5"
               >
                 <CloudscapeSearchInput
                   value={serviceSearch}
@@ -456,7 +456,7 @@ const ArchitectureCanvasInner: React.FC = () => {
                       key={svc.id}
                       type="button"
                       onClick={() => handleQuickAddService(svc)}
-                      className="w-full text-left px-3 py-2 rounded-[4px] text-[12px] text-[var(--aws-text-primary)] hover:bg-[#F2F3F3] dark:hover:bg-[#232F3E] transition-colors duration-100 flex items-center justify-between cursor-pointer"
+                      className="w-full text-left px-2.5 py-1.5 rounded-[6px] text-[12px] text-[var(--aws-text-primary)] hover:bg-[#F2F3F3] dark:hover:bg-[#232F3E] transition-colors duration-100 flex items-center justify-between cursor-pointer"
                     >
                       <span className="truncate font-medium">{svc.name}</span>
                       <span className="font-mono text-[10px] text-[var(--aws-text-muted)] ml-2 shrink-0">
@@ -474,20 +474,17 @@ const ArchitectureCanvasInner: React.FC = () => {
                 ref={boundaryTriggerRef}
                 type="button"
                 onClick={() => togglePopover('canvas-boundary')}
-                style={{
-                  backgroundColor: 'var(--aws-card-bg)',
-                  color: 'var(--aws-text-primary)',
-                }}
-                className={`h-8 px-3 rounded-[4px] border text-[13px] font-medium flex items-center gap-1.5 enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer ${
+                data-open={isBoundaryOpen ? 'true' : 'false'}
+                className={`h-8 px-3 rounded-[6px] border text-[12px] font-medium flex items-center gap-1.5 enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer bg-white dark:bg-[#192534] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2D40] text-[#16191F] dark:text-[#EAEDED] shadow-xs ${
                   isBoundaryOpen
-                    ? 'border-[#0972D3] dark:border-[#539FE5]'
-                    : 'border-[var(--aws-input-border)] hover:border-[var(--aws-interactive)]'
+                    ? 'border-[#0972D3] dark:border-[#539FE5] ring-1 ring-[#0972D3]/20 dark:ring-[#539FE5]/20'
+                    : 'border-[#D5DBDB] dark:border-[#354150] hover:border-[#0972D3] dark:hover:border-[#539FE5]'
                 }`}
               >
                 <BoxSelect className="w-4 h-4 text-[#8C4FFF]" />
                 <span className="hidden sm:inline">Boundary</span>
                 <ChevronDown
-                  className="w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  className="w-3.5 h-3.5 text-[#545B64] dark:text-[#879596] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
                   style={{ transform: isBoundaryOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
                 />
               </button>
@@ -496,9 +493,9 @@ const ArchitectureCanvasInner: React.FC = () => {
                 isOpen={isBoundaryOpen}
                 onClose={() => closePopover('canvas-boundary')}
                 triggerRef={boundaryTriggerRef}
-                className="top-9 left-0 w-64 p-1.5 space-y-1"
+                className="top-9.5 left-0 w-64 space-y-0.5"
               >
-                <div className="px-3 py-1.5 text-[11px] font-bold text-[var(--aws-text-muted)] border-b border-[var(--aws-border)] mb-1">
+                <div className="px-2.5 py-1 text-[11px] font-bold text-[#545B64] dark:text-[#879596] border-b border-[#D5DBDB] dark:border-[#354150] mb-1">
                   Add group boundary
                 </div>
                 {[
@@ -514,10 +511,10 @@ const ArchitectureCanvasInner: React.FC = () => {
                     key={b.id}
                     type="button"
                     onClick={() => handleAddBoundary(b.id as GroupBoundaryType, b.label)}
-                    className="w-full text-left px-3 py-2 rounded-[4px] text-[12px] text-[var(--aws-text-primary)] hover:bg-[#F2F3F3] dark:hover:bg-[#232F3E] transition-colors duration-100 flex items-center justify-between gap-4 cursor-pointer"
+                    className="w-full text-left px-2.5 py-1.5 rounded-[6px] text-[12px] text-[#16191F] dark:text-[#EAEDED] hover:bg-[#F2F3F3] dark:hover:bg-[#232F3E] transition-colors duration-100 flex items-center justify-between gap-4 cursor-pointer"
                   >
                     <span className="font-medium">{b.label}</span>
-                    <span className="text-[10px] text-[var(--aws-text-muted)] shrink-0">{b.desc}</span>
+                    <span className="text-[10px] text-[#545B64] dark:text-[#879596] shrink-0">{b.desc}</span>
                   </button>
                 ))}
               </AnimatedPopover>
@@ -530,27 +527,24 @@ const ArchitectureCanvasInner: React.FC = () => {
                 type="button"
                 onClick={() => togglePopover('canvas-snapshots')}
                 aria-disabled={isSavingSnapshot ? 'true' : undefined}
-                style={{
-                  backgroundColor: 'var(--aws-card-bg)',
-                  color: 'var(--aws-text-primary)',
-                }}
-                className={`h-8 px-3 rounded-[4px] border text-[13px] font-medium flex items-center gap-1.5 enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer ${
+                data-open={isSnapshotOpen ? 'true' : 'false'}
+                className={`h-8 px-3 rounded-[6px] border text-[12px] font-medium flex items-center gap-1.5 enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer bg-white dark:bg-[#192534] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2D40] text-[#16191F] dark:text-[#EAEDED] shadow-xs ${
                   isSnapshotOpen
-                    ? 'border-[#0972D3] dark:border-[#539FE5]'
-                    : 'border-[var(--aws-input-border)] hover:border-[var(--aws-interactive)]'
+                    ? 'border-[#0972D3] dark:border-[#539FE5] ring-1 ring-[#0972D3]/20 dark:ring-[#539FE5]/20'
+                    : 'border-[#D5DBDB] dark:border-[#354150] hover:border-[#0972D3] dark:hover:border-[#539FE5]'
                 }`}
               >
                 <AnimatedIcon
                   activeKey={isSavingSnapshot ? 'loading' : 'idle'}
-                  size={16}
-                  className="w-4 h-4 text-[#1D8102]"
+                  size={15}
+                  className="w-3.5 h-3.5 text-[#1D8102]"
                 >
-                  <Save key="idle" className="w-4 h-4 text-[#1D8102]" />
-                  <Arc key="loading" size={14} easing="stacked" cap="round" color="#1D8102" />
+                  <Save key="idle" className="w-3.5 h-3.5 text-[#1D8102]" />
+                  <Arc key="loading" size={13} easing="stacked" cap="round" color="#1D8102" />
                 </AnimatedIcon>
                 <span className="hidden md:inline">Snapshots</span>
                 <ChevronDown
-                  className="w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  className="w-3.5 h-3.5 text-[#545B64] dark:text-[#879596] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
                   style={{ transform: isSnapshotOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
                 />
               </button>
@@ -560,9 +554,9 @@ const ArchitectureCanvasInner: React.FC = () => {
                 onClose={() => closePopover('canvas-snapshots')}
                 triggerRef={snapshotTriggerRef}
                 align="right"
-                className="top-9 right-0 w-72 p-3 space-y-3"
+                className="top-9.5 right-0 w-72 p-2 space-y-2.5"
               >
-                <div className="flex items-center justify-between border-b border-[var(--aws-border)] pb-2">
+                <div className="flex items-center justify-between border-b border-[var(--aws-border)] pb-1.5">
                   <span className="text-[12px] font-bold text-[var(--aws-text-primary)]">
                     Diagram snapshots
                   </span>
@@ -584,7 +578,7 @@ const ArchitectureCanvasInner: React.FC = () => {
                       borderColor: 'var(--aws-input-border)',
                       color: 'var(--aws-text-primary)',
                     }}
-                    className="flex-1 h-7 px-2.5 rounded-[4px] border text-[12px] outline-none caret-[var(--aws-interactive)] transition-[border-color,box-shadow] duration-150 ease-out focus:border-[var(--aws-interactive)] focus:ring-2 focus:ring-[var(--aws-interactive)]/40"
+                    className="flex-1 h-7 px-2.5 rounded-[6px] border text-[12px] outline-none caret-[var(--aws-interactive)] transition-[border-color,box-shadow] duration-150 ease-out focus:border-[var(--aws-interactive)] focus:ring-2 focus:ring-[var(--aws-interactive)]/40"
                   />
                   <button
                     type="submit"
@@ -594,7 +588,7 @@ const ArchitectureCanvasInner: React.FC = () => {
                       backgroundColor: 'var(--aws-interactive)',
                       color: '#FFFFFF',
                     }}
-                    className="h-7 px-2.5 rounded-[4px] text-[12px] font-medium cursor-pointer enabled:active:scale-[0.97] transition-[background-color,transform] duration-150 ease-out flex items-center gap-1.5"
+                    className="h-7 px-2.5 rounded-[6px] text-[12px] font-medium cursor-pointer enabled:active:scale-[0.97] transition-[background-color,transform] duration-150 ease-out flex items-center gap-1.5"
                   >
                     <AnimatedIcon
                       activeKey={isSavingSnapshot ? 'loading' : 'idle'}
@@ -625,7 +619,7 @@ const ArchitectureCanvasInner: React.FC = () => {
                             backgroundColor: 'var(--aws-page-bg)',
                             borderColor: 'var(--aws-border)',
                           }}
-                          className="flex items-center justify-between p-1.5 rounded-[4px] border text-[12px] group"
+                          className="flex items-center justify-between p-1.5 rounded-[6px] border text-[12px] group"
                         >
                           <button
                             type="button"
@@ -742,26 +736,23 @@ const ArchitectureCanvasInner: React.FC = () => {
                 type="button"
                 onClick={() => togglePopover('canvas-export')}
                 aria-disabled={isExporting ? 'true' : undefined}
-                style={{
-                  backgroundColor: 'var(--aws-card-bg)',
-                  color: 'var(--aws-text-primary)',
-                }}
-                className={`h-8 px-2.5 rounded-[4px] border text-[13px] font-medium flex items-center gap-1.5 enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer ${
+                data-open={isExportOpen ? 'true' : 'false'}
+                className={`h-8 px-3 rounded-[6px] border text-[12px] font-medium flex items-center gap-1.5 enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer bg-white dark:bg-[#192534] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2D40] text-[#16191F] dark:text-[#EAEDED] shadow-xs ${
                   isExportOpen
-                    ? 'border-[#0972D3] dark:border-[#539FE5]'
-                    : 'border-[var(--aws-input-border)] hover:border-[var(--aws-interactive)]'
+                    ? 'border-[#0972D3] dark:border-[#539FE5] ring-1 ring-[#0972D3]/20 dark:ring-[#539FE5]/20'
+                    : 'border-[#D5DBDB] dark:border-[#354150] hover:border-[#0972D3] dark:hover:border-[#539FE5]'
                 }`}
                 title="Export diagram"
               >
                 <AnimatedIcon
                   activeKey={isExporting ? 'loading' : 'idle'}
-                  size={16}
-                  className="w-4 h-4"
+                  size={15}
+                  className="w-3.5 h-3.5"
                 >
-                  <Download key="idle" className="w-4 h-4" />
+                  <Download key="idle" className="w-3.5 h-3.5" />
                   <Arc
                     key="loading"
-                    size={14}
+                    size={13}
                     easing="stacked"
                     cap="round"
                     color={theme === 'dark' ? '#539FE5' : '#0972D3'}
@@ -769,7 +760,7 @@ const ArchitectureCanvasInner: React.FC = () => {
                 </AnimatedIcon>
                 <span className="hidden md:inline">Export</span>
                 <ChevronDown
-                  className="w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  className="w-3.5 h-3.5 text-[#545B64] dark:text-[#879596] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
                   style={{ transform: isExportOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
                 />
               </button>
@@ -779,13 +770,13 @@ const ArchitectureCanvasInner: React.FC = () => {
                 onClose={() => closePopover('canvas-export')}
                 triggerRef={exportTriggerRef}
                 align="right"
-                className="top-9 right-0 w-56 p-1.5 space-y-1"
+                className="top-9.5 right-0 w-56 space-y-0.5"
               >
                 <button
                   type="button"
                   onClick={handleExportJson}
                   aria-disabled={isExporting ? 'true' : undefined}
-                  className="w-full text-left px-3 py-2 rounded-[4px] text-[12px] text-[var(--aws-text-primary)] hover:bg-[#F2F3F3] dark:hover:bg-[#232F3E] transition-colors duration-100 flex items-center justify-between cursor-pointer"
+                  className="w-full text-left px-2.5 py-1.5 rounded-[6px] text-[12px] text-[#16191F] dark:text-[#EAEDED] hover:bg-[#F2F3F3] dark:hover:bg-[#232F3E] transition-colors duration-100 flex items-center justify-between cursor-pointer"
                 >
                   <span className="font-medium">Export JSON spec</span>
                   <AnimatedIcon
@@ -863,6 +854,8 @@ const ArchitectureCanvasInner: React.FC = () => {
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
               defaultEdgeOptions={defaultEdgeOptions}

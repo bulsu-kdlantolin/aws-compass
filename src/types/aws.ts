@@ -36,6 +36,7 @@ export interface AWSService {
   color?: string;
   arnExample?: string;
   docsUrl?: string;
+  order?: number;
   updatedAt: number;
 }
 

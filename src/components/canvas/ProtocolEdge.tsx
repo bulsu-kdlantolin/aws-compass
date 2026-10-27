@@ -209,14 +209,9 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
             <div
               data-state={isDropdownOpen ? 'open' : 'closed'}
               style={{
-                backgroundColor: 'var(--aws-drawer-bg)',
-                borderColor: 'var(--aws-border)',
-                color: 'var(--aws-text-primary)',
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
-                zIndex: 1000,
                 overscrollBehavior: 'contain',
               }}
-              className={`absolute top-7 left-1/2 -translate-x-1/2 min-w-[240px] rounded-[4px] border p-1 z-[1000] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] origin-top ${
+              className={`absolute top-7 left-1/2 -translate-x-1/2 min-w-[240px] rounded-[12px] p-1.5 border z-[1000] bg-white dark:bg-[#192534] border-[#D5DBDB] dark:border-[#354150] shadow-[0px_2px_6px_rgba(0,0,0,0.04),0px_8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_10px_30px_-5px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] origin-top ${
                 isDropdownOpen
                   ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
                   : 'opacity-0 scale-[0.96] -translate-y-1.5 pointer-events-none'
@@ -227,7 +222,7 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
                   borderColor: 'var(--aws-border)',
                   color: 'var(--aws-text-muted)',
                 }}
-                className="px-3 py-1.5 text-[11px] font-mono border-b mb-1 flex items-center justify-between"
+                className="px-2.5 py-1 text-[11px] font-mono border-b mb-1 flex items-center justify-between"
               >
                 <span className="font-semibold">Select protocol</span>
               </div>
@@ -240,7 +235,7 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
                       key={p}
                       type="button"
                       onClick={() => handleProtocolSelect(p)}
-                      className={`w-full text-left px-3 py-2 rounded-[4px] text-[11px] font-mono flex items-center justify-between gap-4 transition-colors duration-100 cursor-pointer ${
+                      className={`w-full text-left px-2.5 py-1.5 rounded-[6px] text-[11px] font-mono flex items-center justify-between gap-4 transition-colors duration-100 cursor-pointer ${
                         isCurrent
                           ? 'bg-[#0972D3]/10 dark:bg-[#539FE5]/15 text-[#0972D3] dark:text-[#539FE5] font-semibold'
                           : 'text-[var(--aws-text-primary)] hover:bg-[#F2F3F3] dark:hover:bg-[#232F3E]'

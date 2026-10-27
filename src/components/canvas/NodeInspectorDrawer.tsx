@@ -21,6 +21,7 @@ import { CloudscapeStatusIndicator } from '../ui/CloudscapeStatusIndicator';
 import { CloudscapeCodeBlock } from '../ui/CloudscapeCodeBlock';
 import { CloudscapeTextarea } from '../ui/CloudscapeTextarea';
 import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
+import { getVerifiedAWSDocsUrl } from '../../utils/awsDocs';
 
 const NodeNotesEditor: React.FC<{
   initialNotes: string;
@@ -265,9 +266,9 @@ export const NodeInspectorDrawer: React.FC = () => {
                 </div>
                 <div
                   style={{
-                    backgroundColor: '#0F141A',
+                    backgroundColor: 'var(--aws-page-bg)',
                     borderColor: 'var(--aws-border)',
-                    color: '#EAEDED',
+                    color: 'var(--aws-text-primary)',
                   }}
                   className="font-mono text-[11px] p-2.5 rounded-[4px] border break-all select-all"
                 >
@@ -439,22 +440,68 @@ export const NodeInspectorDrawer: React.FC = () => {
                 <span>Open in Concept Vault dossier</span>
               </button>
 
-              {service?.docsUrl && (
-                <a
-                  href={service.docsUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    backgroundColor: 'var(--aws-card-bg)',
-                    borderColor: 'var(--aws-border)',
-                    color: 'var(--aws-text-primary)',
-                  }}
-                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-[4px] border text-[12px] hover:border-[var(--aws-interactive)] transition-colors"
-                >
-                  <span>Official AWS reference documentation</span>
-                  <ExternalLink className="w-3.5 h-3.5 text-[var(--aws-text-muted)]" />
-                </a>
-              )}
+              {(() => {
+                const docsUrl = getVerifiedAWSDocsUrl(service?.id, service?.docsUrl);
+                if (!docsUrl) return null;
+                return (
+                  <a
+                    href={docsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      backgroundColor: 'var(--aws-card-bg)',
+                      borderColor: 'var(--aws-border)',
+                      color: 'var(--aws-text-primary)',
+                    }}
+                    className="group w-full flex items-center justify-center gap-2 px-3 py-2 rounded-[6px] border text-[12px] font-medium hover:border-[#FF9900] hover:text-[#FF9900] active:scale-[0.98] transition-all duration-150 cursor-pointer shadow-2xs select-none"
+                    title="Open official AWS reference documentation"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="shrink-0 text-[#FF9900]"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M14 2V8H20"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M16 13H8"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M16 17H8"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <span>Official AWS reference documentation</span>
+                    <ExternalLink
+                      className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[#FF9900] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-150"
+                      strokeWidth={1.75}
+                    />
+                  </a>
+                );
+              })()}
             </div>
           </div>
         ) : (

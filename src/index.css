@@ -1,7 +1,11 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
-  :root {
+  :root,
+  [data-theme="dark"],
+  .dark {
     /* Fonts */
     --font-sans: "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
     --font-mono: "Amazon Ember Mono", "JetBrains Mono", Consolas, monospace;
@@ -54,6 +58,7 @@
   }
 
   [data-theme="light"],
+  .light,
   .aws-theme-light {
     /* AWS Cloudscape Design System — Light Mode */
     --aws-header-bg: #232F3E; /* Top Global Header is always dark */
@@ -324,6 +329,72 @@
   color: #EAEDED;
   font-size: 12px;
   line-height: 18px;
+}
+
+.vault-prose a {
+  color: var(--aws-interactive);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+.vault-prose a:hover {
+  color: var(--aws-interactive-hover);
+}
+
+.vault-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 13px;
+  line-height: 18px;
+  border: 1px solid var(--aws-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.vault-prose th {
+  background-color: var(--aws-page-bg);
+  color: var(--aws-text-muted);
+  font-weight: 600;
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--aws-border);
+  border-right: 1px solid var(--aws-border);
+}
+
+.vault-prose td {
+  padding: 8px 12px;
+  color: var(--aws-text-primary);
+  border-bottom: 1px solid var(--aws-border);
+  border-right: 1px solid var(--aws-border);
+}
+
+.vault-prose tr:last-child td {
+  border-bottom: none;
+}
+
+.vault-prose th:last-child,
+.vault-prose td:last-child {
+  border-right: none;
+}
+
+.vault-prose tr:hover td {
+  background-color: var(--aws-page-bg);
+}
+
+.vault-prose hr {
+  border: none;
+  border-top: 1px solid var(--aws-border);
+  margin: 20px 0;
+}
+
+.vault-prose ol {
+  list-style-type: decimal;
+  padding-left: 20px;
+  margin-bottom: 12px;
+  color: var(--aws-text-primary);
+  font-size: 14px;
 }
 
 /* Cloudscape Skeleton Shimmer Loader with Reduced-Motion Fallback */
