@@ -1,11 +1,86 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:is(.dark, .dark *));
+
+/* ==========================================================================
+   Official Amazon AWS Font Family: Amazon Ember & Amazon Ember Mono
+   ========================================================================== */
+@font-face {
+  font-family: 'Amazon Ember';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/fonts/AmazonEmber-Light.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Amazon Ember';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/AmazonEmber-Regular.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Amazon Ember';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/AmazonEmber-Italic.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Amazon Ember';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/AmazonEmber-Medium.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Amazon Ember';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/AmazonEmber-Bold.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Amazon Ember';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/AmazonEmber-BoldItalic.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Amazon Ember Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/AmazonEmberMono-Regular.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Amazon Ember Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/AmazonEmberMono-Bold.woff') format('woff');
+}
+
+@theme {
+  --font-sans: "Amazon Ember", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Amazon Ember Mono", "JetBrains Mono", Consolas, monospace;
+}
 
 @layer base {
   :root,
-  [data-theme="dark"],
-  .dark {
+  :root[data-theme="dark"],
+  :root.dark,
+  html[data-theme="dark"],
+  html.dark,
+  body.dark {
     /* Fonts */
     --font-sans: "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
     --font-mono: "Amazon Ember Mono", "JetBrains Mono", Consolas, monospace;
@@ -16,6 +91,8 @@
     --aws-card-bg: #161E2D;
     --aws-sidebar-bg: #161E2D;
     --aws-drawer-bg: #192534;
+    --aws-popover-bg: #192534;
+    --aws-popover-hover: #232F3E;
     --aws-border: #354150;
     --aws-border-subtle: #242f3d;
     --aws-input-border: #545B64;
@@ -57,8 +134,11 @@
     color-scheme: dark;
   }
 
-  [data-theme="light"],
-  .light,
+  :root[data-theme="light"],
+  :root.light,
+  html[data-theme="light"],
+  html.light,
+  body.light,
   .aws-theme-light {
     /* AWS Cloudscape Design System — Light Mode */
     --aws-header-bg: #232F3E; /* Top Global Header is always dark */
@@ -66,6 +146,8 @@
     --aws-card-bg: #FFFFFF;
     --aws-sidebar-bg: #FFFFFF;
     --aws-drawer-bg: #FFFFFF;
+    --aws-popover-bg: #FFFFFF;
+    --aws-popover-hover: #F2F3F3;
     --aws-border: #D5DBDB;
     --aws-border-subtle: #E9EBED;
     --aws-input-border: #7D8998;
@@ -107,12 +189,19 @@
     color-scheme: light;
   }
 
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
   html, body, #root {
     height: 100%;
     width: 100%;
     margin: 0;
     padding: 0;
     overflow: hidden;
+    font-family: var(--font-sans);
   }
 
   body {
@@ -126,8 +215,29 @@
     transition: background-color 0.15s ease, color 0.15s ease;
   }
 
+  /* Form elements universal font inheritance */
+  button,
+  input,
+  optgroup,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+
+  /* React Flow canvas text color & font inheritance */
+  .react-flow,
+  .react-flow__renderer,
+  .react-flow__pane,
+  .react-flow__node,
+  .react-flow__edge,
+  .react-flow__edge-text,
+  .react-flow__controls {
+    font-family: var(--font-sans);
+    color: var(--aws-text-primary);
+  }
+
   /* Monospace typography */
-  code, kbd, samp, pre {
+  code, kbd, samp, pre, .font-mono {
     font-family: var(--font-mono);
   }
 }

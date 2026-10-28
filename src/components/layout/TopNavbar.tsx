@@ -2,8 +2,6 @@ import React, { useRef, useState } from 'react';
 import {
   BookOpen,
   LayoutGrid,
-  PanelLeftClose,
-  PanelLeftOpen,
   RotateCcw,
   Download,
   Upload,
@@ -15,7 +13,7 @@ import {
 import { useCompassStore } from '../../store/useCompassStore';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { exportFullDatabase, importFullDatabase } from '../../db/compassDb';
-import { AWSCompassLogo } from '../icons/AWSCompassLogo';
+import { AWSCompassLogo } from '../ui/AWSCompassLogo';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { Arc } from '../ui/LoadingIndicators';
 
@@ -32,8 +30,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenCommandPalette }) =>
   const {
     workspaceMode,
     setWorkspaceMode,
-    isSidebarOpen,
-    toggleSidebar,
     services,
     resetToDefaults,
     refreshServices,
@@ -122,30 +118,18 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenCommandPalette }) =>
 
       {/* ZONE 1 (Left Zone): Brand & Flush Full-Height Workspace Tabs */}
       <div className="flex items-center h-full gap-2">
-        {/* Sidebar Toggle: Borderless ghost icon button */}
+        {/* Brand Identity Lockup */}
         <button
           type="button"
-          onClick={toggleSidebar}
-          className="size-8 rounded-[6px] flex items-center justify-center text-[#879596] hover:text-[#EAEDED] hover:bg-white/5 enabled:active:scale-[0.96] transition-[background-color,color,transform] duration-150 ease-out cursor-pointer"
-          title={isSidebarOpen ? 'Hide service catalog' : 'Show service catalog'}
-          aria-label={isSidebarOpen ? 'Hide service catalog' : 'Show service catalog'}
+          onClick={() => setWorkspaceMode('vault')}
+          className="group flex items-center gap-2.5 pl-0.5 pr-2 py-1 rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#539FE5] cursor-pointer select-none transition-opacity hover:opacity-95 text-left"
+          title="AWS Compass"
         >
-          {isSidebarOpen ? (
-            <PanelLeftClose className="w-4 h-4" strokeWidth={1.75} />
-          ) : (
-            <PanelLeftOpen className="w-4 h-4" strokeWidth={1.75} />
-          )}
+          <AWSCompassLogo size={28} />
+          <span className="font-sans font-bold text-[14px] text-white tracking-[-0.01em]">
+            AWS Compass
+          </span>
         </button>
-
-        {/* Brand Identity */}
-        <div className="flex items-center gap-2 pl-0.5 pr-2">
-          <AWSCompassLogo size={24} />
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-bold text-[14px] leading-none text-white tracking-tight">
-              AWS Compass
-            </span>
-          </div>
-        </div>
 
         {/* 1px Vertical Divider */}
         <div className="h-5 w-px bg-[#354150] shrink-0" aria-hidden="true" />
@@ -192,21 +176,18 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenCommandPalette }) =>
         </nav>
       </div>
 
-      {/* ZONE 2 (Center Zone): Recessed Command Palette Trigger (Ctrl+K) */}
+      {/* ZONE 2 (Center Zone): Recessed Command Palette Trigger */}
       <div className="flex-1 max-w-sm mx-4 hidden md:flex justify-center">
         <button
           type="button"
           onClick={onOpenCommandPalette}
-          className="h-8 w-80 rounded-[6px] bg-[#090D12]/80 border border-[#354150] hover:border-[#545B64] px-3 flex items-center justify-between text-[13px] text-[#879596] hover:text-[#EAEDED] transition-colors cursor-pointer group"
-          title="Open command palette (Ctrl+K)"
+          className="h-8 w-80 rounded-[6px] bg-[#090D12]/80 border border-[#354150] hover:border-[#545B64] px-3 flex items-center text-[13px] text-[#879596] hover:text-[#EAEDED] transition-colors cursor-pointer group"
+          title="Open search (Ctrl+K)"
         >
           <div className="flex items-center gap-2 min-w-0">
             <Search className="w-3.5 h-3.5 text-[#879596] group-hover:text-[#EAEDED] shrink-0" strokeWidth={1.75} />
             <span className="truncate">Search services, CLI, blueprints...</span>
           </div>
-          <kbd className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-[#879596] bg-[#161E2D] border border-[#354150] rounded-[3px] shrink-0">
-            Ctrl K
-          </kbd>
         </button>
       </div>
 

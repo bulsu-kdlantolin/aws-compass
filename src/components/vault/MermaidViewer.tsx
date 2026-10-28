@@ -1,6 +1,6 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import mermaid from 'mermaid';
-import { AlertCircle, Maximize2, ZoomIn, ZoomOut } from 'lucide-react';
+import { AlertCircle, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { useCompassStore } from '../../store/useCompassStore';
 import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
 import { Trace } from '../ui/LoadingIndicators';
@@ -18,11 +18,29 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, className =
   const [error, setError] = useState<string | null>(null);
   const [isRendering, setIsRendering] = useState<boolean>(true);
   const [zoom, setZoom] = useState<number>(1);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const theme = useCompassStore((s) => s.theme);
 
-  const handleZoomIn = () => setZoom((z) => Math.min(2.0, Number((z + 0.15).toFixed(2))));
-  const handleZoomOut = () => setZoom((z) => Math.max(0.6, Number((z - 0.15).toFixed(2))));
+  const handleZoomIn = () => setZoom((z) => Math.min(3.0, Number((z + 0.15).toFixed(2))));
+  const handleZoomOut = () => setZoom((z) => Math.max(0.4, Number((z - 0.15).toFixed(2))));
   const handleZoomReset = () => setZoom(1);
+
+  // Close full screen on ESC key and lock body scroll
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isFullscreen]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -150,9 +168,10 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, className =
       {/* Slim Top Header Bar */}
       <div
         style={{
+          backgroundColor: 'var(--aws-card-bg)',
           borderBottomColor: 'var(--aws-border)',
         }}
-        className="px-4 py-2 border-b bg-[#F8F9FA] dark:bg-[#192534] flex items-center justify-between select-none"
+        className="px-4 py-2 border-b flex items-center justify-between select-none"
       >
         <span
           style={{ color: 'var(--aws-text-primary)' }}
@@ -165,7 +184,7 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, className =
           <button
             type="button"
             onClick={handleZoomOut}
-            disabled={zoom <= 0.6}
+            disabled={zoom <= 0.4}
             style={{
               backgroundColor: 'var(--aws-card-bg)',
               borderColor: 'var(--aws-border)',
@@ -180,7 +199,7 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, className =
           <button
             type="button"
             onClick={handleZoomIn}
-            disabled={zoom >= 2.0}
+            disabled={zoom >= 3.0}
             style={{
               backgroundColor: 'var(--aws-card-bg)',
               borderColor: 'var(--aws-border)',
@@ -195,14 +214,29 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, className =
           <button
             type="button"
             onClick={handleZoomReset}
+            disabled={zoom === 1}
             style={{
               backgroundColor: 'var(--aws-card-bg)',
               borderColor: 'var(--aws-border)',
               color: 'var(--aws-text-muted)',
             }}
-            className="p-1 rounded-[4px] border hover:text-[var(--aws-text-primary)] hover:border-[var(--aws-brand)] cursor-pointer transition-colors"
-            title="Fit / Reset zoom (100%)"
-            aria-label="Fit / Reset zoom"
+            className="p-1 rounded-[4px] border hover:text-[var(--aws-text-primary)] hover:border-[var(--aws-brand)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+            title="Reset zoom (100%)"
+            aria-label="Reset zoom"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsFullscreen(true)}
+            style={{
+              backgroundColor: 'var(--aws-card-bg)',
+              borderColor: 'var(--aws-border)',
+              color: 'var(--aws-text-primary)',
+            }}
+            className="p-1 rounded-[4px] border hover:border-[var(--aws-interactive)] hover:text-[var(--aws-interactive)] cursor-pointer transition-colors"
+            title="View full screen / Fit screen"
+            aria-label="View full screen"
           >
             <Maximize2 className="w-3.5 h-3.5" />
           </button>
@@ -259,6 +293,140 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, className =
             className="mermaid-container flex justify-center items-center w-full"
             dangerouslySetInnerHTML={{ __html: svgContent }}
           />
+        </div>
+      )}
+
+      {/* Fullscreen Inspection Lightbox Modal */}
+      {isFullscreen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Architecture flow full screen"
+          className="fixed inset-0 z-[100] flex flex-col bg-[var(--aws-page-bg)] animate-in fade-in duration-150 select-none"
+        >
+          {/* Fullscreen Header Bar */}
+          <div
+            style={{
+              backgroundColor: 'var(--aws-card-bg)',
+              borderBottomColor: 'var(--aws-border)',
+            }}
+            className="h-12 px-4 sm:px-6 border-b flex items-center justify-between shrink-0 shadow-xs"
+          >
+            <div className="flex items-center gap-2.5">
+              <span
+                style={{ color: 'var(--aws-text-primary)' }}
+                className="text-[14px] font-bold"
+              >
+                Architecture flow
+              </span>
+              <span
+                style={{
+                  backgroundColor: 'var(--aws-page-bg)',
+                  borderColor: 'var(--aws-border)',
+                  color: 'var(--aws-text-muted)',
+                }}
+                className="font-mono text-[11px] px-2 py-0.5 rounded-[4px] border hidden sm:inline"
+              >
+                Fullscreen view
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Zoom Controls */}
+              <div className="flex items-center border border-[var(--aws-border)] rounded-[4px] overflow-hidden bg-[var(--aws-card-bg)]">
+                <button
+                  type="button"
+                  onClick={handleZoomOut}
+                  disabled={zoom <= 0.4}
+                  className="p-1.5 hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] text-[var(--aws-text-muted)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  title="Zoom out"
+                  aria-label="Zoom out"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <span className="px-2 text-[12px] font-mono text-[var(--aws-text-muted)] select-none">
+                  {Math.round(zoom * 100)}%
+                </span>
+                <button
+                  type="button"
+                  onClick={handleZoomIn}
+                  disabled={zoom >= 3.0}
+                  className="p-1.5 hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] text-[var(--aws-text-muted)] border-l border-[var(--aws-border)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  title="Zoom in"
+                  aria-label="Zoom in"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleZoomReset}
+                  className="px-2.5 py-1.5 text-[12px] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] text-[var(--aws-text-muted)] border-l border-[var(--aws-border)] cursor-pointer transition-colors flex items-center gap-1 font-medium"
+                  title="Reset zoom to 100%"
+                  aria-label="Reset zoom to 100%"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Reset</span>
+                </button>
+              </div>
+
+              <div
+                style={{ backgroundColor: 'var(--aws-border)' }}
+                className="h-4 w-px mx-1"
+              />
+
+              <CloudscapeCopyButton
+                textToCopy={chart.trim()}
+                label="Copy source"
+                copiedLabel="Copied"
+                ariaLabel="Copy Mermaid source"
+              />
+
+              <div
+                style={{ backgroundColor: 'var(--aws-border)' }}
+                className="h-4 w-px mx-1"
+              />
+
+              {/* Exit Fullscreen button */}
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(false)}
+                style={{
+                  backgroundColor: 'var(--aws-card-bg)',
+                  borderColor: 'var(--aws-border)',
+                  color: 'var(--aws-text-primary)',
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] border text-[12px] font-medium hover:border-[var(--aws-interactive)] hover:text-[var(--aws-interactive)] cursor-pointer transition-colors shadow-2xs"
+                title="Exit full screen (Esc)"
+                aria-label="Exit full screen"
+              >
+                <Minimize2 className="w-3.5 h-3.5" />
+                <span>Exit full screen</span>
+                <kbd
+                  style={{
+                    backgroundColor: 'var(--aws-page-bg)',
+                    borderColor: 'var(--aws-border)',
+                    color: 'var(--aws-text-muted)',
+                  }}
+                  className="text-[10px] font-mono px-1.5 py-0.2 rounded border ml-1 hidden sm:inline"
+                >
+                  ESC
+                </kbd>
+              </button>
+            </div>
+          </div>
+
+          {/* Fullscreen Body Viewport */}
+          <div className="flex-1 overflow-auto custom-scrollbar p-6 sm:p-12 flex items-center justify-center">
+            <div
+              style={{
+                transform: `scale(${zoom})`,
+                transformOrigin: 'center center',
+                transition: 'transform 0.15s ease-out',
+              }}
+              className="mermaid-container flex justify-center items-center w-full max-w-7xl"
+              dangerouslySetInnerHTML={{ __html: svgContent }}
+            />
+          </div>
         </div>
       )}
     </div>

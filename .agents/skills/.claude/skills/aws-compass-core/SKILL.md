@@ -110,4 +110,10 @@ Containers follow official AWS Architecture Deck specifications:
 9. **NO macOS Window Dots on Code Blocks**: Flat `#0F141A` terminal block with top utility bar (`aws-cli`) and functional Copy button.
 10. **Strict ZERO-EMOJI Policy**: Zero emojis anywhere in UI, empty states, or markdown dossiers.
 11. **NO Pill-Box Segmented Tabs**: Flush structural underline tabs with 3px active bottom indicator bar.
-12. **NO Native Unstyled Select Dropdowns**: Animated accessible listbox select (`CloudscapeSelect.tsx`).
+12. **NO Native Unstyled Select Dropdowns**: Animated accessible listbox select (`CloudscapeSelect.tsx`).
+
+### 7.5. Official AWS Compass Brand Identity Components
+- **`<AWSCompassLogo size={28} variant="tile" | "mark" />`**: Official brand identity component located at `src/components/ui/AWSCompassLogo.tsx`.
+  - **Tile Variant (`variant="tile"`, Navbar default)**: Authentic circular navigational compass (`r="11"` casing). Solid `#FF9900` surface with `0.8px` subtle inner border (`rgba(255,255,255,0.25)`), precision concentric inner dial ring (`r="9.5"`), azimuth graduation track (`r="7.75"`), 8 cardinal and ordinal tick marks (N, NE, E, SE, S, SW, W, NW), and 45° tilted faceted dual-tone needle (`#0F141A` North-East pointer pointing at NE tick, `#FFFFFF` South-West tail, `#FF9900` center pivot pin with inner pin).
+  - **Mark Variant (`variant="mark"` / `<AWSCompassLogoMark />`)**: Standalone circular navigational compass glyph for Command Palette, empty states, and loading indicators. Adapts dynamically to surfaces with `var(--aws-interactive)` (`#0972D3` light / `#539FE5` dark) circular bezel, concentric dial rings, and 8 ticks, `#FF9900` North-East needle, and `currentColor` South-West tail.
+  - **Motion & Hover Physics (`better-ui`)**: When inside a `.group` container (`@media (hover: hover)` and `prefers-reduced-motion: no-preference`), smoothly rotates the needle by `12deg` using `transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)]` with explicit SVG pivot `transformOrigin: '12px 12px'`.

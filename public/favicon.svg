@@ -1,74 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <!-- Background Gradient: Rich AWS Dark Navy -->
-    <linearGradient id="favBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stopColor="#1B2533" />
-      <stop offset="100%" stopColor="#0B1118" />
-    </linearGradient>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <style>
+    /* Default: Dark Browser Tab Bar (prefers-color-scheme: dark) */
+    .fav-tile { fill: #FF9900; }
+    .fav-dial { stroke: #0F141A; stroke-width: 1.2; fill: none; opacity: 0.75; }
+    .fav-track { stroke: #0F141A; stroke-width: 0.75; stroke-dasharray: 1.2 1.5; fill: none; opacity: 0.4; }
+    .fav-tick { stroke: #0F141A; stroke-width: 1.8; stroke-linecap: round; }
+    .fav-tick-sub { stroke: #0F141A; stroke-width: 1.2; stroke-linecap: round; opacity: 0.65; }
+    .fav-pointer { fill: #0F141A; }
+    .fav-tail { fill: #FFFFFF; }
+    .fav-pin { fill: #FF9900; stroke: #0F141A; stroke-width: 0.8; }
 
-    <!-- North Needle (AWS Orange 3D Facets) -->
-    <linearGradient id="favNorthL" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stopColor="#FF9900" />
-      <stop offset="100%" stopColor="#FFBA49" />
-    </linearGradient>
-    <linearGradient id="favNorthD" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stopColor="#EC7211" />
-      <stop offset="100%" stopColor="#D45B07" />
-    </linearGradient>
+    /* Light Browser Tab Bar (prefers-color-scheme: light) */
+    @media (prefers-color-scheme: light) {
+      .fav-tile { fill: #232F3E; }
+      .fav-dial { stroke: #FFFFFF; stroke-width: 1.2; fill: none; opacity: 0.75; }
+      .fav-track { stroke: #FFFFFF; stroke-width: 0.75; stroke-dasharray: 1.2 1.5; fill: none; opacity: 0.4; }
+      .fav-tick { stroke: #FFFFFF; stroke-width: 1.8; stroke-linecap: round; }
+      .fav-tick-sub { stroke: #FFFFFF; stroke-width: 1.2; stroke-linecap: round; opacity: 0.65; }
+      .fav-pointer { fill: #FF9900; }
+      .fav-tail { fill: #FFFFFF; }
+      .fav-pin { fill: #232F3E; stroke: #FF9900; stroke-width: 0.8; }
+    }
+  </style>
 
-    <!-- South Needle (Cloudscape Blue 3D Facets) -->
-    <linearGradient id="favSouthL" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stopColor="#539FE5" />
-      <stop offset="100%" stopColor="#2E80D2" />
-    </linearGradient>
-    <linearGradient id="favSouthD" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stopColor="#0972D3" />
-      <stop offset="100%" stopColor="#065299" />
-    </linearGradient>
+  <!-- Outer Circular Bezel / Compass Body -->
+  <circle class="fav-tile" cx="16" cy="16" r="15" />
 
-    <!-- AWS Smile Accent -->
-    <linearGradient id="favSmile" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stopColor="#FF9900" />
-      <stop offset="100%" stopColor="#FFB338" />
-    </linearGradient>
+  <!-- Inner Precision Dial Ring -->
+  <circle class="fav-dial" cx="16" cy="16" r="12.8" />
 
-    <filter id="favShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000000" flood-opacity="0.6" />
-    </filter>
-  </defs>
+  <!-- Azimuth Graduation Track -->
+  <circle class="fav-track" cx="16" cy="16" r="10.4" />
 
-  <!-- Rounded Badge Frame for clean contrast on both light and dark browser chrome -->
-  <rect x="1" y="1" width="62" height="62" rx="14" fill="url(#favBg)" stroke="#FF9900" stroke-width="1.5" stroke-opacity="0.85" />
+  <!-- Major Cardinal Ticks (N, E, S, W) -->
+  <line class="fav-tick" x1="16" y1="2.2" x2="16" y2="5.6" />
+  <line class="fav-tick" x1="16" y1="26.4" x2="16" y2="29.8" />
+  <line class="fav-tick" x1="2.2" y1="16" x2="5.6" y2="16" />
+  <line class="fav-tick" x1="26.4" y1="16" x2="29.8" y2="16" />
 
-  <!-- Outer Dial Rings -->
-  <circle cx="32" cy="32" r="23" stroke="#415164" stroke-width="1.25" stroke-dasharray="2 3" opacity="0.8" />
-  <circle cx="32" cy="32" r="18.5" stroke="#2E3C4D" stroke-width="1.5" />
+  <!-- Minor Ordinal Ticks (NE, SE, SW, NW) -->
+  <line class="fav-tick-sub" x1="23.5" y1="8.5" x2="25.8" y2="6.2" />
+  <line class="fav-tick-sub" x1="23.5" y1="23.5" x2="25.8" y2="25.8" />
+  <line class="fav-tick-sub" x1="8.5" y1="23.5" x2="6.2" y2="25.8" />
+  <line class="fav-tick-sub" x1="8.5" y1="8.5" x2="6.2" y2="6.2" />
 
-  <!-- Cardinal Axis Ticks -->
-  <line x1="32" y1="5.5" x2="32" y2="10.5" stroke="#FF9900" stroke-width="2.5" stroke-linecap="round" />
-  <line x1="32" y1="53.5" x2="32" y2="58.5" stroke="#539FE5" stroke-width="2" stroke-linecap="round" />
-  <line x1="5.5" y1="32" x2="10.5" y2="32" stroke="#879596" stroke-width="1.75" stroke-linecap="round" />
-  <line x1="53.5" y1="32" x2="58.5" y2="32" stroke="#879596" stroke-width="1.75" stroke-linecap="round" />
+  <!-- Directional Compass Needle -->
+  <polygon class="fav-pointer" points="16,16 13.6,13.6 22.8,9.2 18.4,18.4" />
+  <polygon class="fav-tail" points="16,16 18.4,18.4 9.2,22.8 13.6,13.6" />
 
-  <!-- Lateral Pointer Wings -->
-  <path d="M 32 32 L 32 29 L 16 32 L 32 32 Z" fill="#65778A" />
-  <path d="M 32 32 L 32 35 L 16 32 L 32 32 Z" fill="#4B5B6D" />
-  <path d="M 32 32 L 32 29 L 48 32 L 32 32 Z" fill="#889BB0" />
-  <path d="M 32 32 L 32 35 L 48 32 L 32 32 Z" fill="#65778A" />
-
-  <!-- South Needle (Blue) -->
-  <path d="M 32 32 L 27 32 L 32 49 Z" fill="url(#favSouthL)" filter="url(#favShadow)" />
-  <path d="M 32 32 L 37 32 L 32 49 Z" fill="url(#favSouthD)" filter="url(#favShadow)" />
-
-  <!-- North Needle (Orange) -->
-  <path d="M 32 32 L 27 32 L 32 14 Z" fill="url(#favNorthL)" filter="url(#favShadow)" />
-  <path d="M 32 32 L 37 32 L 32 14 Z" fill="url(#favNorthD)" filter="url(#favShadow)" />
-
-  <!-- AWS Smile Arch with Arrow -->
-  <path d="M 20 44 C 26 51, 38 51, 44 44" stroke="url(#favSmile)" stroke-width="2" stroke-linecap="round" fill="none" />
-  <path d="M 44.5 41.5 L 45 45.5 L 41.5 45 Z" fill="#FF9900" />
-
-  <!-- Center Pivot -->
-  <circle cx="32" cy="32" r="4.5" fill="#0B1118" stroke="#FF9900" stroke-width="1.5" />
-  <circle cx="32" cy="32" r="2" fill="#FFFFFF" />
+  <!-- Center Pivot Pin -->
+  <circle class="fav-pin" cx="16" cy="16" r="1.8" />
 </svg>

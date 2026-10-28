@@ -1,20 +1,53 @@
 import React, { useEffect, useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { useCompassStore } from './store/useCompassStore';
+import { useCanvasStore } from './store/useCanvasStore';
 import { Navbar } from './components/layout/Navbar';
 import { ServiceCatalog } from './components/catalog/ServiceCatalog';
 import { ConceptVault } from './components/vault/ConceptVault';
 import { ArchitectureCanvas } from './components/canvas/ArchitectureCanvas';
 import { CommandPalette } from './components/layout/CommandPalette';
 import { DisableThemeTransitions } from './components/ui/DisableThemeTransitions';
-import { AWSCompassLogo } from './components/icons/AWSCompassLogo';
+import { AWSCompassLogo } from './components/ui/AWSCompassLogo';
 
 export const App: React.FC = () => {
-  const { isDbLoaded, isSidebarOpen, workspaceMode, initialize } = useCompassStore();
+  const {
+    isDbLoaded,
+    isSidebarOpen,
+    toggleSidebar,
+    workspaceMode,
+    services,
+    selectedServiceId,
+    initialize,
+  } = useCompassStore();
+  const activeDiagramName = useCanvasStore((s) => s.activeDiagramName);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  // Dynamic Tab Title Sync (better-accessibility 2.4.2 SPA rules)
+  useEffect(() => {
+    if (!isDbLoaded) {
+      document.title = 'AWS Compass · Cloud Architecture & Study Vault';
+      return;
+    }
+
+    if (workspaceMode === 'canvas') {
+      const blueprintName = activeDiagramName || 'Architecture Canvas';
+      document.title = `${blueprintName} · Architecture Canvas · AWS Compass`;
+    } else {
+      const selectedService = services.find((s) => s.id === selectedServiceId);
+      if (selectedService) {
+        const short = (selectedService as any).shortName;
+        const serviceTitle = short ? `${short} (${selectedService.name})` : selectedService.name;
+        document.title = `${serviceTitle} · Concept Vault · AWS Compass`;
+      } else {
+        document.title = 'Concept Vault · AWS Compass';
+      }
+    }
+  }, [isDbLoaded, workspaceMode, selectedServiceId, services, activeDiagramName]);
 
   // Global Ctrl+K / Cmd+K Command Palette listener
   useEffect(() => {
@@ -69,6 +102,20 @@ export const App: React.FC = () => {
       <div className="flex flex-1 overflow-hidden relative">
         {/* Service Catalog Sidebar */}
         {isSidebarOpen && <ServiceCatalog />}
+
+        {/* Collapsed Sidebar Docked Trigger (Cloudscape AppLayout style) */}
+        {!isSidebarOpen && (
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className="absolute left-0 top-2 z-30 h-8 pl-2.5 pr-3 rounded-r-[6px] bg-[var(--aws-card-bg)] border-y border-r border-[var(--aws-border)] shadow-md hover:border-[#FF9900] text-[var(--aws-text-primary)] hover:text-[#FF9900] flex items-center gap-1.5 transition-all duration-150 cursor-pointer group"
+            title="Open service catalog"
+            aria-label="Open service catalog"
+          >
+            <ChevronRight className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[#FF9900] transition-colors" strokeWidth={2} />
+            <span className="text-[11px] font-semibold tracking-wide">Catalog</span>
+          </button>
+        )}
 
         {/* Workspace Area: Concept Vault or Architecture Canvas */}
         <main className="flex-1 h-full overflow-hidden relative">

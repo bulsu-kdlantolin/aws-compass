@@ -1,19 +1,15 @@
-import React, { useMemo, useState, useRef } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
+  ChevronLeft,
   ChevronRight,
   Filter,
-  GripVertical,
   RotateCcw,
   Search,
   X,
-  ChevronDown,
-  Check,
 } from 'lucide-react';
 import { useCompassStore, DEFAULT_CATEGORIES } from '../../store/useCompassStore';
-import { usePopoverStore } from '../../store/usePopoverStore';
-import type { AWSCategory, StudyStatus, AWSService } from '../../types/aws';
+import type { AWSCategory, AWSService } from '../../types/aws';
 import { ServiceCard } from './ServiceCard';
-import { AnimatedPopover } from '../ui/AnimatedPopover';
 
 export const ServiceCatalog: React.FC = () => {
   const {
@@ -21,6 +17,7 @@ export const ServiceCatalog: React.FC = () => {
     selectedServiceId,
     filter,
     categoryOrder,
+    toggleSidebar,
     setSelectedServiceId,
     setSearch,
     setCategoryFilter,
@@ -28,26 +25,17 @@ export const ServiceCatalog: React.FC = () => {
     setStudyStatusFilter,
     reorderService,
     moveServiceToCategory,
-    reorderCategories,
     resetServiceOrder,
   } = useCompassStore();
 
   // Collapsible category state: all categories open by default
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
-  const statusTriggerRef = useRef<HTMLButtonElement>(null);
 
-  const activePopoverId = usePopoverStore((s) => s.activePopoverId);
-  const openPopover = usePopoverStore((s) => s.openPopover);
-  const closePopover = usePopoverStore((s) => s.closePopover);
-  const isStatusOpen = activePopoverId === 'sidebar-status-filter';
-
-  // Drag and drop state for services & category labels
+  // Drag and drop state for services
   const [draggedServiceId, setDraggedServiceId] = useState<string | null>(null);
-  const [draggedCategory, setDraggedCategory] = useState<AWSCategory | null>(null);
   const [targetCardId, setTargetCardId] = useState<string | null>(null);
   const [targetCardDropPosition, setTargetCardDropPosition] = useState<'top' | 'bottom' | null>(null);
   const [targetCategoryHeader, setTargetCategoryHeader] = useState<AWSCategory | null>(null);
-  const [targetCategoryDropPosition, setTargetCategoryDropPosition] = useState<'top' | 'bottom' | null>(null);
 
   const handleSearchChange = (val: string) => {
     setSearch(val);
@@ -144,7 +132,6 @@ export const ServiceCatalog: React.FC = () => {
   // --- Drag and Drop Handlers for Service Cards ---
   const handleCardDragStart = (_e: React.DragEvent, service: AWSService) => {
     setDraggedServiceId(service.id);
-    setDraggedCategory(null);
   };
 
   const handleCardDragOver = (e: React.DragEvent, targetService: AWSService) => {
@@ -200,39 +187,19 @@ export const ServiceCatalog: React.FC = () => {
 
   const handleCardDragEnd = () => {
     setDraggedServiceId(null);
-    setDraggedCategory(null);
     setTargetCardId(null);
     setTargetCardDropPosition(null);
     setTargetCategoryHeader(null);
-    setTargetCategoryDropPosition(null);
   };
 
-  // --- Drag and Drop Handlers for Category Headers ("Around that Label") ---
-  const handleCategoryDragStart = (e: React.DragEvent, cat: AWSCategory) => {
-    e.dataTransfer.setData('application/aws-category-id', cat);
-    e.dataTransfer.effectAllowed = 'move';
-    setDraggedCategory(cat);
-    setDraggedServiceId(null);
-  };
-
+  // --- Drag and Drop Handlers for Moving Services onto Category Headers ---
   const handleCategoryHeaderDragOver = (e: React.DragEvent, cat: AWSCategory) => {
+    if (!draggedServiceId) return;
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
-
-    if (draggedCategory) {
-      // Reordering category labels
-      if (draggedCategory === cat) return;
-      const rect = e.currentTarget.getBoundingClientRect();
-      const pos = e.clientY - rect.top < rect.height / 2 ? 'top' : 'bottom';
-      setTargetCategoryHeader(cat);
-      setTargetCategoryDropPosition(pos);
-    } else {
-      // Dragging service onto category label
-      setTargetCategoryHeader(cat);
-      setTargetCategoryDropPosition(null);
-      setTargetCardId(null);
-    }
+    setTargetCategoryHeader(cat);
+    setTargetCardId(null);
   };
 
   const handleCategoryHeaderDragLeave = (e: React.DragEvent, cat: AWSCategory) => {
@@ -240,7 +207,6 @@ export const ServiceCatalog: React.FC = () => {
     if (!e.currentTarget.contains(related)) {
       if (targetCategoryHeader === cat) {
         setTargetCategoryHeader(null);
-        setTargetCategoryDropPosition(null);
       }
     }
   };
@@ -249,22 +215,13 @@ export const ServiceCatalog: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
 
-    const categorySource = e.dataTransfer.getData('application/aws-category-id') || draggedCategory;
     const serviceSource = e.dataTransfer.getData('application/aws-service-id') || draggedServiceId;
 
-    const catDropPos = targetCategoryDropPosition;
-
     setTargetCategoryHeader(null);
-    setTargetCategoryDropPosition(null);
-    setDraggedCategory(null);
     setDraggedServiceId(null);
     setTargetCardId(null);
 
-    if (categorySource && categorySource !== cat) {
-      // Reorder category labels
-      const pos = catDropPos === 'top' ? 'before' : 'after';
-      reorderCategories(categorySource as AWSCategory, cat, pos);
-    } else if (serviceSource) {
+    if (serviceSource) {
       // Move service into this category header (at start) and auto-expand
       setCollapsedCategories((prev) => ({ ...prev, [cat]: false }));
       await moveServiceToCategory(serviceSource, cat, 'start');
@@ -279,6 +236,34 @@ export const ServiceCatalog: React.FC = () => {
       }}
       className="w-72 md:w-80 flex flex-col h-full border-r shrink-0 select-none rounded-none"
     >
+      {/* Sidebar Top Header with Title, Count & Collapse Control */}
+      <div
+        style={{
+          borderBottomColor: 'var(--aws-border)',
+          backgroundColor: 'var(--aws-card-bg)',
+        }}
+        className="h-10 px-3 border-b flex items-center justify-between shrink-0 select-none"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[12px] font-bold text-[var(--aws-text-primary)] tracking-tight truncate">
+            Service catalog
+          </span>
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-[4px] bg-[var(--aws-page-bg)] border border-[var(--aws-border)] text-[var(--aws-text-muted)]">
+            {services.length}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          className="h-7 px-2 rounded-[4px] flex items-center gap-1.5 text-[11px] font-medium text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border border-[var(--aws-border)]/60 hover:border-[var(--aws-border)] transition-all cursor-pointer shadow-2xs"
+          title="Collapse service catalog"
+          aria-label="Collapse service catalog"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" strokeWidth={2} />
+          <span className="text-[11px]">Collapse</span>
+        </button>
+      </div>
+
       {/* Redesigned 3-Row Filter Header */}
       <div
         style={{
@@ -286,132 +271,32 @@ export const ServiceCatalog: React.FC = () => {
         }}
         className="p-2.5 space-y-2 relative"
       >
-        {/* Row 1: Composite Filter Input with Embedded Status Trigger */}
+        {/* Row 1: Search Input */}
         <div className="relative">
-          <div className="h-8 w-full rounded-[6px] bg-[#F8F9FA] dark:bg-[#0F141A] border border-[#D5DBDB] dark:border-[#354150] focus-within:border-[#0972D3] dark:focus-within:border-[#539FE5] flex items-center px-2.5 gap-2 transition-[border-color,box-shadow] duration-150">
-            <Search className="w-3.5 h-3.5 text-[#545B64] dark:text-[#879596] shrink-0" strokeWidth={1.75} />
+          <div className="h-8 w-full rounded-[6px] bg-[var(--aws-page-bg)] border border-[var(--aws-input-border)] focus-within:border-[var(--aws-interactive)] flex items-center px-2.5 gap-2 transition-[border-color,box-shadow] duration-150">
+            <Search className="w-3.5 h-3.5 text-[var(--aws-text-muted)] shrink-0" strokeWidth={1.75} />
             <input
               type="text"
               value={filter.search}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Filter catalog..."
-              className="w-full bg-transparent text-[12px] text-[#16191F] dark:text-[#EAEDED] placeholder-[#545B64] dark:placeholder-[#879596] focus:outline-none min-w-0"
+              className="w-full bg-transparent text-[12px] text-[var(--aws-text-primary)] placeholder-[var(--aws-text-muted)] focus:outline-none min-w-0"
             />
             {filter.search && (
               <button
                 type="button"
                 onClick={() => handleSearchChange('')}
-                className="text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] p-0.5 rounded cursor-pointer shrink-0"
+                className="text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] p-0.5 rounded cursor-pointer shrink-0"
                 title="Clear search"
               >
                 <X className="w-3 h-3" />
               </button>
             )}
-            {/* Inline status filter trigger button */}
-            <button
-              ref={statusTriggerRef}
-              type="button"
-              onClick={() =>
-                isStatusOpen ? closePopover('sidebar-status-filter') : openPopover('sidebar-status-filter')
-              }
-              className={`flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-[11px] font-medium shrink-0 cursor-pointer transition-colors ${
-                filter.studyStatus !== 'All'
-                  ? 'bg-[#0972D3]/10 dark:bg-[#539FE5]/15 text-[#0972D3] dark:text-[#539FE5]'
-                  : 'text-[#545B64] dark:text-[#879596] hover:bg-black/5 dark:hover:bg-white/5'
-              }`}
-              title="Filter by study status"
-              aria-haspopup="listbox"
-              aria-expanded={isStatusOpen}
-            >
-              <span
-                className={`w-2 h-2 rounded-full shrink-0 ${
-                  filter.studyStatus === 'mastered'
-                    ? 'bg-[#1D8102]'
-                    : filter.studyStatus === 'in-progress'
-                    ? 'bg-[#539FE5]'
-                    : filter.studyStatus === 'review'
-                    ? 'bg-[#FF9900]'
-                    : filter.studyStatus === 'not-started'
-                    ? 'bg-[#879596]'
-                    : 'bg-[#879596]/40 border border-[#879596]'
-                }`}
-              />
-              <span className="truncate max-w-[62px]">
-                {filter.studyStatus === 'All'
-                  ? 'All'
-                  : filter.studyStatus === 'mastered'
-                  ? 'Mastered'
-                  : filter.studyStatus === 'in-progress'
-                  ? 'In prog.'
-                  : filter.studyStatus === 'review'
-                  ? 'Review'
-                  : 'Not started'}
-              </span>
-              <ChevronDown
-                className={`w-3 h-3 text-[#545B64] dark:text-[#879596] shrink-0 transition-transform duration-150 ${
-                  isStatusOpen ? 'rotate-180' : ''
-                }`}
-              />
-            </button>
           </div>
-
-          {/* Status Filter Popover */}
-          <AnimatedPopover
-            isOpen={isStatusOpen}
-            onClose={() => closePopover('sidebar-status-filter')}
-            align="right"
-            triggerRef={statusTriggerRef}
-            className="w-48 mt-1.5"
-          >
-            <div className="space-y-0.5">
-              {[
-                { value: 'All', label: 'All statuses', dot: 'bg-transparent border border-[#879596]' },
-                { value: 'mastered', label: 'Mastered', dot: 'bg-[#1D8102]' },
-                { value: 'in-progress', label: 'In progress', dot: 'bg-[#539FE5]' },
-                { value: 'review', label: 'Review', dot: 'bg-[#FF9900]' },
-                { value: 'not-started', label: 'Not started', dot: 'bg-[#879596]' },
-              ].map((item) => {
-                const isSelected = filter.studyStatus === item.value;
-                const count =
-                  item.value === 'All'
-                    ? services.length
-                    : services.filter((s) => s.studyStatus === item.value).length;
-
-                return (
-                  <button
-                    key={item.value}
-                    type="button"
-                    onClick={() => {
-                      setStudyStatusFilter(item.value as StudyStatus | 'All');
-                      closePopover('sidebar-status-filter');
-                    }}
-                    className={`w-full px-2.5 py-1.5 rounded-[6px] flex items-center justify-between text-[11px] font-medium transition-colors cursor-pointer ${
-                      isSelected
-                        ? 'bg-[#0972D3]/10 dark:bg-[#539FE5]/15 text-[#0972D3] dark:text-[#539FE5] font-semibold'
-                        : 'text-[#16191F] dark:text-[#EAEDED] hover:bg-[#F2F3F3] dark:hover:bg-[#232F3E]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${item.dot}`} />
-                      <span>{item.label}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono tabular-nums text-[#879596] text-[10px]">
-                        {count}
-                      </span>
-                      {isSelected && (
-                        <Check className="w-3.5 h-3.5 text-[#0972D3] dark:text-[#539FE5]" />
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </AnimatedPopover>
         </div>
 
         {/* Row 2: Concentric Segmented Tier Track (All | Tier 1 | Tier 2 | Tier 3) */}
-        <div className="h-7 p-0.5 rounded-[7px] bg-[#EAEDED] dark:bg-[#0F141A] border border-[#D5DBDB]/60 dark:border-[#354150]/60 grid grid-cols-4 gap-0.5">
+        <div className="h-7 p-0.5 rounded-[7px] bg-[var(--aws-page-bg)] border border-[var(--aws-border)] grid grid-cols-4 gap-0.5">
           {(['All', 1, 2, 3] as const).map((tierVal) => {
             const isSelected = filter.tier === tierVal;
             const label = tierVal === 'All' ? 'All' : `Tier ${tierVal}`;
@@ -422,8 +307,8 @@ export const ServiceCatalog: React.FC = () => {
                 onClick={() => setTierFilter(tierVal)}
                 className={`rounded-[5px] text-[11px] font-semibold flex items-center justify-center transition-all duration-150 cursor-pointer ${
                   isSelected
-                    ? 'bg-white dark:bg-[#1F2B3E] text-[#16191F] dark:text-white shadow-xs'
-                    : 'text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
+                    ? 'bg-[var(--aws-card-bg)] text-[var(--aws-text-primary)] shadow-xs'
+                    : 'text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)]'
                 }`}
               >
                 {label}
@@ -523,23 +408,15 @@ export const ServiceCatalog: React.FC = () => {
             ))}
           </div>
         ) : (
-          /* Collapsible Category Tree with Drag-and-Drop Reordering */
+          /* Collapsible Category Tree */
           categoriesToRender.map((cat) => {
             const catServices = servicesByCategory.get(cat) || [];
             const isCollapsed = !!collapsedCategories[cat];
             const isHeaderTarget = targetCategoryHeader === cat;
-            const isCategoryDragging = draggedCategory === cat;
 
             return (
               <div key={cat} className="select-none relative">
-                {/* Category Reorder Drop Indicator - Top */}
-                {isHeaderTarget && draggedCategory && targetCategoryDropPosition === 'top' && (
-                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#FF9900] z-30 pointer-events-none flex items-center shadow-[0_0_8px_rgba(255,153,0,0.8)]">
-                    <div className="w-2 h-2 rounded-full bg-[#FF9900] -ml-1 border-2 border-[var(--aws-page-bg)]" />
-                  </div>
-                )}
-
-                {/* Category Header Row (28px height, draggable & drop-target) */}
+                {/* Category Header Row (28px height, drop-target for services) */}
                 <div
                   onDragOver={(e) => handleCategoryHeaderDragOver(e, cat)}
                   onDragLeave={(e) => handleCategoryHeaderDragLeave(e, cat)}
@@ -550,43 +427,27 @@ export const ServiceCatalog: React.FC = () => {
                       : 'var(--aws-card-bg)',
                   }}
                   className={`group w-full h-7 px-2 flex items-center justify-between text-left transition-[background-color,box-shadow] duration-150 relative ${
-                    isCategoryDragging ? 'opacity-40' : 'opacity-100'
-                  } ${
                     isHeaderTarget && draggedServiceId
                       ? 'ring-2 ring-[#FF9900] border-l-4 border-l-[#FF9900]'
                       : 'hover:bg-[var(--aws-page-bg)]'
                   }`}
                 >
-                  {/* Category Header Left: Drag Grip + Chevron + Label */}
-                  <div className="flex items-center gap-1 min-w-0 flex-1">
-                    {/* Category Label Drag Handle */}
-                    <span
-                      draggable
-                      onDragStart={(e) => handleCategoryDragStart(e, cat)}
-                      onDragEnd={handleCardDragEnd}
-                      title={`Drag to reorder "${cat}" section`}
-                      className="opacity-0 group-hover:opacity-60 text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] cursor-grab active:cursor-grabbing shrink-0 transition-opacity mr-0.5"
-                    >
-                      <GripVertical className="w-3 h-3" strokeWidth={1.75} />
+                  {/* Category Header Left: Chevron + Label */}
+                  <button
+                    type="button"
+                    onClick={() => toggleCategory(cat)}
+                    className="flex items-center gap-1.5 min-w-0 flex-1 text-left cursor-pointer focus:outline-none"
+                  >
+                    <ChevronRight
+                      className={`w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-150 shrink-0 ${
+                        isCollapsed ? '' : 'rotate-90'
+                      }`}
+                      strokeWidth={2}
+                    />
+                    <span className="text-[12px] font-semibold text-[var(--aws-text-primary)] truncate">
+                      {cat}
                     </span>
-
-                    {/* Toggle Button */}
-                    <button
-                      type="button"
-                      onClick={() => toggleCategory(cat)}
-                      className="flex items-center gap-1.5 min-w-0 flex-1 text-left cursor-pointer focus:outline-none"
-                    >
-                      <ChevronRight
-                        className={`w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-150 shrink-0 ${
-                          isCollapsed ? '' : 'rotate-90'
-                        }`}
-                        strokeWidth={2}
-                      />
-                      <span className="text-[12px] font-semibold text-[var(--aws-text-primary)] truncate">
-                        {cat}
-                      </span>
-                    </button>
-                  </div>
+                  </button>
 
                   {/* Category Header Right: Active Drop Badge or Count */}
                   {isHeaderTarget && draggedServiceId ? (
@@ -599,13 +460,6 @@ export const ServiceCatalog: React.FC = () => {
                     </span>
                   )}
                 </div>
-
-                {/* Category Reorder Drop Indicator - Bottom */}
-                {isHeaderTarget && draggedCategory && targetCategoryDropPosition === 'bottom' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FF9900] z-30 pointer-events-none flex items-center shadow-[0_0_8px_rgba(255,153,0,0.8)]">
-                    <div className="w-2 h-2 rounded-full bg-[#FF9900] -ml-1 border-2 border-[var(--aws-page-bg)]" />
-                  </div>
-                )}
 
                 {/* Category Service Items (each 28px height) */}
                 {!isCollapsed && (

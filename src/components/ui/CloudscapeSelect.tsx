@@ -21,6 +21,7 @@ export interface CloudscapeSelectProps<T extends string = string> {
   className?: string;
   ariaLabel?: string;
   size?: 'sm' | 'md';
+  align?: 'left' | 'right';
 }
 
 export function CloudscapeSelect<T extends string = string>({
@@ -32,6 +33,7 @@ export function CloudscapeSelect<T extends string = string>({
   className = '',
   ariaLabel,
   size = 'md',
+  align = 'left',
 }: CloudscapeSelectProps<T>) {
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
@@ -170,7 +172,10 @@ export function CloudscapeSelect<T extends string = string>({
   const heightClass = size === 'sm' ? 'h-7 text-[11px]' : 'h-8 text-[12px]';
 
   return (
-    <div ref={containerRef} className={`relative inline-block ${className}`}>
+    <div
+      ref={containerRef}
+      className={`relative inline-block ${isOpen ? 'z-50' : ''} ${className}`}
+    >
       {/* Refined elevated pill trigger with subtle depth */}
       <button
         ref={triggerRef}
@@ -187,10 +192,10 @@ export function CloudscapeSelect<T extends string = string>({
         aria-activedescendant={
           isOpen && highlightedIndex >= 0 ? `opt-${uniqueId}-${highlightedIndex}` : undefined
         }
-        className={`w-full ${heightClass} px-3 rounded-[6px] border flex items-center justify-between gap-2 cursor-pointer font-medium transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out outline-none disabled:opacity-50 disabled:cursor-not-allowed enabled:active:scale-[0.97] bg-white dark:bg-[#192534] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2D40] text-[#16191F] dark:text-[#EAEDED] shadow-xs ${
+        className={`w-full ${heightClass} px-3 rounded-[6px] border flex items-center justify-between gap-2 cursor-pointer font-medium transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out outline-none disabled:opacity-50 disabled:cursor-not-allowed enabled:active:scale-[0.97] bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] shadow-xs ${
           isOpen
-            ? 'border-[#0972D3] dark:border-[#539FE5] ring-1 ring-[#0972D3]/20 dark:ring-[#539FE5]/20'
-            : 'border-[#D5DBDB] dark:border-[#354150] hover:border-[#0972D3] dark:hover:border-[#539FE5]'
+            ? 'border-[var(--aws-interactive)] ring-1 ring-[var(--aws-interactive)]/20'
+            : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)]'
         }`}
       >
         <span className="flex items-center gap-2 truncate text-left">
@@ -202,7 +207,7 @@ export function CloudscapeSelect<T extends string = string>({
 
         {/* 180deg rotating chevron with 200ms cubic-bezier */}
         <ChevronDown
-          className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] text-[#545B64] dark:text-[#879596]"
+          className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] text-[var(--aws-text-muted)]"
           style={{
             transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
           }}
@@ -222,7 +227,9 @@ export function CloudscapeSelect<T extends string = string>({
           style={{
             overscrollBehavior: 'contain',
           }}
-          className={`absolute left-0 mt-1.5 w-full min-w-[210px] max-h-64 overflow-y-auto custom-scrollbar rounded-[12px] p-1.5 border z-50 bg-white dark:bg-[#192534] border-[#D5DBDB] dark:border-[#354150] shadow-[0px_2px_6px_rgba(0,0,0,0.04),0px_8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_10px_30px_-5px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] origin-top ${
+          className={`absolute ${
+            align === 'right' ? 'right-0 origin-top-right' : 'left-0 origin-top-left'
+          } mt-1.5 w-full min-w-[210px] max-h-64 overflow-y-auto custom-scrollbar rounded-[12px] p-1.5 border z-50 bg-[var(--aws-popover-bg)] border-[var(--aws-border)] text-[var(--aws-text-primary)] shadow-2xl dark:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.08)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] ${
             isOpen
               ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
               : 'opacity-0 scale-[0.96] -translate-y-1.5 pointer-events-none'
@@ -242,10 +249,10 @@ export function CloudscapeSelect<T extends string = string>({
                 onMouseEnter={() => setHighlightedIndex(idx)}
                 className={`px-2.5 py-1.5 rounded-[6px] flex items-center justify-between gap-3 transition-colors duration-100 cursor-pointer text-[12px] select-none ${
                   isSelected
-                    ? 'bg-[#0972D3]/10 dark:bg-[#539FE5]/15 text-[#0972D3] dark:text-[#539FE5] font-semibold'
+                    ? 'bg-[var(--aws-interactive)]/15 text-[var(--aws-interactive)] font-semibold'
                     : isHighlighted
-                    ? 'bg-[#F2F3F3] dark:bg-[#232F3E] text-[#16191F] dark:text-[#EAEDED] font-normal'
-                    : 'text-[#16191F] dark:text-[#EAEDED] hover:bg-[#F2F3F3] dark:hover:bg-[#232F3E] font-normal'
+                    ? 'bg-[var(--aws-popover-hover)] text-[var(--aws-text-primary)] font-normal'
+                    : 'text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)] font-normal'
                 }`}
               >
                 <div className="flex items-center gap-2 truncate flex-1 min-w-0">
@@ -254,7 +261,7 @@ export function CloudscapeSelect<T extends string = string>({
                     <div className="truncate leading-tight">{opt.label}</div>
                     {opt.description && (
                       <div
-                        className="text-[11px] font-normal truncate text-[#545B64] dark:text-[#879596] opacity-90 mt-0.5"
+                        className="text-[11px] font-normal truncate text-[var(--aws-text-muted)] opacity-90 mt-0.5"
                       >
                         {opt.description}
                       </div>
@@ -264,14 +271,14 @@ export function CloudscapeSelect<T extends string = string>({
 
                 <div className="flex items-center gap-2 shrink-0">
                   {opt.count !== undefined && (
-                    <span className="text-[11px] font-mono tabular-nums text-[#545B64] dark:text-[#879596] font-medium">
+                    <span className="text-[11px] font-mono tabular-nums text-[var(--aws-text-muted)] font-medium">
                       {opt.count}
                     </span>
                   )}
                   {opt.badge}
                   {isSelected && (
                     <Check
-                      className="w-3.5 h-3.5 text-[#0972D3] dark:text-[#539FE5]"
+                      className="w-3.5 h-3.5 text-[var(--aws-interactive)]"
                       aria-hidden="true"
                     />
                   )}

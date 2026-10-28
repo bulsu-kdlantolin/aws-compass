@@ -92,6 +92,28 @@ const BOUNDARY_RULES: Record<string, BoundaryStyleRule> = {
     textLight: '#ED7100',
     textDark: '#ED7100',
   },
+  serverless: {
+    label: 'Managed Serverless',
+    groupId: 'serverless',
+    dashed: true,
+    borderLight: '#E7157B',
+    borderDark: '#E7157B',
+    bgLight: 'rgba(231, 21, 123, 0.03)',
+    bgDark: 'rgba(231, 21, 123, 0.05)',
+    textLight: '#E7157B',
+    textDark: '#E7157B',
+  },
+  'data-subnet': {
+    label: 'Isolated Data Subnet',
+    groupId: 'private-subnet',
+    dashed: false,
+    borderLight: '#3B48CC',
+    borderDark: '#3B48CC',
+    bgLight: 'rgba(59, 72, 204, 0.05)',
+    bgDark: 'rgba(59, 72, 204, 0.05)',
+    textLight: '#3B48CC',
+    textDark: '#3B48CC',
+  },
 };
 
 export const AWSGroupNode = memo((props: NodeProps) => {

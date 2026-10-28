@@ -22,7 +22,7 @@ export const CloudscapeContainer: React.FC<CloudscapeContainerProps> = ({
         backgroundColor: 'var(--aws-card-bg)',
         borderColor: 'var(--aws-border)',
       }}
-      className={`rounded-[8px] border overflow-hidden shadow-xs transition-colors ${className}`}
+      className={`rounded-[8px] border shadow-xs transition-colors relative ${className}`}
     >
       {/* Top Header Band */}
       {header && (
@@ -30,7 +30,7 @@ export const CloudscapeContainer: React.FC<CloudscapeContainerProps> = ({
           style={{
             borderBottomColor: 'var(--aws-border)',
           }}
-          className="px-5 py-3 border-b flex items-center justify-between gap-4"
+          className="px-5 py-3 border-b flex items-center justify-between gap-4 rounded-t-[7px]"
         >
           <div className="font-bold text-[16px] leading-[24px] text-[var(--aws-text-primary)]">
             {header}
@@ -49,7 +49,7 @@ export const CloudscapeContainer: React.FC<CloudscapeContainerProps> = ({
             borderTopColor: 'var(--aws-border)',
             backgroundColor: 'var(--aws-page-bg)',
           }}
-          className="px-5 py-3 border-t text-[12px] text-[var(--aws-text-muted)]"
+          className="px-5 py-3 border-t text-[12px] text-[var(--aws-text-muted)] rounded-b-[7px]"
         >
           {footer}
         </div>

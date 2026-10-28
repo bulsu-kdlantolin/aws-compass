@@ -166,10 +166,10 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
             <button
               type="button"
               onClick={() => (isDropdownOpen ? closePopover(popoverId) : openPopover(popoverId))}
-              className={`bg-[#F2F3F3] dark:bg-[#0F1B2A] border px-2 py-0.5 rounded-[4px] text-[11px] font-mono shadow-xs cursor-pointer flex items-center gap-1.5 transition-[border-color,background-color,transform] duration-150 ease-out enabled:active:scale-[0.97] ${
+              className={`bg-[var(--aws-card-bg)] border px-2 py-0.5 rounded-[4px] text-[11px] font-mono shadow-xs cursor-pointer flex items-center gap-1.5 transition-[border-color,background-color,transform] duration-150 ease-out enabled:active:scale-[0.97] ${
                 isDropdownOpen
-                  ? 'border-[#0972D3] dark:border-[#539FE5] text-[var(--aws-text-primary)]'
-                  : 'border-[#D5DBDB] dark:border-[#354150] hover:border-[var(--aws-interactive)] text-[var(--aws-text-primary)]'
+                  ? 'border-[var(--aws-interactive)] text-[var(--aws-text-primary)]'
+                  : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)] text-[var(--aws-text-primary)]'
               }`}
               title={`Protocol: ${protocol} (${protocolStyle.flowType} flow). Click to change.`}
             >
@@ -211,7 +211,7 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
               style={{
                 overscrollBehavior: 'contain',
               }}
-              className={`absolute top-7 left-1/2 -translate-x-1/2 min-w-[240px] rounded-[12px] p-1.5 border z-[1000] bg-white dark:bg-[#192534] border-[#D5DBDB] dark:border-[#354150] shadow-[0px_2px_6px_rgba(0,0,0,0.04),0px_8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_10px_30px_-5px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] origin-top ${
+              className={`absolute top-7 left-1/2 -translate-x-1/2 min-w-[240px] rounded-[12px] p-1.5 border z-[1000] bg-[var(--aws-popover-bg)] border-[var(--aws-border)] text-[var(--aws-text-primary)] shadow-[0px_2px_6px_rgba(0,0,0,0.04),0px_8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_10px_30px_-5px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] origin-top ${
                 isDropdownOpen
                   ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
                   : 'opacity-0 scale-[0.96] -translate-y-1.5 pointer-events-none'
@@ -237,8 +237,8 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
                       onClick={() => handleProtocolSelect(p)}
                       className={`w-full text-left px-2.5 py-1.5 rounded-[6px] text-[11px] font-mono flex items-center justify-between gap-4 transition-colors duration-100 cursor-pointer ${
                         isCurrent
-                          ? 'bg-[#0972D3]/10 dark:bg-[#539FE5]/15 text-[#0972D3] dark:text-[#539FE5] font-semibold'
-                          : 'text-[var(--aws-text-primary)] hover:bg-[#F2F3F3] dark:hover:bg-[#232F3E]'
+                          ? 'bg-[var(--aws-interactive)]/15 text-[var(--aws-interactive)] font-semibold'
+                          : 'text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)]'
                       }`}
                     >
                       <div className="flex items-center gap-2 truncate">
@@ -256,7 +256,7 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
                           {pStyle.flowType}
                         </span>
                         {isCurrent && (
-                          <Check className="w-3.5 h-3.5 text-[#0972D3] dark:text-[#539FE5]" aria-hidden="true" />
+                          <Check className="w-3.5 h-3.5 text-[var(--aws-interactive)]" aria-hidden="true" />
                         )}
                       </div>
                     </button>

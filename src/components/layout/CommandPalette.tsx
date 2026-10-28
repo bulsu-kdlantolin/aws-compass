@@ -16,7 +16,7 @@ import { useCanvasStore } from '../../store/useCanvasStore';
 import { AWSServiceIcon } from '../canvas/AWSIcons';
 import { SEED_BLUEPRINTS } from '../../db/seedBlueprints';
 import { ClassicV2 } from '../ui/LoadingIndicators';
-import { AWSCompassLogo } from '../icons/AWSCompassLogo';
+import { AWSCompassLogoMark } from '../ui/AWSCompassLogo';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -385,7 +385,7 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
         >
           {filteredActions.length === 0 ? (
             <div className="p-8 text-center" style={{ color: 'var(--aws-text-muted)' }}>
-              <AWSCompassLogo size={36} className="opacity-40 mx-auto mb-2" />
+              <AWSCompassLogoMark size={36} className="opacity-70 mx-auto mb-2" />
               <p className="text-sm font-medium" style={{ color: 'var(--aws-text-primary)' }}>
                 No matching commands found
               </p>
@@ -536,9 +536,10 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
 
           <div
             style={{ color: 'var(--aws-brand)' }}
-            className="font-mono text-[10px] font-semibold"
+            className="flex items-center gap-1.5 font-mono text-[10px] font-semibold"
           >
-            {filteredActions.length} commands available
+            <AWSCompassLogoMark size={13} className="shrink-0" />
+            <span>{filteredActions.length} commands available</span>
           </div>
         </div>
       </div>

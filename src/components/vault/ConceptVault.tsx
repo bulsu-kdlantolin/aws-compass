@@ -38,11 +38,11 @@ const ConceptVaultTable: React.FC<{
   services: AWSService[];
   onSelectService: (id: string) => void;
 }> = ({ services, onSelectService }) => {
+  const isSidebarOpen = useCompassStore((s) => s.isSidebarOpen);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [sortKey, setSortKey] = useState<SortKey>('tier');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -127,75 +127,23 @@ const ConceptVaultTable: React.FC<{
   return (
     <div
       style={{ backgroundColor: 'var(--aws-page-bg)' }}
-      className="flex flex-col h-full overflow-hidden p-4 sm:p-6"
+      className={`flex flex-col h-full overflow-hidden ${!isSidebarOpen ? 'pl-24 pr-4 sm:pr-6 pt-4 sm:pt-6 pb-4 sm:pb-6' : 'p-4 sm:p-6'}`}
     >
       <div className="max-w-7xl w-full mx-auto flex flex-col h-full overflow-hidden space-y-4">
-        {/* Table Title and Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-          <div>
-            <h1
-              style={{ color: 'var(--aws-text-primary)' }}
-              className="text-[20px] font-bold leading-[24px]"
-            >
-              AWS Services
-            </h1>
-            <p
-              style={{ color: 'var(--aws-text-muted)' }}
-              className="text-[12px] leading-[16px] mt-0.5"
-            >
-              Explore core AWS services, official architecture blueprints, and exam study dossiers.
-            </p>
-          </div>
-
-          {/* Density toggle */}
-          <div className="flex items-center gap-1 self-start sm:self-auto">
-            <span
-              style={{ color: 'var(--aws-text-muted)' }}
-              className="text-[12px] mr-1"
-            >
-              Density:
-            </span>
-            <button
-              type="button"
-              onClick={() => setDensity('comfortable')}
-              style={
-                density === 'comfortable'
-                  ? {
-                      backgroundColor: 'var(--aws-card-bg)',
-                      borderColor: 'var(--aws-brand)',
-                      color: 'var(--aws-text-primary)',
-                    }
-                  : {
-                      backgroundColor: 'transparent',
-                      borderColor: 'var(--aws-border)',
-                      color: 'var(--aws-text-muted)',
-                    }
-              }
-              className="px-2 py-1 text-[11px] rounded-[4px] border font-medium cursor-pointer transition-colors"
-            >
-              Comfortable
-            </button>
-            <button
-              type="button"
-              onClick={() => setDensity('compact')}
-              style={
-                density === 'compact'
-                  ? {
-                      backgroundColor: 'var(--aws-card-bg)',
-                      borderColor: 'var(--aws-brand)',
-                      color: 'var(--aws-text-primary)',
-                    }
-                  : {
-                      backgroundColor: 'transparent',
-                      borderColor: 'var(--aws-border)',
-                      color: 'var(--aws-text-muted)',
-                    }
-              }
-              className="px-2 py-1 text-[11px] rounded-[4px] border font-medium cursor-pointer transition-colors"
-            >
-              Compact
-            </button>
-          </div>
+        {/* Table Title */}
+        <div className="shrink-0">
+          <h1
+            style={{ color: 'var(--aws-text-primary)' }}
+            className="text-[20px] font-bold leading-[24px]"
+          >
+            AWS Services
+          </h1>
+          <p
+            style={{ color: 'var(--aws-text-muted)' }}
+            className="text-[12px] leading-[16px] mt-0.5"
+          >
+            Explore core AWS services, official architecture blueprints, and exam study dossiers.
+          </p>
         </div>
 
         {/* Outer Cloudscape Container (8px radius, single 1px border) */}
@@ -211,7 +159,7 @@ const ConceptVaultTable: React.FC<{
             style={{
               borderBottomColor: 'var(--aws-border)',
             }}
-            className="px-4 py-3 border-b flex flex-wrap items-center justify-between gap-3 shrink-0"
+            className="px-4 py-3 border-b flex flex-wrap items-center justify-between gap-3 shrink-0 relative z-20"
           >
             <div className="flex items-center gap-2.5 flex-1 max-w-lg">
               <CloudscapeSearchInput
@@ -337,16 +285,10 @@ const ConceptVaultTable: React.FC<{
                     <tr
                       key={svc.id}
                       onClick={() => onSelectService(svc.id)}
-                      className={`hover:bg-[var(--aws-page-bg)] cursor-pointer transition-colors ${
-                        density === 'comfortable' ? 'py-3' : 'py-1.5'
-                      }`}
+                      className="hover:bg-[var(--aws-page-bg)] cursor-pointer transition-colors py-3"
                     >
                       {/* Service column with 24x24px AWSServiceIcon */}
-                      <td
-                        className={`px-4 ${
-                          density === 'comfortable' ? 'py-3' : 'py-1.5'
-                        }`}
-                      >
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-2.5">
                           <AWSServiceIcon
                             serviceId={svc.id}
@@ -370,19 +312,13 @@ const ConceptVaultTable: React.FC<{
                       {/* Category */}
                       <td
                         style={{ color: 'var(--aws-text-primary)' }}
-                        className={`px-4 ${
-                          density === 'comfortable' ? 'py-3' : 'py-1.5'
-                        }`}
+                        className="px-4 py-3"
                       >
                         {svc.category}
                       </td>
 
                       {/* Tier */}
-                      <td
-                        className={`px-4 font-mono text-[12px] ${
-                          density === 'comfortable' ? 'py-3' : 'py-1.5'
-                        }`}
-                      >
+                      <td className="px-4 py-3 font-mono text-[12px]">
                         <span
                           style={{
                             color:
@@ -396,29 +332,19 @@ const ConceptVaultTable: React.FC<{
                       </td>
 
                       {/* CLI Prefix */}
-                      <td
-                        className={`px-4 font-mono text-[12px] text-[var(--aws-text-muted)] ${
-                          density === 'comfortable' ? 'py-3' : 'py-1.5'
-                        }`}
-                      >
+                      <td className="px-4 py-3 font-mono text-[12px] text-[var(--aws-text-muted)]">
                         aws {svc.id}
                       </td>
 
                       {/* Study Status */}
-                      <td
-                        className={`px-4 ${
-                          density === 'comfortable' ? 'py-3' : 'py-1.5'
-                        }`}
-                      >
+                      <td className="px-4 py-3">
                         <CloudscapeStatusIndicator status={svc.studyStatus} />
                       </td>
 
                       {/* Summary */}
                       <td
                         style={{ color: 'var(--aws-text-muted)' }}
-                        className={`px-4 text-[12px] hidden lg:table-cell max-w-xs xl:max-w-md truncate ${
-                          density === 'comfortable' ? 'py-3' : 'py-1.5'
-                        }`}
+                        className="px-4 py-3 text-[12px] hidden lg:table-cell max-w-xs xl:max-w-md truncate"
                       >
                         {svc.summary}
                       </td>
@@ -458,6 +384,7 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
   onUpdateStatus,
   onUpdateDoc,
 }) => {
+  const isSidebarOpen = useCompassStore((s) => s.isSidebarOpen);
   const [isEditing, setIsEditing] = useState(false);
   const [editorContent, setEditorContent] = useState(service.markdownDoc);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -490,7 +417,7 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
           backgroundColor: 'var(--aws-card-bg)',
           borderBottomColor: 'var(--aws-border)',
         }}
-        className="border-b px-4 sm:px-6 py-2.5 shrink-0 flex items-center justify-between gap-3 select-none"
+        className={`border-b ${!isSidebarOpen ? 'pl-24 pr-4 sm:pr-6' : 'px-4 sm:px-6'} py-2.5 shrink-0 flex items-center justify-between gap-3 select-none`}
       >
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-[13px]">
@@ -539,7 +466,7 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
               className={`flex items-center gap-1.5 px-3 py-1 text-[12px] font-medium rounded-[4px] border transition-all duration-150 cursor-pointer ${
                 !isEditing
                   ? 'shadow-xs font-semibold'
-                  : 'hover:text-[var(--aws-text-primary)] hover:bg-black/5 dark:hover:bg-white/5'
+                  : 'hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)]'
               }`}
             >
               <BookOpen
@@ -570,7 +497,7 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
               className={`flex items-center gap-1.5 px-3 py-1 text-[12px] font-medium rounded-[4px] border transition-all duration-150 cursor-pointer ${
                 isEditing
                   ? 'shadow-xs font-semibold'
-                  : 'hover:text-[var(--aws-text-primary)] hover:bg-black/5 dark:hover:bg-white/5'
+                  : 'hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)]'
               }`}
             >
               <Edit3
@@ -748,6 +675,7 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
           <div className="max-w-4xl mx-auto space-y-5 pb-8">
             {/* Cloudscape Container: Service Header & Key-Value Grid */}
             <CloudscapeContainer
+              className="relative z-10"
               header={
                 <div className="flex items-center gap-3">
                   <AWSServiceIcon serviceId={service.id} size={32} />
@@ -826,7 +754,7 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
                 </div>
 
                 {/* Study Status */}
-                <div>
+                <div className="relative z-20">
                   <span
                     style={{ color: 'var(--aws-text-muted)' }}
                     className="text-[12px] block font-medium mb-1"
@@ -840,6 +768,7 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
                       onUpdateStatus(service.id, val as StudyStatus)
                     }
                     ariaLabel="Update study status"
+                    align="right"
                     className="w-36"
                   />
                 </div>
