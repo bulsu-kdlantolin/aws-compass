@@ -21,56 +21,66 @@ import {
   BoxSelect,
   Download,
   Check,
-  Grid,
   ZoomIn,
   ZoomOut,
   Save,
-  FolderOpen,
   LayoutGrid,
   ArrowRightLeft,
+  Undo2,
+  Redo2,
+  Edit2,
+  Users,
+  StickyNote,
 } from 'lucide-react';
 import { useCompassStore } from '../../store/useCompassStore';
 import { useCanvasStore } from '../../store/useCanvasStore';
+import { useSettingsStore } from '../../store/useSettingsStore';
 import { usePopoverStore } from '../../store/usePopoverStore';
 import { AnimatedPopover } from '../ui/AnimatedPopover';
 import { AWSServiceNode } from './AWSServiceNode';
 import { AWSGroupNode } from './AWSGroupNode';
+import { AnnotationNode } from './AnnotationNode';
 import { ProtocolEdge } from './ProtocolEdge';
 import { NodeInspectorDrawer } from './NodeInspectorDrawer';
+import { CanvasContextMenu } from './CanvasContextMenu';
+import { BlueprintManagerDropdown } from './BlueprintManagerDropdown';
 import { getAWSCategoryColor } from '../../utils/awsCategoryColors';
-import { CloudscapeSelect, type CloudscapeSelectOption } from '../ui/CloudscapeSelect';
 import { CloudscapeSearchInput } from '../ui/CloudscapeSearchInput';
 import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { Blocks, Pulse, Arc } from '../ui/LoadingIndicators';
-import type { AWSService, GroupBoundaryType } from '../../types/aws';
+import type { AWSService, GroupBoundaryType, ExternalActorType } from '../../types/aws';
 
 // Hoist static node & edge registrations
 const nodeTypes: NodeTypes = {
   awsService: AWSServiceNode,
   awsGroup: AWSGroupNode,
   architectureGroup: AWSGroupNode,
+  annotationNode: AnnotationNode,
 };
 
 const edgeTypes: EdgeTypes = {
   default: ProtocolEdge,
 };
 
-const defaultEdgeOptions = {
-  type: 'default',
-  markerEnd: {
-    type: MarkerType.ArrowClosed,
-    width: 14,
-    height: 14,
-    color: '#8C4FFF',
-  },
-};
+const EXTERNAL_ACTORS: { type: ExternalActorType; label: string; desc: string }[] = [
+  { type: 'user-browser', label: 'User / Client Browser', desc: 'HTTPS / Web Traffic Ingress' },
+  { type: 'mobile-client', label: 'Mobile / IoT Client', desc: 'REST / WebSocket Device Client' },
+  { type: 'corporate-datacenter', label: 'Corporate Data Center', desc: 'Direct Connect / Site-to-Site VPN' },
+  { type: 'external-webhook', label: 'External Webhook / API', desc: '3rd-Party Partner Payload Ingress' },
+];
 
-const TEMPLATE_OPTIONS: CloudscapeSelectOption[] = [
-  { value: 'serverless-microservice', label: 'Serverless microservice', description: 'Route 53 -> CloudFront -> S3 + API Gateway -> Lambda -> DynamoDB' },
-  { value: '3-tier-vpc', label: '3-Tier VPC web app', description: 'IGW -> ALB -> EC2 Auto Scaling -> RDS Multi-AZ' },
-  { value: 'event-driven-pipeline', label: 'Event-driven pipeline', description: 'S3 Event -> SNS -> SQS -> Lambda Worker' },
-  { value: 'containerized-fargate', label: 'Containerized Fargate service', description: 'ALB -> ECS Fargate -> Amazon ECR + CloudWatch' },
+const GROUP_BOUNDARIES: { id: GroupBoundaryType; label: string; desc: string }[] = [
+  { id: 'aws-cloud', label: 'AWS Cloud', desc: 'Outer perimeter' },
+  { id: 'region', label: 'Region', desc: 'Regional boundary' },
+  { id: 'vpc', label: 'VPC', desc: '10.0.0.0/16' },
+  { id: 'public-subnet', label: 'Public subnet', desc: 'Ingress tier' },
+  { id: 'private-subnet', label: 'Private subnet', desc: 'Application tier' },
+  { id: 'data-subnet', label: 'Data subnet', desc: 'Database isolated' },
+  { id: 'security-group', label: 'Security group', desc: 'Firewall rules' },
+  { id: 'auto-scaling-group', label: 'Auto scaling group', desc: 'Scale cluster' },
+  { id: 'corporate-datacenter', label: 'Corporate Data Center', desc: 'On-premises scope' },
+  { id: 'serverless', label: 'Managed Serverless', desc: 'Event-driven scope' },
 ];
 
 const ArchitectureCanvasInner: React.FC = () => {
@@ -86,75 +96,132 @@ const ArchitectureCanvasInner: React.FC = () => {
   const onEdgesChange = useCanvasStore((s) => s.onEdgesChange);
   const onConnect = useCanvasStore((s) => s.onConnect);
   const addServiceNode = useCanvasStore((s) => s.addServiceNode);
+  const addExternalActor = useCanvasStore((s) => s.addExternalActor);
+  const addAnnotationNode = useCanvasStore((s) => s.addAnnotationNode);
   const clearCanvas = useCanvasStore((s) => s.clearCanvas);
-  const loadTemplate = useCanvasStore((s) => s.loadTemplate);
-  const openInspector = useCanvasStore((s) => s.openInspector);
+  const openNodeInspector = useCanvasStore((s) => s.openNodeInspector);
+  const openEdgeInspector = useCanvasStore((s) => s.openEdgeInspector);
   const closeInspector = useCanvasStore((s) => s.closeInspector);
   const setNodes = useCanvasStore((s) => s.setNodes);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
+  const selectedEdgeId = useCanvasStore((s) => s.selectedEdgeId);
   const removeNode = useCanvasStore((s) => s.removeNode);
-  const saveSnapshot = useCanvasStore((s) => s.saveSnapshot);
-  const loadSnapshot = useCanvasStore((s) => s.loadSnapshot);
-  const deleteSnapshot = useCanvasStore((s) => s.deleteSnapshot);
-  const savedDiagrams = useCanvasStore((s) => s.savedDiagrams);
-  const activeDiagramId = useCanvasStore((s) => s.activeDiagramId);
+  const removeEdge = useCanvasStore((s) => s.removeEdge);
+  const duplicateNode = useCanvasStore((s) => s.duplicateNode);
   const activeDiagramName = useCanvasStore((s) => s.activeDiagramName);
+  const saveCurrentAsBlueprint = useCanvasStore((s) => s.saveCurrentAsBlueprint);
+  const renameBlueprint = useCanvasStore((s) => s.renameBlueprint);
+  const activeDiagramId = useCanvasStore((s) => s.activeDiagramId);
   const saveStatus = useCanvasStore((s) => s.saveStatus);
   const initializeCanvas = useCanvasStore((s) => s.initializeCanvas);
   const autoLayout = useCanvasStore((s) => s.autoLayout);
+  const openContextMenu = useCanvasStore((s) => s.openContextMenu);
+  const closeContextMenu = useCanvasStore((s) => s.closeContextMenu);
+
+  // Undo / Redo history
+  const undo = useCanvasStore((s) => s.undo);
+  const redo = useCanvasStore((s) => s.redo);
+  const canUndo = useCanvasStore((s) => s.canUndo);
+  const canRedo = useCanvasStore((s) => s.canRedo);
+
   const isSidebarOpen = useCompassStore((s) => s.isSidebarOpen);
   const activePopoverId = usePopoverStore((s) => s.activePopoverId);
   const closePopover = usePopoverStore((s) => s.closePopover);
   const togglePopover = usePopoverStore((s) => s.togglePopover);
 
-  const isAddOpen = activePopoverId === 'canvas-add-service';
+  // Settings preferences
+  const canvasGridVariant = useSettingsStore((s) => s.canvasGridVariant);
+  const snapToGrid = useSettingsStore((s) => s.snapToGrid);
+  const snapGridSize = useSettingsStore((s) => s.snapGridSize);
+  const showMiniMap = useSettingsStore((s) => s.showMiniMap);
+  const animateEdgesByDefault = useSettingsStore((s) => s.animateEdgesByDefault);
+
+  const isAddServiceOpen = activePopoverId === 'canvas-add-service';
   const isBoundaryOpen = activePopoverId === 'canvas-boundary';
-  const isSnapshotOpen = activePopoverId === 'canvas-snapshots';
+  const isActorNoteOpen = activePopoverId === 'canvas-actor-note';
+  const isSaveAsOpen = activePopoverId === 'canvas-save-as';
   const isExportOpen = activePopoverId === 'canvas-export';
 
-  const addTriggerRef = useRef<HTMLButtonElement>(null);
+  const addServiceTriggerRef = useRef<HTMLButtonElement>(null);
   const boundaryTriggerRef = useRef<HTMLButtonElement>(null);
-  const snapshotTriggerRef = useRef<HTMLButtonElement>(null);
+  const actorNoteTriggerRef = useRef<HTMLButtonElement>(null);
+  const saveAsTriggerRef = useRef<HTMLButtonElement>(null);
   const exportTriggerRef = useRef<HTMLButtonElement>(null);
 
-  const [activeTemplateId, setActiveTemplateId] = useState<string>('serverless-microservice');
   const [layoutDirection, setLayoutDirection] = useState<'LR' | 'TB'>('LR');
   const [serviceSearch, setServiceSearch] = useState('');
-  const [snapshotNameInput, setSnapshotNameInput] = useState('');
-  const [snapshotSaveSuccess, setSnapshotSaveSuccess] = useState(false);
-  const [gridVariant, setGridVariant] = useState<BackgroundVariant>(BackgroundVariant.Dots);
 
-  // loading-dev action and layout indicator states
+  // Inline Title Editing state
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState('');
+
+  // Save As Custom Blueprint state
+  const [saveAsNameInput, setSaveAsNameInput] = useState('');
+  const [saveAsSuccess, setSaveAsSuccess] = useState(false);
+
+  // Indicators
   const [isArranging, setIsArranging] = useState(false);
-  const [isAddingService, setIsAddingService] = useState(false);
-  const [isSavingSnapshot, setIsSavingSnapshot] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     initializeCanvas();
   }, [initializeCanvas]);
 
-  useEffect(() => {
-    if (activeDiagramId && TEMPLATE_OPTIONS.some((o) => o.value === activeDiagramId)) {
-      setActiveTemplateId(activeDiagramId);
-    }
-  }, [activeDiagramId]);
-
-  // Keyboard shortcut listener: Delete/Backspace to delete selected node
+  // Global Keyboard Shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+D, Delete/Backspace, Escape)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const isTyping =
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA' ||
+        (document.activeElement as HTMLElement)?.isContentEditable;
+
+      // Undo: Ctrl+Z / Cmd+Z
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey && !isTyping) {
+        e.preventDefault();
+        undo();
+        return;
+      }
+
+      // Redo: Ctrl+Y / Ctrl+Shift+Z / Cmd+Shift+Z
       if (
-        (e.key === 'Delete' || e.key === 'Backspace') &&
-        selectedNodeId &&
-        document.activeElement?.tagName !== 'INPUT' &&
-        document.activeElement?.tagName !== 'TEXTAREA'
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y' && !isTyping) ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z' && !isTyping)
       ) {
-        removeNode(selectedNodeId);
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Duplicate: Ctrl+D / Cmd+D
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd' && !isTyping) {
+        e.preventDefault();
+        if (selectedNodeId) {
+          duplicateNode(selectedNodeId);
+        }
+        return;
+      }
+
+      // Delete: Delete or Backspace
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !isTyping) {
+        if (selectedNodeId) {
+          removeNode(selectedNodeId);
+        } else if (selectedEdgeId) {
+          removeEdge(selectedEdgeId);
+        }
+        return;
+      }
+
+      // Escape: Close context menu and inspectors
+      if (e.key === 'Escape') {
+        closeContextMenu();
+        closeInspector();
+        setIsEditingTitle(false);
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeId, removeNode]);
+  }, [undo, redo, duplicateNode, removeNode, removeEdge, selectedNodeId, selectedEdgeId, closeContextMenu, closeInspector]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -181,16 +248,6 @@ const ArchitectureCanvasInner: React.FC = () => {
     [reactFlowInstance, services, addServiceNode]
   );
 
-  const handleSelectTemplate = (templateId: string) => {
-    setActiveTemplateId(templateId);
-    setIsArranging(true);
-    loadTemplate(templateId);
-    setTimeout(() => {
-      reactFlowInstance.fitView({ padding: 0.15, duration: 400 });
-      setIsArranging(false);
-    }, 220);
-  };
-
   const handleTriggerAutoLayout = (direction: 'LR' | 'TB') => {
     setIsArranging(true);
     autoLayout(direction);
@@ -202,7 +259,6 @@ const ArchitectureCanvasInner: React.FC = () => {
 
   const handleQuickAddService = useCallback(
     (svc: AWSService) => {
-      setIsAddingService(true);
       const offset = (nodes.length % 5) * 35;
       const center = reactFlowInstance.screenToFlowPosition({
         x: window.innerWidth / 2 + offset,
@@ -210,18 +266,44 @@ const ArchitectureCanvasInner: React.FC = () => {
       });
 
       addServiceNode(svc, center);
+      closePopover('canvas-add-primitives');
       closePopover('canvas-add-service');
       setServiceSearch('');
-      setTimeout(() => setIsAddingService(false), 300);
     },
     [nodes.length, reactFlowInstance, addServiceNode, closePopover]
   );
 
+  const handleQuickAddActor = useCallback(
+    (actorType: ExternalActorType, label: string) => {
+      const offset = (nodes.length % 4) * 30;
+      const center = reactFlowInstance.screenToFlowPosition({
+        x: window.innerWidth / 2 - 120 + offset,
+        y: window.innerHeight / 2 - 100 + offset,
+      });
+
+      addExternalActor(actorType, label, center);
+      closePopover('canvas-add-primitives');
+      closePopover('canvas-actor-note');
+    },
+    [nodes.length, reactFlowInstance, addExternalActor, closePopover]
+  );
+
+  const handleQuickAddNote = useCallback(() => {
+    const center = reactFlowInstance.screenToFlowPosition({
+      x: window.innerWidth / 2 - 80,
+      y: window.innerHeight / 2 - 60,
+    });
+
+    addAnnotationNode('Architecture Note', '', center);
+    closePopover('canvas-add-primitives');
+    closePopover('canvas-actor-note');
+  }, [reactFlowInstance, addAnnotationNode, closePopover]);
+
   const handleAddBoundary = useCallback(
     (boundaryType: GroupBoundaryType, label: string) => {
       const center = reactFlowInstance.screenToFlowPosition({
-        x: window.innerWidth / 2 - 200,
-        y: window.innerHeight / 2 - 150,
+        x: window.innerWidth / 2 - 220,
+        y: window.innerHeight / 2 - 160,
       });
 
       const newBoundary = {
@@ -238,8 +320,9 @@ const ArchitectureCanvasInner: React.FC = () => {
           isBoundary: true,
           boundaryType,
           boundaryLabel: label,
-          width: boundaryType === 'aws-cloud' ? 1000 : 540,
-          height: boundaryType === 'aws-cloud' ? 520 : 320,
+          cidr: boundaryType === 'vpc' ? '10.0.0.0/16' : boundaryType.includes('subnet') ? '10.0.1.0/24' : undefined,
+          width: boundaryType === 'aws-cloud' ? 960 : 540,
+          height: boundaryType === 'aws-cloud' ? 520 : 340,
         },
       };
 
@@ -249,17 +332,24 @@ const ArchitectureCanvasInner: React.FC = () => {
     [nodes, reactFlowInstance, setNodes, closePopover]
   );
 
-  const handleSaveSnapshot = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSavingSnapshot(true);
-    try {
-      await saveSnapshot(snapshotNameInput.trim() || undefined);
-      setSnapshotNameInput('');
-      setSnapshotSaveSuccess(true);
-      setTimeout(() => setSnapshotSaveSuccess(false), 2000);
-    } finally {
-      setTimeout(() => setIsSavingSnapshot(false), 300);
+  const handleCommitTitleChange = async () => {
+    if (titleDraft.trim() && titleDraft.trim() !== activeDiagramName) {
+      await renameBlueprint(activeDiagramId, titleDraft.trim());
     }
+    setIsEditingTitle(false);
+  };
+
+  const handleSaveAsBlueprint = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!saveAsNameInput.trim()) return;
+
+    await saveCurrentAsBlueprint(saveAsNameInput.trim());
+    setSaveAsSuccess(true);
+    setTimeout(() => {
+      setSaveAsSuccess(false);
+      closePopover('canvas-save-as');
+      setSaveAsNameInput('');
+    }, 1200);
   };
 
   const handleExportJson = useCallback(() => {
@@ -292,7 +382,7 @@ const ArchitectureCanvasInner: React.FC = () => {
   }, [nodes, edges, activeDiagramName, closePopover]);
 
   const markdownSpec = useMemo(() => {
-    const serviceNodes = nodes.filter((n) => !n.data.isBoundary);
+    const serviceNodes = nodes.filter((n) => !n.data.isBoundary && !n.data.isAnnotation);
     const boundaryNodes = nodes.filter((n) => n.data.isBoundary);
 
     return [
@@ -304,19 +394,19 @@ const ArchitectureCanvasInner: React.FC = () => {
       `- **Connections Count**: ${edges.length}`,
       '',
       `## Service Instances`,
-      ...serviceNodes.map((n) => `- **${n.data.label}** (\`${n.data.serviceId}\`): ${n.data.category} (Tier ${n.data.tier})`),
+      ...serviceNodes.map((n) => `- **${n.data.customTitle || n.data.label}** (\`${n.data.serviceId}\`): ${n.data.category} (Tier ${n.data.tier})`),
       '',
       `## Data & Control Flows`,
       ...edges.map((e) => {
         const src = nodes.find((n) => n.id === e.source)?.data.label || e.source;
         const tgt = nodes.find((n) => n.id === e.target)?.data.label || e.target;
-        return `- ${src} --[${e.protocol || 'HTTPS/REST'}]--> ${tgt}`;
+        return `- ${src} --[${e.data?.customLabel || e.protocol || 'HTTPS/REST'}]--> ${tgt}`;
       }),
     ].join('\n');
   }, [nodes, edges, activeDiagramName]);
 
   const filteredQuickAddServices = useMemo(() => {
-    if (!serviceSearch.trim()) return services.slice(0, 16);
+    if (!serviceSearch.trim()) return services.slice(0, 18);
     const q = serviceSearch.toLowerCase().trim();
     return services.filter(
       (s) => s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q)
@@ -325,13 +415,30 @@ const ArchitectureCanvasInner: React.FC = () => {
 
   const miniMapNodeColor = useCallback(
     (node: { data?: unknown }) => {
-      const data = node.data as { category?: string; isBoundary?: boolean };
+      const data = node.data as { category?: string; isBoundary?: boolean; isAnnotation?: boolean };
       if (data?.isBoundary) {
         return theme === 'dark' ? '#354150' : '#D5DBDB';
+      }
+      if (data?.isAnnotation) {
+        return '#ED7100';
       }
       return getAWSCategoryColor(data?.category || '', theme);
     },
     [theme]
+  );
+
+  const flowEdgeOptions = useMemo(
+    () => ({
+      type: 'default',
+      animated: animateEdgesByDefault,
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 14,
+        height: 14,
+        color: '#8C4FFF',
+      },
+    }),
+    [animateEdgesByDefault]
   );
 
   return (
@@ -344,40 +451,121 @@ const ArchitectureCanvasInner: React.FC = () => {
     >
       {/* Main Canvas Viewport Area */}
       <div className="flex-1 h-full relative flex flex-col min-w-0">
-        {/* Cloudscape Enterprise Toolbar */}
+        {/* Cloudscape Enterprise Toolbar - 3 Clusters */}
         <div
           style={{
             backgroundColor: 'var(--aws-card-bg)',
             borderBottomColor: 'var(--aws-border)',
           }}
-          className={`h-12 border-b ${!isSidebarOpen ? 'pl-24 pr-4' : 'px-4'} flex items-center justify-between gap-3 shrink-0 z-10`}
+          className={`h-12 border-b ${!isSidebarOpen ? 'pl-24 pr-4' : 'px-4'} flex items-center justify-between gap-3 shrink-0 z-10 overflow-x-auto custom-scrollbar`}
         >
-          {/* Left: Template Selector & Non-blocking Auto-Save Status */}
-          <div className="flex items-center gap-3">
-            <span className="text-[12px] font-bold text-[var(--aws-text-muted)] hidden sm:inline">
-              Blueprint:
-            </span>
-            <CloudscapeSelect
-              value={activeTemplateId}
-              options={TEMPLATE_OPTIONS}
-              onChange={handleSelectTemplate}
-              className="w-56 sm:w-64"
-            />
+          {/* Cluster 1: Blueprint Selector & Save As */}
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 shrink-0">
+            <BlueprintManagerDropdown />
 
-            {/* Canvas Auto-Save Persistence Feedback */}
+            {/* Inline Title & Save As Action */}
+            <div className="hidden lg:flex items-center gap-1.5 border-l border-[var(--aws-border)] pl-2.5">
+              {isEditingTitle ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    value={titleDraft}
+                    onChange={(e) => setTitleDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleCommitTitleChange();
+                      if (e.key === 'Escape') setIsEditingTitle(false);
+                    }}
+                    onBlur={handleCommitTitleChange}
+                    autoFocus
+                    className="h-7 px-2 text-[12px] font-semibold rounded border border-[var(--aws-interactive)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCommitTitleChange}
+                    className="p-1 text-[#1D8102] hover:opacity-80 cursor-pointer"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTitleDraft(activeDiagramName);
+                    setIsEditingTitle(true);
+                  }}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-[4px] text-[12px] text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] cursor-pointer group"
+                  title="Click to rename current blueprint"
+                >
+                  <span className="max-w-[140px] truncate">{activeDiagramName}</span>
+                  <Edit2 className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+              )}
+
+              {/* Save As Custom Blueprint Button */}
+              <div className="relative">
+                <button
+                  ref={saveAsTriggerRef}
+                  type="button"
+                  onClick={() => togglePopover('canvas-save-as')}
+                  className="h-7 px-2 text-[11px] font-medium rounded border border-[var(--aws-border)] hover:border-[var(--aws-interactive)] hover:text-[var(--aws-interactive)] text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)] flex items-center gap-1 cursor-pointer"
+                  title="Save current architecture graph as a Custom Blueprint"
+                >
+                  <Save className="w-3 h-3 text-[#1D8102]" />
+                  <span>Save as...</span>
+                </button>
+
+                <AnimatedPopover
+                  isOpen={isSaveAsOpen}
+                  onClose={() => closePopover('canvas-save-as')}
+                  triggerRef={saveAsTriggerRef}
+                  align="left"
+                  className="top-8.5 left-0 w-72 p-2.5 space-y-2"
+                >
+                  <div className="text-[12px] font-bold text-[var(--aws-text-primary)] flex items-center justify-between">
+                    <span>Save Custom Blueprint</span>
+                    {saveAsSuccess && (
+                      <span className="text-[11px] text-[#1D8102] flex items-center gap-1 font-semibold">
+                        <Check className="w-3.5 h-3.5" /> Saved
+                      </span>
+                    )}
+                  </div>
+                  <form onSubmit={handleSaveAsBlueprint} className="space-y-2">
+                    <input
+                      type="text"
+                      value={saveAsNameInput}
+                      onChange={(e) => setSaveAsNameInput(e.target.value)}
+                      placeholder="Blueprint title (e.g. My Prod VPC)..."
+                      autoFocus
+                      className="w-full h-8 px-2.5 text-[12px] rounded border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] outline-none focus:border-[var(--aws-interactive)]"
+                    />
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => closePopover('canvas-save-as')}
+                        className="px-2.5 py-1 text-[11px] rounded border border-[var(--aws-border)] text-[var(--aws-text-muted)] hover:bg-[var(--aws-page-bg)] cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-3 py-1 text-[11px] font-semibold rounded bg-[var(--aws-interactive)] text-white hover:opacity-90 cursor-pointer"
+                      >
+                        Save Blueprint
+                      </button>
+                    </div>
+                  </form>
+                </AnimatedPopover>
+              </div>
+            </div>
+
+            {/* Canvas Auto-Save Indicator */}
             <div
-              className="hidden md:flex items-center text-[11px] font-mono px-2 py-0.5 rounded min-w-[130px] select-none"
+              className="hidden 2xl:flex items-center text-[11px] font-mono px-2 py-0.5 rounded select-none"
               role="status"
               aria-live="polite"
               aria-atomic="true"
             >
-              <span className="sr-only">
-                {saveStatus === 'saving'
-                  ? 'Saving changes…'
-                  : saveStatus === 'saved'
-                  ? 'Saved'
-                  : 'All changes saved'}
-              </span>
               <div
                 className={`inline-flex items-center gap-1.5 transition-opacity duration-200 ${
                   saveStatus === 'idle' ? 'opacity-0' : 'opacity-100'
@@ -398,54 +586,51 @@ const ArchitectureCanvasInner: React.FC = () => {
                       : 'text-[var(--aws-text-muted)]'
                   }
                 >
-                  {saveStatus === 'saving' ? 'Saving changes…' : 'Saved'}
+                  {saveStatus === 'saving' ? 'Saving…' : 'Saved'}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Right: Actions and Controls */}
-          <div className="flex items-center gap-2">
-            {/* Quick Add Service Dropdown */}
+          {/* 1px Vertical Divider */}
+          <div className="h-5 w-px bg-[var(--aws-border)] shrink-0 hidden md:block" aria-hidden="true" />
+
+          {/* Cluster 2: Add Primitives (Service, Boundary, Actor/Note) & Auto-Layout */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* + Add service ▾ */}
             <div className="relative">
               <button
-                ref={addTriggerRef}
+                ref={addServiceTriggerRef}
                 type="button"
                 onClick={() => togglePopover('canvas-add-service')}
-                aria-disabled={isAddingService ? 'true' : undefined}
                 style={{
                   backgroundColor: '#FF9900',
                   color: '#0F141A',
                 }}
-                className={`h-8 px-3 rounded-[6px] font-bold text-[13px] flex items-center gap-1.5 hover:bg-[#EC7211] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer shadow-xs border ${
-                  isAddOpen ? 'border-[#0972D3] dark:border-[#539FE5]' : 'border-transparent'
-                }`}
+                className="h-8 px-2.5 rounded-[4px] text-[12px] font-bold flex items-center gap-1.5 shadow-xs hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer"
+                title="Add AWS Service"
               >
-                <AnimatedIcon
-                  activeKey={isAddingService ? 'loading' : 'idle'}
-                  size={16}
-                  className="w-4 h-4"
-                >
-                  <Plus key="idle" className="w-4 h-4" />
-                  <Arc key="loading" size={14} easing="stacked" cap="round" color="#0F141A" />
-                </AnimatedIcon>
-                <span>Add service</span>
+                <Plus className="w-4 h-4" />
+                <span>Service</span>
                 <ChevronDown
-                  className="w-3.5 h-3.5 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                  style={{ transform: isAddOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  className="w-3.5 h-3.5 transition-transform duration-200"
+                  style={{ transform: isAddServiceOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
                 />
               </button>
 
               <AnimatedPopover
-                isOpen={isAddOpen}
+                isOpen={isAddServiceOpen}
                 onClose={() => closePopover('canvas-add-service')}
-                triggerRef={addTriggerRef}
-                className="top-9.5 left-0 w-64 space-y-1.5"
+                triggerRef={addServiceTriggerRef}
+                className="top-9.5 left-0 w-72 p-2 space-y-2"
               >
+                <div className="text-[11px] font-bold text-[var(--aws-text-muted)] border-b border-[var(--aws-border)] pb-1 px-1">
+                  Add AWS service to canvas
+                </div>
                 <CloudscapeSearchInput
                   value={serviceSearch}
                   onChange={setServiceSearch}
-                  placeholder="Filter services..."
+                  placeholder="Filter services by name or ID..."
                   autoFocus
                   size="sm"
                   className="w-full"
@@ -468,23 +653,24 @@ const ArchitectureCanvasInner: React.FC = () => {
               </AnimatedPopover>
             </div>
 
-            {/* Add Group Boundary Container Dropdown */}
+            {/* + Boundary ▾ */}
             <div className="relative">
               <button
                 ref={boundaryTriggerRef}
                 type="button"
                 onClick={() => togglePopover('canvas-boundary')}
                 data-open={isBoundaryOpen ? 'true' : 'false'}
-                className={`h-8 px-3 rounded-[6px] border text-[12px] font-medium flex items-center gap-1.5 enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] shadow-xs ${
+                className={`h-8 px-2.5 rounded-[4px] border text-[12px] font-medium text-[var(--aws-text-primary)] bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] flex items-center gap-1.5 transition-all cursor-pointer ${
                   isBoundaryOpen
                     ? 'border-[var(--aws-interactive)] ring-1 ring-[var(--aws-interactive)]/20'
                     : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)]'
                 }`}
+                title="Add architectural group boundary"
               >
                 <BoxSelect className="w-4 h-4 text-[#8C4FFF]" />
                 <span className="hidden sm:inline">Boundary</span>
                 <ChevronDown
-                  className="w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  className="w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-200"
                   style={{ transform: isBoundaryOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
                 />
               </button>
@@ -498,20 +684,12 @@ const ArchitectureCanvasInner: React.FC = () => {
                 <div className="px-2.5 py-1 text-[11px] font-bold text-[var(--aws-text-muted)] border-b border-[var(--aws-border)] mb-1">
                   Add group boundary
                 </div>
-                {[
-                  { id: 'aws-cloud', label: 'AWS Cloud', desc: 'Outer perimeter' },
-                  { id: 'region', label: 'Region', desc: 'Regional boundary' },
-                  { id: 'vpc', label: 'VPC', desc: '10.0.0.0/16' },
-                  { id: 'public-subnet', label: 'Public subnet', desc: 'Ingress tier' },
-                  { id: 'private-subnet', label: 'Private subnet', desc: 'Application tier' },
-                  { id: 'security-group', label: 'Security group', desc: 'Firewall rules' },
-                  { id: 'auto-scaling-group', label: 'Auto scaling group', desc: 'Scale cluster' },
-                ].map((b) => (
+                {GROUP_BOUNDARIES.map((b) => (
                   <button
                     key={b.id}
                     type="button"
-                    onClick={() => handleAddBoundary(b.id as GroupBoundaryType, b.label)}
-                    className="w-full text-left px-2.5 py-1.5 rounded-[6px] text-[12px] text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)] transition-colors duration-100 flex items-center justify-between gap-4 cursor-pointer"
+                    onClick={() => handleAddBoundary(b.id, b.label)}
+                    className="w-full text-left px-2.5 py-1.5 rounded-[6px] text-[12px] text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)] transition-colors flex items-center justify-between gap-4 cursor-pointer"
                   >
                     <span className="font-medium">{b.label}</span>
                     <span className="text-[10px] text-[var(--aws-text-muted)] shrink-0">{b.desc}</span>
@@ -520,141 +698,82 @@ const ArchitectureCanvasInner: React.FC = () => {
               </AnimatedPopover>
             </div>
 
-            {/* Snapshots Menu */}
+            {/* + Actor / Note ▾ */}
             <div className="relative">
               <button
-                ref={snapshotTriggerRef}
+                ref={actorNoteTriggerRef}
                 type="button"
-                onClick={() => togglePopover('canvas-snapshots')}
-                aria-disabled={isSavingSnapshot ? 'true' : undefined}
-                data-open={isSnapshotOpen ? 'true' : 'false'}
-                className={`h-8 px-3 rounded-[6px] border text-[12px] font-medium flex items-center gap-1.5 enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] shadow-xs ${
-                  isSnapshotOpen
+                onClick={() => togglePopover('canvas-actor-note')}
+                data-open={isActorNoteOpen ? 'true' : 'false'}
+                className={`h-8 px-2.5 rounded-[4px] border text-[12px] font-medium text-[var(--aws-text-primary)] bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isActorNoteOpen
                     ? 'border-[var(--aws-interactive)] ring-1 ring-[var(--aws-interactive)]/20'
                     : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)]'
                 }`}
+                title="Add external clients or callout notes"
               >
-                <AnimatedIcon
-                  activeKey={isSavingSnapshot ? 'loading' : 'idle'}
-                  size={15}
-                  className="w-3.5 h-3.5 text-[#1D8102]"
-                >
-                  <Save key="idle" className="w-3.5 h-3.5 text-[#1D8102]" />
-                  <Arc key="loading" size={13} easing="stacked" cap="round" color="#1D8102" />
-                </AnimatedIcon>
-                <span className="hidden md:inline">Snapshots</span>
+                <Users className="w-4 h-4 text-[#0972D3] dark:text-[#539FE5]" />
+                <span className="hidden md:inline">Actor / Note</span>
                 <ChevronDown
-                  className="w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                  style={{ transform: isSnapshotOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  className="w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-200"
+                  style={{ transform: isActorNoteOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
                 />
               </button>
 
               <AnimatedPopover
-                isOpen={isSnapshotOpen}
-                onClose={() => closePopover('canvas-snapshots')}
-                triggerRef={snapshotTriggerRef}
-                align="right"
-                className="top-9.5 right-0 w-72 p-2 space-y-2.5"
+                isOpen={isActorNoteOpen}
+                onClose={() => closePopover('canvas-actor-note')}
+                triggerRef={actorNoteTriggerRef}
+                className="top-9.5 left-0 w-72 p-2 space-y-2"
               >
-                <div className="flex items-center justify-between border-b border-[var(--aws-border)] pb-1.5">
-                  <span className="text-[12px] font-bold text-[var(--aws-text-primary)]">
-                    Diagram snapshots
-                  </span>
-                  {snapshotSaveSuccess && (
-                    <span className="text-[11px] text-[#1D8102] flex items-center gap-1 font-semibold">
-                      <Check className="w-3.5 h-3.5" /> Saved
-                    </span>
-                  )}
+                <div className="text-[10px] font-bold text-[var(--aws-text-muted)] uppercase tracking-wider px-1">
+                  External Clients & Callers
+                </div>
+                <div className="space-y-0.5">
+                  {EXTERNAL_ACTORS.map((act) => (
+                    <button
+                      key={act.type}
+                      type="button"
+                      onClick={() => handleQuickAddActor(act.type, act.label)}
+                      className="w-full text-left px-2.5 py-1.5 rounded-[6px] text-[12px] text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)] transition-colors flex items-center justify-between gap-3 cursor-pointer"
+                    >
+                      <div className="truncate">
+                        <div className="font-medium truncate">{act.label}</div>
+                        <div className="text-[10px] text-[var(--aws-text-muted)] truncate">{act.desc}</div>
+                      </div>
+                      <Users className="w-3.5 h-3.5 text-[var(--aws-interactive)] shrink-0" />
+                    </button>
+                  ))}
                 </div>
 
-                <form onSubmit={handleSaveSnapshot} className="flex items-center gap-1.5">
-                  <input
-                    type="text"
-                    value={snapshotNameInput}
-                    onChange={(e) => setSnapshotNameInput(e.target.value)}
-                    placeholder="Snapshot title..."
-                    style={{
-                      backgroundColor: 'var(--aws-page-bg)',
-                      borderColor: 'var(--aws-input-border)',
-                      color: 'var(--aws-text-primary)',
-                    }}
-                    className="flex-1 h-7 px-2.5 rounded-[6px] border text-[12px] outline-none caret-[var(--aws-interactive)] transition-[border-color,box-shadow] duration-150 ease-out focus:border-[var(--aws-interactive)] focus:ring-2 focus:ring-[var(--aws-interactive)]/40"
-                  />
-                  <button
-                    type="submit"
-                    disabled={isSavingSnapshot}
-                    aria-disabled={isSavingSnapshot ? 'true' : undefined}
-                    style={{
-                      backgroundColor: 'var(--aws-interactive)',
-                      color: '#FFFFFF',
-                    }}
-                    className="h-7 px-2.5 rounded-[6px] text-[12px] font-medium cursor-pointer enabled:active:scale-[0.97] transition-[background-color,transform] duration-150 ease-out flex items-center gap-1.5"
-                  >
-                    <AnimatedIcon
-                      activeKey={isSavingSnapshot ? 'loading' : 'idle'}
-                      size={14}
-                      className="w-3.5 h-3.5"
-                    >
-                      <Save key="idle" className="w-3.5 h-3.5" />
-                      <Arc key="loading" size={14} easing="stacked" cap="round" color="#FFFFFF" />
-                    </AnimatedIcon>
-                    <span>Save</span>
-                  </button>
-                </form>
-
-                <div className="space-y-1">
-                  <div className="text-[11px] font-semibold text-[var(--aws-text-muted)]">
-                    Saved ({savedDiagrams.length})
+                <div className="border-t border-[var(--aws-border)] pt-2">
+                  <div className="text-[10px] font-bold text-[var(--aws-text-muted)] uppercase tracking-wider px-1 mb-1">
+                    Topology Sticky Note
                   </div>
-                  {savedDiagrams.length === 0 ? (
-                    <div className="text-[11px] text-[var(--aws-text-muted)] italic py-1">
-                      No custom snapshots yet.
+                  <button
+                    type="button"
+                    onClick={handleQuickAddNote}
+                    className="w-full flex items-center gap-2 p-2 rounded-[6px] border border-dashed border-[var(--aws-border)] hover:border-[var(--aws-interactive)] hover:bg-[var(--aws-interactive)]/10 text-[var(--aws-text-primary)] cursor-pointer text-left transition-colors"
+                  >
+                    <StickyNote className="w-4 h-4 text-[#ED7100] shrink-0" />
+                    <div>
+                      <div className="text-[12px] font-semibold">Add sticky callout note</div>
+                      <div className="text-[10px] text-[var(--aws-text-muted)]">
+                        Document decisions or SLA targets
+                      </div>
                     </div>
-                  ) : (
-                    <div className="max-h-44 overflow-y-auto custom-scrollbar space-y-1">
-                      {savedDiagrams.map((diag) => (
-                        <div
-                          key={diag.id}
-                          style={{
-                            backgroundColor: 'var(--aws-page-bg)',
-                            borderColor: 'var(--aws-border)',
-                          }}
-                          className="flex items-center justify-between p-1.5 rounded-[6px] border text-[12px] group"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              loadSnapshot(diag.id);
-                              closePopover('canvas-snapshots');
-                            }}
-                            className="text-left text-[var(--aws-text-primary)] hover:text-[var(--aws-interactive)] flex items-center gap-1.5 cursor-pointer truncate flex-1"
-                          >
-                            <FolderOpen className="w-3.5 h-3.5 text-[#1D8102] shrink-0" />
-                            <span className="truncate">{diag.name}</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => deleteSnapshot(diag.id)}
-                            className="text-[var(--aws-text-muted)] hover:text-[#DD344C] opacity-0 group-hover:opacity-100 cursor-pointer ml-1.5"
-                            title="Delete snapshot"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  </button>
                 </div>
               </AnimatedPopover>
             </div>
 
-            {/* Auto-Layout (LR / TB) Deterministic Engine */}
+            {/* Auto-Layout (LR / TB) */}
             <div className="flex items-center border border-[var(--aws-input-border)] rounded-[4px] overflow-hidden h-8">
               <button
                 type="button"
                 onClick={() => handleTriggerAutoLayout(layoutDirection)}
                 aria-disabled={isArranging ? 'true' : undefined}
-                className="px-2.5 h-full text-[12px] font-medium text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer flex items-center gap-1.5"
+                className="px-2.5 h-full text-[12px] font-medium text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] enabled:active:scale-[0.97] transition-all cursor-pointer flex items-center gap-1.5"
                 title={`Auto-layout diagram using Dagre (${layoutDirection})`}
               >
                 <AnimatedIcon
@@ -665,7 +784,7 @@ const ArchitectureCanvasInner: React.FC = () => {
                   <LayoutGrid key="idle" className="w-3.5 h-3.5 text-[#0972D3] dark:text-[#539FE5]" />
                   <Blocks key="arranging" size={14} sweep="diagonal" color="#FF9900" />
                 </AnimatedIcon>
-                <span className="hidden sm:inline">Auto-Layout</span>
+                <span className="hidden lg:inline">Auto-Layout</span>
                 <span className="font-mono text-[10px] text-[var(--aws-text-muted)] bg-[var(--aws-page-bg)] px-1 py-0.2 rounded border border-[var(--aws-border)]">
                   {layoutDirection}
                 </span>
@@ -678,10 +797,38 @@ const ArchitectureCanvasInner: React.FC = () => {
                   handleTriggerAutoLayout(nextDir);
                 }}
                 aria-disabled={isArranging ? 'true' : undefined}
-                className="px-1.5 h-full text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border-l border-[var(--aws-border)] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer"
+                className="px-1.5 h-full text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border-l border-[var(--aws-border)] cursor-pointer"
                 title={`Switch layout direction to ${layoutDirection === 'LR' ? 'Top-to-Bottom (TB)' : 'Left-to-Right (LR)'}`}
               >
                 <ArrowRightLeft className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+
+          {/* 1px Vertical Divider */}
+          <div className="h-5 w-px bg-[var(--aws-border)] shrink-0 hidden md:block" aria-hidden="true" />
+
+          {/* Cluster 3: Undo/Redo, Zoom/Fit, Export, Clear */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Undo / Redo Actions */}
+            <div className="flex items-center border border-[var(--aws-input-border)] rounded-[4px] overflow-hidden h-8">
+              <button
+                type="button"
+                onClick={undo}
+                disabled={!canUndo}
+                className="px-2 h-full text-[var(--aws-text-primary)] disabled:text-[var(--aws-text-muted)]/40 hover:bg-[var(--aws-page-bg)] disabled:hover:bg-transparent cursor-pointer disabled:cursor-not-allowed transition-colors"
+                title="Undo (Ctrl+Z)"
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={redo}
+                disabled={!canRedo}
+                className="px-2 h-full text-[var(--aws-text-primary)] disabled:text-[var(--aws-text-muted)]/40 hover:bg-[var(--aws-page-bg)] disabled:hover:bg-transparent border-l border-[var(--aws-border)] cursor-pointer disabled:cursor-not-allowed transition-colors"
+                title="Redo (Ctrl+Y)"
+              >
+                <Redo2 className="w-3.5 h-3.5" />
               </button>
             </div>
 
@@ -690,7 +837,7 @@ const ArchitectureCanvasInner: React.FC = () => {
               <button
                 type="button"
                 onClick={() => reactFlowInstance.zoomIn({ duration: 250 })}
-                className="px-2 h-full text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer"
+                className="px-2 h-full text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] cursor-pointer"
                 title="Zoom in"
               >
                 <ZoomIn className="w-3.5 h-3.5" />
@@ -698,7 +845,7 @@ const ArchitectureCanvasInner: React.FC = () => {
               <button
                 type="button"
                 onClick={() => reactFlowInstance.zoomOut({ duration: 250 })}
-                className="px-2 h-full text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border-l border-[var(--aws-border)] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer"
+                className="px-2 h-full text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border-l border-[var(--aws-border)] cursor-pointer"
                 title="Zoom out"
               >
                 <ZoomOut className="w-3.5 h-3.5" />
@@ -706,26 +853,11 @@ const ArchitectureCanvasInner: React.FC = () => {
               <button
                 type="button"
                 onClick={() => reactFlowInstance.fitView({ padding: 0.18, duration: 250 })}
-                className="px-2.5 h-full text-[12px] text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border-l border-[var(--aws-border)] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer flex items-center gap-1"
+                className="px-2.5 h-full text-[12px] text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border-l border-[var(--aws-border)] cursor-pointer flex items-center gap-1"
                 title="Fit diagram to canvas"
               >
                 <Maximize2 className="w-3.5 h-3.5" />
                 <span className="hidden lg:inline">Fit</span>
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setGridVariant((curr) =>
-                    curr === BackgroundVariant.Dots
-                      ? BackgroundVariant.Lines
-                      : BackgroundVariant.Dots
-                  )
-                }
-                className="px-2.5 h-full text-[12px] text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border-l border-[var(--aws-border)] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer flex items-center gap-1"
-                title="Toggle grid style"
-              >
-                <Grid className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline">{gridVariant === BackgroundVariant.Dots ? 'Dots' : 'Grid'}</span>
               </button>
             </div>
 
@@ -737,7 +869,7 @@ const ArchitectureCanvasInner: React.FC = () => {
                 onClick={() => togglePopover('canvas-export')}
                 aria-disabled={isExporting ? 'true' : undefined}
                 data-open={isExportOpen ? 'true' : 'false'}
-                className={`h-8 px-3 rounded-[6px] border text-[12px] font-medium flex items-center gap-1.5 enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] shadow-xs ${
+                className={`h-8 px-2.5 rounded-[4px] border text-[12px] font-medium text-[var(--aws-text-primary)] bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] flex items-center gap-1.5 transition-all cursor-pointer ${
                   isExportOpen
                     ? 'border-[var(--aws-interactive)] ring-1 ring-[var(--aws-interactive)]/20'
                     : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)]'
@@ -760,7 +892,7 @@ const ArchitectureCanvasInner: React.FC = () => {
                 </AnimatedIcon>
                 <span className="hidden md:inline">Export</span>
                 <ChevronDown
-                  className="w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  className="w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-200"
                   style={{ transform: isExportOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
                 />
               </button>
@@ -776,23 +908,10 @@ const ArchitectureCanvasInner: React.FC = () => {
                   type="button"
                   onClick={handleExportJson}
                   aria-disabled={isExporting ? 'true' : undefined}
-                  className="w-full text-left px-2.5 py-1.5 rounded-[6px] text-[12px] text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)] transition-colors duration-100 flex items-center justify-between cursor-pointer"
+                  className="w-full text-left px-2.5 py-1.5 rounded-[6px] text-[12px] text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)] transition-colors cursor-pointer flex items-center justify-between"
                 >
                   <span className="font-medium">Export JSON spec</span>
-                  <AnimatedIcon
-                    activeKey={isExporting ? 'loading' : 'idle'}
-                    size={14}
-                    className="w-3.5 h-3.5 text-[var(--aws-text-muted)]"
-                  >
-                    <Download key="idle" className="w-3.5 h-3.5 text-[var(--aws-text-muted)]" />
-                    <Arc
-                      key="loading"
-                      size={14}
-                      easing="stacked"
-                      cap="round"
-                      color={theme === 'dark' ? '#539FE5' : '#0972D3'}
-                    />
-                  </AnimatedIcon>
+                  <Download className="w-3.5 h-3.5 text-[var(--aws-text-muted)]" />
                 </button>
                 <div className="pt-0.5">
                   <CloudscapeCopyButton
@@ -818,7 +937,7 @@ const ArchitectureCanvasInner: React.FC = () => {
                 borderColor: 'var(--aws-input-border)',
                 color: 'var(--aws-text-muted)',
               }}
-              className="h-8 px-2 rounded-[4px] border hover:text-[#DD344C] hover:border-[#DD344C] enabled:active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 ease-out cursor-pointer"
+              className="h-8 px-2 rounded-[4px] border hover:text-[#DD344C] hover:border-[#DD344C] cursor-pointer transition-colors"
               title="Clear canvas"
             >
               <Trash2 className="w-4 h-4" />
@@ -835,7 +954,6 @@ const ArchitectureCanvasInner: React.FC = () => {
               aria-live="polite"
               className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 px-3.5 py-1.5 rounded-[6px] border border-[#FF9900]/40 bg-[#0F141A]/90 text-[#EAEDED] shadow-lg backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150 select-none"
             >
-              <span className="sr-only">Arranging architecture graph…</span>
               <Blocks size={18} sweep="diagonal" color="#FF9900" />
               <span className="text-[12px] font-medium tracking-wide">
                 Arranging architecture graph…
@@ -859,45 +977,88 @@ const ArchitectureCanvasInner: React.FC = () => {
               onDrop={onDrop}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
-              defaultEdgeOptions={defaultEdgeOptions}
+              defaultEdgeOptions={flowEdgeOptions}
               connectionMode={ConnectionMode.Loose}
-              snapToGrid={true}
-              snapGrid={[16, 16]}
+              snapToGrid={snapToGrid}
+              snapGrid={[snapGridSize, snapGridSize]}
               onNodeClick={(_, node) => {
-                if (!node.data?.isBoundary) {
-                  openInspector(node.id);
-                }
+                openNodeInspector(node.id);
               }}
-              onPaneClick={() => closeInspector()}
+              onEdgeClick={(_, edge) => {
+                openEdgeInspector(edge.id);
+              }}
+              onPaneClick={() => {
+                closeInspector();
+                closeContextMenu();
+              }}
+              onNodeContextMenu={(e, node) => {
+                e.preventDefault();
+                openContextMenu({
+                  x: e.clientX,
+                  y: e.clientY,
+                  type: 'node',
+                  targetId: node.id,
+                });
+              }}
+              onEdgeContextMenu={(e, edge) => {
+                e.preventDefault();
+                openContextMenu({
+                  x: e.clientX,
+                  y: e.clientY,
+                  type: 'edge',
+                  targetId: edge.id,
+                });
+              }}
+              onPaneContextMenu={(e) => {
+                e.preventDefault();
+                openContextMenu({
+                  x: e.clientX,
+                  y: e.clientY,
+                  type: 'canvas',
+                });
+              }}
               fitView
               fitViewOptions={{ padding: 0.18 }}
               minZoom={0.15}
               maxZoom={2.5}
               proOptions={{ hideAttribution: true }}
             >
-              <Background
-                variant={gridVariant}
-                gap={24}
-                size={gridVariant === BackgroundVariant.Dots ? 1.2 : 1}
-                color={theme === 'dark' ? '#354150' : '#D5DBDB'}
-              />
-              <MiniMap
-                style={{
-                  backgroundColor: 'var(--aws-card-bg)',
-                  borderColor: 'var(--aws-border)',
-                }}
-                className="!border !rounded-[4px] !shadow-md !overflow-hidden"
-                nodeColor={miniMapNodeColor}
-                maskColor={theme === 'dark' ? 'rgba(15, 27, 42, 0.75)' : 'rgba(242, 243, 243, 0.75)'}
-                zoomable
-                pannable
-              />
+              {canvasGridVariant !== 'none' && (
+                <Background
+                  variant={
+                    canvasGridVariant === 'dots'
+                      ? BackgroundVariant.Dots
+                      : canvasGridVariant === 'lines'
+                      ? BackgroundVariant.Lines
+                      : BackgroundVariant.Cross
+                  }
+                  gap={snapGridSize * 1.5}
+                  size={canvasGridVariant === 'dots' ? 1.2 : 1}
+                  color={theme === 'dark' ? '#354150' : '#D5DBDB'}
+                />
+              )}
+              {showMiniMap && (
+                <MiniMap
+                  style={{
+                    backgroundColor: 'var(--aws-card-bg)',
+                    borderColor: 'var(--aws-border)',
+                  }}
+                  className="!border !rounded-[4px] !shadow-md !overflow-hidden"
+                  nodeColor={miniMapNodeColor}
+                  maskColor={theme === 'dark' ? 'rgba(15, 27, 42, 0.75)' : 'rgba(242, 243, 243, 0.75)'}
+                  zoomable
+                  pannable
+                />
+              )}
             </ReactFlow>
           </div>
         </div>
       </div>
 
-      {/* Docked Resizable Split Panel (resizes viewport alongside canvas without backdrop) */}
+      {/* Right Context Menu Floating Popover */}
+      <CanvasContextMenu />
+
+      {/* Docked Resizable Dual-Tab Split Panel */}
       <NodeInspectorDrawer />
     </div>
   );

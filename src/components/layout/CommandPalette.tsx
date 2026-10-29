@@ -3,38 +3,36 @@ import {
   Search,
   BookOpen,
   LayoutGrid,
-  PlusCircle,
   FileCode2,
   X,
-  ArrowRight,
   Download,
-  Upload,
-  RotateCcw,
+  Settings,
 } from 'lucide-react';
 import { useCompassStore } from '../../store/useCompassStore';
 import { useCanvasStore } from '../../store/useCanvasStore';
-import { AWSServiceIcon } from '../canvas/AWSIcons';
+import { useSettingsStore } from '../../store/useSettingsStore';
+import { AWSServiceIcon } from '../icons/AWSServiceIcon';
 import { SEED_BLUEPRINTS } from '../../db/seedBlueprints';
-import { ClassicV2 } from '../ui/LoadingIndicators';
 import { AWSCompassLogoMark } from '../ui/AWSCompassLogo';
+import type { StudyStatus } from '../../types/aws';
 
-interface CommandPaletteProps {
+export interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
   onTriggerExport?: () => void;
   onTriggerImport?: () => void;
 }
 
-interface PaletteAction {
+interface PaletteItem {
   id: string;
-  type: 'service-doc' | 'service-node' | 'blueprint' | 'diagram' | 'navigation';
+  section: 'Quick actions' | 'Architecture blueprints' | 'AWS services';
   title: string;
-  subtitle: string;
-  category?: string;
-  serviceId?: string;
-  tier?: number;
+  cliPrefix?: string;
+  metadata: string;
+  status?: StudyStatus;
+  actionLabel: string;
   icon: React.ReactNode;
-  badge?: string;
+  serviceId?: string;
   action: () => void;
 }
 
@@ -56,76 +54,84 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
   } = useCompassStore();
 
   const {
-    addServiceNode,
     loadTemplate,
     loadSnapshot,
     savedDiagrams,
   } = useCanvasStore();
 
-  // Focus input on mount without setting state in effect
+  // Focus search input on mount
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  // Build searchable command items
-  const actions: PaletteAction[] = useMemo(() => {
-    const list: PaletteAction[] = [];
+  // Build searchable items organized by section
+  const allItems: PaletteItem[] = useMemo(() => {
+    const items: PaletteItem[] = [];
 
-    // 1. Service Docs in Concept Vault
-    services.forEach((svc) => {
-      list.push({
-        id: `doc-${svc.id}`,
-        type: 'service-doc',
-        title: svc.name,
-        subtitle: `Open 6-part study dossier in Concept Vault • T${svc.tier} ${svc.category}`,
-        category: 'Jump to Concept Vault Doc',
-        serviceId: svc.id,
-        tier: svc.tier,
-        badge: `T${svc.tier}`,
-        icon: <BookOpen className="w-4 h-4 text-sky-400" />,
-        action: () => {
-          setSelectedServiceId(svc.id);
-          setWorkspaceMode('vault');
-          onClose();
-        },
-      });
+    // 1. Quick actions
+    items.push({
+      id: 'quick-settings',
+      section: 'Quick actions',
+      title: 'Open Settings',
+      cliPrefix: 'Ctrl+,',
+      metadata: 'Preferences',
+      actionLabel: 'Open settings',
+      icon: <Settings className="w-3.5 h-3.5 text-cyan-400" strokeWidth={2} />,
+      action: () => {
+        onClose();
+        useSettingsStore.getState().openSettings();
+      },
     });
 
-    // 2. Drop Service Node onto Canvas Center
-    services.forEach((svc) => {
-      list.push({
-        id: `node-${svc.id}`,
-        type: 'service-node',
-        title: `Drop ${svc.name} onto Canvas`,
-        subtitle: `Spawn new ${svc.category} service node in active architecture canvas`,
-        category: 'Drop Node onto Canvas',
-        serviceId: svc.id,
-        tier: svc.tier,
-        badge: 'ADD',
-        icon: <PlusCircle className="w-4 h-4 text-emerald-400" />,
-        action: () => {
-          setWorkspaceMode('canvas');
-          // Add near center of canvas
-          const centerPos = {
-            x: Math.floor(400 + Math.random() * 80 - 40),
-            y: Math.floor(250 + Math.random() * 80 - 40),
-          };
-          addServiceNode(svc, centerPos);
-          onClose();
-        },
-      });
+    items.push({
+      id: 'quick-vault',
+      section: 'Quick actions',
+      title: 'Switch to Concept Vault',
+      metadata: 'Vault mode',
+      actionLabel: 'Switch mode',
+      icon: <BookOpen className="w-3.5 h-3.5 text-[#FF9900]" strokeWidth={2} />,
+      action: () => {
+        setWorkspaceMode('vault');
+        onClose();
+      },
     });
 
-    // 3. Reference Architecture Blueprints
+    items.push({
+      id: 'quick-canvas',
+      section: 'Quick actions',
+      title: 'Switch to Architecture Canvas',
+      metadata: 'Canvas mode',
+      actionLabel: 'Switch mode',
+      icon: <LayoutGrid className="w-3.5 h-3.5 text-purple-400" strokeWidth={2} />,
+      action: () => {
+        setWorkspaceMode('canvas');
+        onClose();
+      },
+    });
+
+    items.push({
+      id: 'quick-export',
+      section: 'Quick actions',
+      title: 'Export / Import Database (JSON)',
+      metadata: 'Backup & Restore',
+      actionLabel: 'Manage data',
+      icon: <Download className="w-3.5 h-3.5 text-emerald-400" strokeWidth={2} />,
+      action: () => {
+        onClose();
+        useSettingsStore.getState().openSettings('data');
+      },
+    });
+
+    // 2. Architecture blueprints (seeds + saved snapshots)
     Object.values(SEED_BLUEPRINTS).forEach((bp) => {
-      list.push({
+      items.push({
         id: `blueprint-${bp.id}`,
-        type: 'blueprint',
+        section: 'Architecture blueprints',
         title: bp.name,
-        subtitle: `${bp.description} (${bp.nodes.length} nodes, ${bp.edges.length} connections)`,
-        category: 'Reference Architecture Blueprints',
-        badge: bp.category,
-        icon: <FileCode2 className="w-4 h-4 text-purple-400" />,
+        cliPrefix: 'blueprint',
+        metadata: `${bp.category} · ${bp.nodes.length} nodes`,
+        actionLabel: 'Load blueprint',
+        icon: <FileCode2 className="w-3.5 h-3.5 text-purple-400" strokeWidth={2} />,
         action: () => {
           setWorkspaceMode('canvas');
           loadTemplate(bp.id);
@@ -134,18 +140,15 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
       });
     });
 
-    // 4. Saved Snapshots in Dexie
     savedDiagrams.forEach((diag) => {
-      list.push({
-        id: `diag-${diag.id}`,
-        type: 'diagram',
+      items.push({
+        id: `snapshot-${diag.id}`,
+        section: 'Architecture blueprints',
         title: diag.name,
-        subtitle: `Saved architecture snapshot with ${diag.nodes.length} nodes (${new Date(
-          diag.updatedAt
-        ).toLocaleDateString()})`,
-        category: 'Saved Architecture Diagrams',
-        badge: 'SAVED',
-        icon: <LayoutGrid className="w-4 h-4 text-amber-400" />,
+        cliPrefix: 'snapshot',
+        metadata: `Saved · ${diag.nodes.length} nodes`,
+        actionLabel: 'Load snapshot',
+        icon: <LayoutGrid className="w-3.5 h-3.5 text-amber-400" strokeWidth={2} />,
         action: () => {
           setWorkspaceMode('canvas');
           loadSnapshot(diag.id);
@@ -154,90 +157,32 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
       });
     });
 
-    // 5. Global Actions
-    list.push({
-      id: 'nav-switch-vault',
-      type: 'navigation',
-      title: 'Switch to Concept Vault',
-      subtitle: 'Browse 30+ AWS architecture dossiers, Mermaid flows & exam tips',
-      category: 'Workspace Navigation',
-      badge: 'NAV',
-      icon: <BookOpen className="w-4 h-4 text-[#FF9900]" />,
-      action: () => {
-        setWorkspaceMode('vault');
-        onClose();
-      },
-    });
-
-    list.push({
-      id: 'nav-switch-canvas',
-      type: 'navigation',
-      title: 'Switch to Architecture Canvas',
-      subtitle: 'Design multi-tier diagrams with Draw.io protocol edges & group boundaries',
-      category: 'Workspace Navigation',
-      badge: 'NAV',
-      icon: <LayoutGrid className="w-4 h-4 text-purple-400" />,
-      action: () => {
-        setWorkspaceMode('canvas');
-        onClose();
-      },
-    });
-
-    if (onTriggerExport) {
-      list.push({
-        id: 'action-export-db',
-        type: 'navigation',
-        title: 'Export Full Database (JSON Backup)',
-        subtitle: 'Download complete Dexie.js database including custom notes & diagrams',
-        category: 'Database Backup',
-        badge: 'BACKUP',
-        icon: <Download className="w-4 h-4 text-emerald-400" />,
+    // 3. AWS services
+    services.forEach((svc) => {
+      items.push({
+        id: `service-${svc.id}`,
+        section: 'AWS services',
+        title: svc.name,
+        cliPrefix: `aws ${svc.id}`,
+        metadata: `${svc.category} · T${svc.tier}`,
+        status: svc.studyStatus,
+        actionLabel: 'Open dossier',
+        serviceId: svc.id,
+        icon: null,
         action: () => {
+          setSelectedServiceId(svc.id);
+          setWorkspaceMode('vault');
           onClose();
-          onTriggerExport();
         },
       });
-    }
-
-    if (onTriggerImport) {
-      list.push({
-        id: 'action-import-db',
-        type: 'navigation',
-        title: 'Import Database (JSON Backup)',
-        subtitle: 'Restore Dexie.js services, dossiers, and diagrams from backup file',
-        category: 'Database Backup',
-        badge: 'RESTORE',
-        icon: <Upload className="w-4 h-4 text-sky-400" />,
-        action: () => {
-          onClose();
-          onTriggerImport();
-        },
-      });
-    }
-
-    list.push({
-      id: 'action-reset-defaults',
-      type: 'navigation',
-      title: 'Reset Database to Defaults',
-      subtitle: 'Re-seed all 30 AWS services and dossiers to fresh initial state',
-      category: 'Database Backup',
-      badge: 'RESET',
-      icon: <RotateCcw className="w-4 h-4 text-rose-400" />,
-      action: async () => {
-        if (window.confirm('Reset all catalog services and diagrams to factory seed?')) {
-          await resetToDefaults();
-          onClose();
-        }
-      },
     });
 
-    return list;
+    return items;
   }, [
     services,
     savedDiagrams,
     setSelectedServiceId,
     setWorkspaceMode,
-    addServiceNode,
     loadTemplate,
     loadSnapshot,
     resetToDefaults,
@@ -246,32 +191,52 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
     onClose,
   ]);
 
-  // Filter actions based on search
-  const filteredActions = useMemo(() => {
+  // Filter items matching query
+  const filteredItems = useMemo(() => {
     if (!search.trim()) {
-      return actions.slice(0, 40);
+      return allItems;
     }
     const q = search.toLowerCase().trim();
-    return actions.filter(
-      (a) =>
-        a.title.toLowerCase().includes(q) ||
-        a.subtitle.toLowerCase().includes(q) ||
-        (a.category && a.category.toLowerCase().includes(q)) ||
-        (a.serviceId && a.serviceId.toLowerCase().includes(q))
+    return allItems.filter(
+      (item) =>
+        item.title.toLowerCase().includes(q) ||
+        (item.cliPrefix && item.cliPrefix.toLowerCase().includes(q)) ||
+        (item.metadata && item.metadata.toLowerCase().includes(q)) ||
+        (item.serviceId && item.serviceId.toLowerCase().includes(q))
     );
-  }, [actions, search]);
+  }, [allItems, search]);
 
-  const [isSearching, setIsSearching] = useState(false);
-  const searchTimerRef = useRef<number | null>(null);
+  // Group filtered items by section maintaining flat indexes for keyboard navigation
+  const groupedSections = useMemo(() => {
+    const sectionNames: Array<PaletteItem['section']> = [
+      'Quick actions',
+      'Architecture blueprints',
+      'AWS services',
+    ];
+
+    const result: {
+      name: PaletteItem['section'];
+      items: { item: PaletteItem; flatIndex: number }[];
+    }[] = [];
+
+    sectionNames.forEach((name) => {
+      const itemsInSection: { item: PaletteItem; flatIndex: number }[] = [];
+      filteredItems.forEach((item, flatIdx) => {
+        if (item.section === name) {
+          itemsInSection.push({ item, flatIndex: flatIdx });
+        }
+      });
+      if (itemsInSection.length > 0) {
+        result.push({ name, items: itemsInSection });
+      }
+    });
+
+    return result;
+  }, [filteredItems]);
 
   const handleSearchChange = (val: string) => {
     setSearch(val);
     setSelectedIndex(0);
-    setIsSearching(true);
-    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    searchTimerRef.current = window.setTimeout(() => {
-      setIsSearching(false);
-    }, 280);
   };
 
   // Scroll active item into view
@@ -283,18 +248,18 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
     }
   }, [selectedIndex]);
 
-  // Keyboard navigation handler
+  // Keyboard navigation
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setSelectedIndex((prev) => (prev < filteredActions.length - 1 ? prev + 1 : 0));
+        setSelectedIndex((prev) => (prev < filteredItems.length - 1 ? prev + 1 : 0));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : filteredActions.length - 1));
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : filteredItems.length - 1));
       } else if (e.key === 'Enter') {
         e.preventDefault();
-        const selected = filteredActions[selectedIndex];
+        const selected = filteredItems[selectedIndex];
         if (selected) {
           selected.action();
         }
@@ -303,7 +268,7 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
         onClose();
       }
     },
-    [filteredActions, selectedIndex, onClose]
+    [filteredItems, selectedIndex, onClose]
   );
 
   return (
@@ -311,236 +276,162 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
       role="dialog"
       aria-modal="true"
       aria-label="Command Palette"
-      className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-[14vh] sm:pt-[16vh] px-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
-        style={{
-          backgroundColor: 'var(--aws-drawer-bg)',
-          borderColor: 'var(--aws-border)',
-          color: 'var(--aws-text-primary)',
-        }}
-        className="w-full max-w-2xl border rounded-[8px] shadow-2xl overflow-hidden flex flex-col max-h-[75vh] animate-in zoom-in-95 duration-150"
+        className="w-full max-w-[580px] rounded-[16px] overflow-hidden flex flex-col bg-white dark:bg-[#141C28]/95 dark:backdrop-blur-md border border-[#D5DBDB] dark:border-white/10 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15)] dark:shadow-[0_24px_64px_-12px_rgba(0,0,0,0.7)] animate-in zoom-in-95 duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] select-none"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
-        {/* Search Input Bar */}
-        <div
-          style={{
-            backgroundColor: 'var(--aws-card-bg)',
-            borderBottomColor: 'var(--aws-border)',
-          }}
-          className="relative flex items-center px-4 border-b transition-[border-color,box-shadow] duration-150 ease-out focus-within:border-[var(--aws-interactive)]"
-        >
-          <Search className="w-5 h-5 text-[var(--aws-interactive)] shrink-0 mr-3 pointer-events-none" strokeWidth={1.75} aria-hidden="true" />
+        {/* Top Search Input Bar (h-12, no ESC badge) */}
+        <div className="h-12 px-4 flex items-center gap-3 border-b border-[#D5DBDB] dark:border-[#2A3647] shrink-0">
+          <Search className="w-4 h-4 text-[#545B64] dark:text-[#879596] shrink-0 pointer-events-none" strokeWidth={1.75} aria-hidden="true" />
           <input
             ref={inputRef}
             type="text"
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Type a command, service name (e.g. 'lambda', 's3'), or blueprint..."
+            placeholder="Search services, CLI prefixes, or blueprints..."
             spellCheck={false}
             autoComplete="off"
-            style={{ color: 'var(--aws-text-primary)' }}
-            className="w-full py-3.5 bg-transparent text-sm placeholder:text-[var(--aws-text-muted)] outline-none caret-[var(--aws-interactive)]"
+            className="w-full bg-transparent text-[14px] text-[#16191F] dark:text-[#EAEDED] placeholder:text-[#545B64] dark:placeholder:text-[#879596] outline-none caret-[#FF9900]"
           />
-          <div className="flex items-center shrink-0 ml-2 gap-2">
-            {isSearching && (
-              <span className="flex items-center justify-center text-[var(--aws-text-muted)] animate-in fade-in duration-150" aria-hidden="true">
-                <ClassicV2 size={14} color="var(--aws-text-muted)" />
-              </span>
-            )}
-            {search ? (
-              <button
-                type="button"
-                onClick={() => handleSearchChange('')}
-                style={{ color: 'var(--aws-text-muted)' }}
-                className="p-1 hover:text-[var(--aws-text-primary)] rounded cursor-pointer transition-[opacity,filter,transform] duration-200 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:scale-100 motion-reduce:blur-[0px]"
-                aria-label="Clear search input"
-              >
-                <X className="w-4 h-4" strokeWidth={2} />
-              </button>
-            ) : (
-              <kbd
-                style={{
-                  backgroundColor: 'var(--aws-page-bg)',
-                  borderColor: 'var(--aws-border)',
-                  color: 'var(--aws-text-muted)',
-                }}
-                className="hidden sm:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-mono font-bold border rounded shadow-xs"
-              >
-                ESC
-              </kbd>
-            )}
-          </div>
-        </div>
-
-        {/* Results List */}
-        <div
-          ref={listRef}
-          style={{
-            borderColor: 'var(--aws-border)',
-          }}
-          className="flex-1 overflow-y-auto p-2 divide-y divide-[var(--aws-border)] scrollbar-thin custom-scrollbar"
-        >
-          {filteredActions.length === 0 ? (
-            <div className="p-8 text-center" style={{ color: 'var(--aws-text-muted)' }}>
-              <AWSCompassLogoMark size={36} className="opacity-70 mx-auto mb-2" />
-              <p className="text-sm font-medium" style={{ color: 'var(--aws-text-primary)' }}>
-                No matching commands found
-              </p>
-              <p className="text-xs opacity-75 mt-1">
-                Try searching for "microservice", "dynamodb", "vpc", or "blueprint".
-              </p>
-            </div>
-          ) : (
-            filteredActions.map((action, idx) => {
-              const isSelected = idx === selectedIndex;
-              return (
-                <div
-                  key={action.id}
-                  data-selected={isSelected}
-                  onClick={() => action.action()}
-                  onMouseEnter={() => setSelectedIndex(idx)}
-                  style={
-                    isSelected
-                      ? {
-                          backgroundColor: 'var(--aws-page-bg)',
-                          borderColor: 'var(--aws-brand)',
-                          color: 'var(--aws-text-primary)',
-                        }
-                      : {
-                          color: 'var(--aws-text-primary)',
-                          borderColor: 'transparent',
-                        }
-                  }
-                  className={`flex items-center justify-between gap-3 px-3 py-2 rounded-[4px] cursor-pointer transition-colors border ${
-                    isSelected ? 'shadow-sm' : 'hover:bg-[var(--aws-page-bg)]'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    {action.serviceId ? (
-                      <AWSServiceIcon serviceId={action.serviceId} size={24} className="shrink-0" />
-                    ) : (
-                      <div className="w-6 h-6 flex items-center justify-center shrink-0 text-[var(--aws-text-muted)]">
-                        {action.icon}
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-xs truncate">{action.title}</span>
-                        {action.badge && (
-                          <span
-                            style={{
-                              backgroundColor: 'var(--aws-page-bg)',
-                              borderColor: 'var(--aws-border)',
-                              color: 'var(--aws-text-muted)',
-                            }}
-                            className="font-mono text-[9px] px-1.5 py-0.2 rounded-[2px] border shrink-0"
-                          >
-                            {action.badge}
-                          </span>
-                        )}
-                      </div>
-                      <p
-                        style={{ color: 'var(--aws-text-muted)' }}
-                        className="text-[11px] truncate mt-0.5"
-                      >
-                        {action.subtitle}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    {action.category && (
-                      <span
-                        style={{ color: 'var(--aws-text-muted)' }}
-                        className="hidden md:inline font-mono text-[9px] opacity-80"
-                      >
-                        {action.category}
-                      </span>
-                    )}
-                    <ArrowRight
-                      style={{
-                        color: isSelected ? 'var(--aws-brand)' : 'var(--aws-text-muted)',
-                      }}
-                      className={`w-3.5 h-3.5 ${isSelected ? 'translate-x-0.5' : ''} transition-transform`}
-                    />
-                  </div>
-                </div>
-              );
-            })
+          {search.length > 0 && (
+            <button
+              type="button"
+              onClick={() => handleSearchChange('')}
+              className="size-6 rounded-[6px] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center transition-all cursor-pointer shrink-0"
+              aria-label="Clear search input"
+            >
+              <X className="w-3.5 h-3.5" strokeWidth={2} />
+            </button>
           )}
         </div>
 
-        {/* Footer shortcuts helper */}
+        {/* Results List: max-h-[360px], concentric p-1.5 padding, no footer */}
         <div
-          style={{
-            backgroundColor: 'var(--aws-sidebar-bg)',
-            borderColor: 'var(--aws-border)',
-            color: 'var(--aws-text-muted)',
-          }}
-          className="px-4 py-2 border-t flex items-center justify-between text-[11px] select-none"
+          ref={listRef}
+          className="max-h-[360px] overflow-y-auto overscroll-contain p-1.5 scrollbar-thin custom-scrollbar"
         >
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 font-mono">
-              <kbd
-                style={{
-                  backgroundColor: 'var(--aws-page-bg)',
-                  borderColor: 'var(--aws-border)',
-                  color: 'var(--aws-text-primary)',
-                }}
-                className="px-1 py-0.5 rounded border text-[10px]"
-              >
-                ↑
-              </kbd>
-              <kbd
-                style={{
-                  backgroundColor: 'var(--aws-page-bg)',
-                  borderColor: 'var(--aws-border)',
-                  color: 'var(--aws-text-primary)',
-                }}
-                className="px-1 py-0.5 rounded border text-[10px]"
-              >
-                ↓
-              </kbd>
-              <span>to navigate</span>
-            </span>
-            <span className="flex items-center gap-1 font-mono">
-              <kbd
-                style={{
-                  backgroundColor: 'var(--aws-page-bg)',
-                  borderColor: 'var(--aws-border)',
-                  color: 'var(--aws-text-primary)',
-                }}
-                className="px-1 py-0.5 rounded border text-[10px]"
-              >
-                ↵
-              </kbd>
-              <span>to select</span>
-            </span>
-            <span className="flex items-center gap-1 font-mono">
-              <kbd
-                style={{
-                  backgroundColor: 'var(--aws-page-bg)',
-                  borderColor: 'var(--aws-border)',
-                  color: 'var(--aws-text-primary)',
-                }}
-                className="px-1 py-0.5 rounded border text-[10px]"
-              >
-                esc
-              </kbd>
-              <span>to close</span>
-            </span>
-          </div>
+          {filteredItems.length === 0 ? (
+            <div className="py-10 px-4 text-center">
+              <AWSCompassLogoMark size={32} className="opacity-60 mx-auto mb-2.5" />
+              <p className="text-[13px] font-medium text-[#16191F] dark:text-[#EAEDED]">
+                No matching results
+              </p>
+              <p className="text-[12px] text-[#545B64] dark:text-[#879596] mt-1">
+                Try searching by service name, CLI prefix (e.g. s3, lambda), or blueprint.
+              </p>
+            </div>
+          ) : (
+            groupedSections.map((group) => (
+              <div key={group.name} className="mb-2 last:mb-0">
+                <div className="px-3 py-1.5 text-[11px] font-semibold text-[#545B64] dark:text-[#879596] select-none">
+                  {group.name}
+                </div>
+                <div className="space-y-0.5">
+                  {group.items.map(({ item, flatIndex }) => {
+                    const isSelected = flatIndex === selectedIndex;
+                    return (
+                      <div
+                        key={item.id}
+                        data-selected={isSelected}
+                        onClick={item.action}
+                        onMouseEnter={() => setSelectedIndex(flatIndex)}
+                        className={`h-10 px-2.5 rounded-[10px] flex items-center justify-between gap-3 cursor-pointer select-none transition-colors relative ${isSelected
+                          ? 'bg-[#EAEDED] dark:bg-[#1F2B3E]'
+                          : 'hover:bg-[#F2F3F3] dark:hover:bg-[#161E2D]'
+                          }`}
+                      >
+                        {/* Leading Edge Accent Pill on active row */}
+                        {isSelected && (
+                          <span
+                            className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-[2.5px] rounded-full bg-[#FF9900]"
+                            aria-hidden="true"
+                          />
+                        )}
 
-          <div
-            style={{ color: 'var(--aws-brand)' }}
-            className="flex items-center gap-1.5 font-mono text-[10px] font-semibold"
-          >
-            <AWSCompassLogoMark size={13} className="shrink-0" />
-            <span>{filteredActions.length} commands available</span>
-          </div>
+                        {/* Left: Icon + Title + CLI Pill */}
+                        <div className="flex items-center gap-2.5 min-w-0 pl-1.5">
+                          {item.serviceId ? (
+                            <AWSServiceIcon
+                              serviceId={item.serviceId}
+                              size={24}
+                              className="rounded-[5px] shrink-0"
+                            />
+                          ) : (
+                            <div className="w-6 h-6 rounded-[5px] bg-[#F2F3F3] dark:bg-[#161E2D] flex items-center justify-center shrink-0">
+                              {item.icon}
+                            </div>
+                          )}
+
+                          <span className="text-[13px] font-semibold text-[#16191F] dark:text-[#EAEDED] truncate">
+                            {item.title}
+                          </span>
+
+                          {item.cliPrefix && (
+                            <span className="text-[11px] font-mono text-[#545B64] dark:text-[#879596] bg-[#F2F3F3] dark:bg-[#0F1B2A] px-1.5 py-0.5 rounded-[4px] shrink-0">
+                              {item.cliPrefix}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Right: Default Metadata vs Active Action Badge */}
+                        <div className="shrink-0 flex items-center">
+                          {isSelected ? (
+                            <span className="flex items-center gap-1.5 text-[12px] font-medium text-[#0972D3] dark:text-[#539FE5] animate-in fade-in duration-100">
+                              <span>{item.actionLabel}</span>
+                              <span className="text-[11px] font-mono px-1 py-0.5 rounded bg-[#0972D3]/10 dark:bg-[#539FE5]/15 leading-none">
+                                ↵
+                              </span>
+                            </span>
+                          ) : (
+                            <div className="flex items-center gap-2 text-[12px] text-[#545B64] dark:text-[#879596] tabular-nums">
+                              <span>{item.metadata}</span>
+                              {item.status === 'mastered' && (
+                                <svg
+                                  viewBox="0 0 16 16"
+                                  width="12"
+                                  height="12"
+                                  fill="none"
+                                  stroke="#1D8102"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="shrink-0 text-[#1D8102]"
+                                  aria-label="Mastered"
+                                >
+                                  <circle cx="8" cy="8" r="6.5" />
+                                  <polyline points="5.5 8.2 7.2 10 10.8 6.5" />
+                                </svg>
+                              )}
+                              {item.status === 'in-progress' && (
+                                <svg
+                                  viewBox="0 0 16 16"
+                                  width="12"
+                                  height="12"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  className="shrink-0 text-[#0972D3] dark:text-[#539FE5]"
+                                  aria-label="In progress"
+                                >
+                                  <circle cx="8" cy="8" r="6.5" />
+                                  <polyline points="8 4.5 8 8 10.5 9.5" />
+                                </svg>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

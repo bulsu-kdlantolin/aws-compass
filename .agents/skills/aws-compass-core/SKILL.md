@@ -145,3 +145,55 @@ Containers follow official AWS Architecture Deck specifications:
    - Light Mode: `primaryColor: '#FFFFFF'`, `primaryTextColor: '#16191F'`, `primaryBorderColor: '#0972D3'`, `lineColor: '#545B64'`, `clusterBkg: '#F8F9FA'`, `clusterBorder: '#D5DBDB'`.
    - Structure: All architectural documentation diagrams use `flowchart LR` with explicit `subgraph` enclosures and concise 1–2 word edge labels.
 
+---
+
+## 10. AWS Blueprint Studio & Sandbox Architecture Standards
+
+### 10.1. Full Blueprint CRUD & Workspace Manager (`BlueprintManagerDropdown.tsx`)
+- **Top Quick Action**: `+ New blank sandbox blueprint` clears the canvas and starts an untitled custom sandbox.
+- **My Custom Blueprints**: Persisted in Dexie.js `diagrams` table (excluding internal auto-save snapshots) with inline hover actions to **Rename**, **Duplicate**, and **Delete**.
+- **AWS Reference Blueprints**: 4 pre-built templates (`Serverless microservice`, `3-Tier VPC web app`, `Event-driven pipeline`, `Containerized Fargate service`) with `"Fork to Custom"` clone capability.
+- **Unified Blueprint Header**: Replaced legacy snapshots button with inline blueprint title editor and `"Save as..."` custom blueprint workflow.
+
+### 10.2. Dual-Tab Sandbox Inspector (`NodeInspectorDrawer.tsx`)
+Docked resizable Cloudscape Split Panel providing two distinct operational modes:
+- **Tab 1: Node / Edge Properties (Sandbox Customizer)**:
+  - **Service Nodes (`AWSServiceNode`)**: Live customization of `customTitle`, `roleSubtitle`, `env` badge (`None`, `Prod`, `Staging`, `Dev`), `az` badge (`Multi-AZ`, `us-east-1a`), `metadataPill` (e.g. `10.0.1.24`), and `parentId` boundary assignment.
+  - **Group Boundaries (`AWSGroupNode`)**: Live customization of boundary type, custom label, CIDR/region tag, border style (`solid`, `dashed`, `dotted`), and accent color override.
+  - **Connection Edges (`ProtocolEdge`)**: Live customization of protocol preset, freeform custom label override, line style, directionality (`one-way`, `bi-directional`, `none`), and traffic animation toggle.
+  - **External Actors**: Client/Caller identity (`user-browser`, `mobile-client`, `corporate-datacenter`, `external-webhook`).
+  - **Annotations**: Resizable sticky note (`AnnotationNode.tsx`) with title, markdown body, and color theme.
+- **Tab 2: Service Dossier**:
+  - Full 6-part study dossier, CLI commands, and interactive Mermaid enterprise flowchart from the Concept Vault preserved alongside the sandbox customizer.
+
+### 10.3. Canvas Editing & Interaction Physics
+- **Double-Click In-Place Editing**: Double-clicking any service node title/role, group boundary header, or annotation node on the canvas switches into an inline input (`Enter` commits, `Escape` cancels).
+- **Resizable Boundaries (`NodeResizer`)**: Group containers and annotation cards feature `@xyflow/react` `<NodeResizer />` (`minWidth={220}`, `minHeight={160}`) with Cloudscape styled handles visible when selected.
+- **Right-Click Context Menu (`CanvasContextMenu.tsx`)**:
+  - Node/Group: Edit Properties, Duplicate (`Ctrl+D`), Bring to Front, Send to Back, Delete (`Del`).
+  - Edge: Edit Protocol/Properties, Reverse Direction, Toggle Animation, Delete (`Del`).
+  - Canvas: Add Service, Add Group Boundary, Add Client/Actor, Add Architecture Note, Auto-Layout, Fit to Screen.
+- **Undo / Redo History Stack**:
+  - 30-step deep history stack in `useCanvasStore.ts` tracking node/edge additions, deletions, moves, and property modifications.
+  - Keyboard shortcuts: `Ctrl+Z` (Undo), `Ctrl+Y` / `Ctrl+Shift+Z` (Redo), `Ctrl+D` (Duplicate), `Delete` / `Backspace` (Delete), `Escape` (Deselect / Close).
+
+---
+
+## 11. Global Settings & Workspace Decluttering Architecture (`SettingsModal.tsx` + `useSettingsStore.ts`)
+
+- **Single Source of Truth**: All site-wide preferences, density, canvas configurations, region defaults, and database backups are centralized in `src/store/useSettingsStore.ts` (persisted in `localStorage` under `aws-compass-settings`).
+- **Global Settings Modal (`src/components/settings/SettingsModal.tsx`)**:
+  - Accessible via the Top Navbar gear icon (`⚙️`), Command Palette (`Ctrl+K` -> `"Open Settings"`), or global keyboard shortcut `Ctrl+,` (`Cmd+,`).
+  - Five Enterprise Preference Panels:
+    1. **Appearance & density**: Theme selection (`dark` | `light` | `system`), UI density (`comfortable` | `compact`), code font size (`12px` | `13px` | `14px`).
+    2. **Architecture canvas**: Grid pattern (`dots` | `lines` | `cross` | `none`), snap to grid toggle + step (`16px` | `24px` | `32px`), default edge routing (`smoothstep` | `bezier` | `straight`), edge traffic animation toggle, minimap toggle, inspector dock position (`right` | `bottom`).
+    3. **Study & region defaults**: Default AWS region (`us-east-1`, `us-west-2`, `eu-west-1`, `ap-southeast-1`), default tier filter, auto-expand Mermaid diagrams.
+    4. **Data, backup & reset**: Live IndexedDB statistics (services count, custom blueprints count, review queue, storage estimate), portable JSON backup export and import, with strict 2-step confirmations for "Reset study progress" and "Factory reset database".
+    5. **Keyboard shortcuts**: Comprehensive reference table (`Ctrl+K`, `Ctrl+,`, `Ctrl+Z/Y`, `Ctrl+D`, `Del/Backspace`, `Esc`).
+- **Decluttered 4 Workspace Zones**:
+  - **Zone 1: Top Navbar (`TopNavbar.tsx`)**: Removed redundant Export, Import, and Reset buttons. Right zone holds strictly: Study Telemetry Readout (`X Mastered · Y In Progress` + mini 2-color bar), `1px` vertical divider, Quick theme toggle, and Settings gear button.
+  - **Zone 2: Service Catalog Sidebar (`ServiceCatalog.tsx`)**: Added `Collapse all` / `Expand all` category tree toggle button; row padding and card heights dynamically adapt to `uiDensity`.
+  - **Zone 3: Concept Vault (`ConceptVault.tsx`)**: Density segmented toggles removed from table header; table row padding binds directly to `uiDensity`; streamlined single-row toolbar with `"Filter by name, ID, or CLI prefix..."`, conditional count (`Showing X of Y services`), and `"Clear filters"` ghost button when active.
+  - **Zone 4: Architecture Canvas Toolbar (`ArchitectureCanvas.tsx`)**: Removed legacy Dots and Snapshots buttons; clustered toolbar into 3 clean groups separated by `1px` dividers (Left: Blueprints & Save As, Center: Add Primitives & Auto-Layout, Right: History, View controls, Export & Clear). React Flow background, grid snapping, and minimap dynamically respond to `useSettingsStore`.
+
+

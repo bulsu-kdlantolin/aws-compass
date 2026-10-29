@@ -3,6 +3,7 @@ import type { AWSService } from '../../types/aws';
 import { GripVertical } from 'lucide-react';
 import { AWSServiceIcon } from '../icons/AWSServiceIcon';
 import { CloudscapeStatusIndicator } from '../ui/CloudscapeStatusIndicator';
+import { useSettingsStore } from '../../store/useSettingsStore';
 
 interface ServiceCardProps {
   service: AWSService;
@@ -33,6 +34,9 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
   onMoveUp,
   onMoveDown,
 }) => {
+  const uiDensity = useSettingsStore((s) => s.uiDensity);
+  const isCompact = uiDensity === 'compact';
+
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('application/aws-service-id', service.id);
     e.dataTransfer.setData('application/aws-service-category', service.category);
@@ -74,7 +78,9 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
         backgroundColor: isSelected ? 'var(--aws-page-bg)' : 'transparent',
         borderLeftColor: isSelected ? 'var(--aws-brand)' : 'transparent',
       }}
-      className={`group relative h-7 px-2 flex items-center gap-1.5 cursor-pointer border-l-2 text-left select-none transition-[opacity,background-color,border-color,transform] duration-100 ${
+      className={`group relative flex items-center cursor-pointer border-l-2 text-left select-none transition-[opacity,background-color,border-color,transform] duration-100 ${
+        isCompact ? 'h-6.5 px-1.5 gap-1.5 text-[12px]' : 'h-7.5 px-2 gap-2 text-[13px]'
+      } ${
         isDragging
           ? 'opacity-35 scale-[0.98] ring-1 ring-[var(--aws-interactive)]/40 bg-[var(--aws-page-bg)]'
           : isSelected
@@ -105,11 +111,11 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
         <GripVertical className="w-3 h-3" strokeWidth={1.75} />
       </span>
 
-      {/* Official 20x20px AWS Architecture Icon tile */}
-      <AWSServiceIcon serviceId={service.id} size={20} className="shrink-0" />
+      {/* Official AWS Architecture Icon tile */}
+      <AWSServiceIcon serviceId={service.id} size={isCompact ? 18 : 20} className="shrink-0" />
 
-      {/* Service Name (13px, Sentence case, truncate) */}
-      <span className="text-[13px] leading-[18px] truncate flex-1 min-w-0">
+      {/* Service Name (Sentence case, truncate) */}
+      <span className={`${isCompact ? 'text-[12px] leading-[16px]' : 'text-[13px] leading-[18px]'} truncate flex-1 min-w-0`}>
         {service.name}
       </span>
 

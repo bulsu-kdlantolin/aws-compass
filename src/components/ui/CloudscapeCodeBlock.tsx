@@ -1,6 +1,7 @@
 import React from 'react';
 import { Terminal } from 'lucide-react';
 import { CloudscapeCopyButton } from './CloudscapeCopyButton';
+import { useSettingsStore } from '../../store/useSettingsStore';
 
 export interface CloudscapeCodeBlockProps {
   code: string;
@@ -15,6 +16,8 @@ export const CloudscapeCodeBlock: React.FC<CloudscapeCodeBlockProps> = ({
   title = 'aws-cli',
   className = '',
 }) => {
+  const codeFontSize = useSettingsStore((s) => s.codeFontSize);
+
   return (
     <div
       style={{
@@ -47,9 +50,12 @@ export const CloudscapeCodeBlock: React.FC<CloudscapeCodeBlockProps> = ({
       </div>
 
       {/* Code Text Content */}
-      <pre className="p-3 m-0 overflow-x-auto custom-scrollbar text-[#EAEDED] bg-transparent">
-        <code>{code}</code>
-      </pre>
+        <pre
+          style={{ fontSize: codeFontSize }}
+          className="p-3 m-0 overflow-x-auto custom-scrollbar text-[#EAEDED] bg-transparent"
+        >
+          <code>{code}</code>
+        </pre>
     </div>
   );
 };

@@ -49,7 +49,16 @@ export type GroupBoundaryType =
   | 'data-subnet'
   | 'security-group'
   | 'auto-scaling-group'
-  | 'serverless';
+  | 'serverless'
+  | 'corporate-datacenter';
+
+export type ExternalActorType =
+  | 'user-browser'
+  | 'mobile-client'
+  | 'corporate-datacenter'
+  | 'external-webhook';
+
+export type NodeEnvironment = 'None' | 'Prod' | 'Staging' | 'Dev';
 
 export interface CanvasNodeData {
   serviceId: string;
@@ -59,11 +68,34 @@ export interface CanvasNodeData {
   status: StudyStatus;
   customNotes?: string;
   arnPattern?: string;
+
+  // Custom sandbox properties for service nodes
+  customTitle?: string;
+  roleSubtitle?: string;
+  env?: NodeEnvironment;
+  az?: string;
+  metadataPill?: string;
+
+  // Group boundary properties
   isBoundary?: boolean;
   boundaryType?: GroupBoundaryType;
   boundaryLabel?: string;
+  cidr?: string;
+  accentColor?: string;
+  borderStyle?: 'solid' | 'dashed' | 'dotted';
   width?: number;
   height?: number;
+
+  // External Actor properties
+  isActor?: boolean;
+  actorType?: ExternalActorType;
+
+  // Annotation / Sticky Note properties
+  isAnnotation?: boolean;
+  annotationTitle?: string;
+  annotationContent?: string;
+  annotationColor?: string;
+
   [key: string]: unknown;
 }
 
@@ -82,9 +114,17 @@ export interface CanvasNodeItem {
   parentId?: string;
 }
 
+export type EdgeLineStyle = 'solid' | 'dashed' | 'dotted';
+export type EdgeDirectionality = 'one-way' | 'bi-directional' | 'none';
+
 export interface CanvasEdgeData {
   protocol?: EdgeProtocol;
   label?: string;
+  customLabel?: string;
+  lineStyle?: EdgeLineStyle;
+  directionality?: EdgeDirectionality;
+  edgeColor?: string;
+  animated?: boolean;
   offset?: number;
   [key: string]: unknown;
 }

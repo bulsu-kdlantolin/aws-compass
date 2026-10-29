@@ -25,6 +25,7 @@ import { CloudscapeSearchInput } from '../ui/CloudscapeSearchInput';
 import { CloudscapeSelect, type CloudscapeSelectOption } from '../ui/CloudscapeSelect';
 import { CloudscapeTextarea } from '../ui/CloudscapeTextarea';
 import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
+import { useSettingsStore } from '../../store/useSettingsStore';
 import { getAWSCategoryColor } from '../../utils/awsCategoryColors';
 import { getVerifiedAWSDocsUrl } from '../../utils/awsDocs';
 
@@ -39,6 +40,8 @@ const ConceptVaultTable: React.FC<{
   onSelectService: (id: string) => void;
 }> = ({ services, onSelectService }) => {
   const isSidebarOpen = useCompassStore((s) => s.isSidebarOpen);
+  const uiDensity = useSettingsStore((s) => s.uiDensity);
+  const isCompact = uiDensity === 'compact';
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [sortKey, setSortKey] = useState<SortKey>('tier');
@@ -124,6 +127,10 @@ const ConceptVaultTable: React.FC<{
     return result;
   }, [services, search, categoryFilter, sortKey, sortOrder]);
 
+  const hasActiveFilters = search.trim().length > 0 || categoryFilter !== 'All';
+  const rowPad = isCompact ? 'py-1.5' : 'py-3';
+  const headPad = isCompact ? 'py-1.5' : 'py-2.5';
+
   return (
     <div
       style={{ backgroundColor: 'var(--aws-page-bg)' }}
@@ -159,13 +166,13 @@ const ConceptVaultTable: React.FC<{
             style={{
               borderBottomColor: 'var(--aws-border)',
             }}
-            className="px-4 py-3 border-b flex flex-wrap items-center justify-between gap-3 shrink-0 relative z-20"
+            className="px-4 py-2.5 border-b flex flex-wrap items-center justify-between gap-3 shrink-0 relative z-20"
           >
             <div className="flex items-center gap-2.5 flex-1 max-w-lg">
               <CloudscapeSearchInput
                 value={search}
                 onChange={setSearch}
-                placeholder="Filter by name, ID, or description..."
+                placeholder="Filter by name, ID, or CLI prefix..."
                 ariaLabel="Filter services"
                 className="flex-1"
                 size="md"
@@ -181,12 +188,26 @@ const ConceptVaultTable: React.FC<{
               />
             </div>
 
-            <span
-              style={{ color: 'var(--aws-text-muted)' }}
-              className="text-[12px] font-mono shrink-0"
-            >
-              {filteredAndSortedServices.length} of {services.length} services
-            </span>
+            {hasActiveFilters && (
+              <div className="flex items-center gap-3 shrink-0">
+                <span
+                  style={{ color: 'var(--aws-text-muted)' }}
+                  className="text-[12px] font-mono"
+                >
+                  Showing {filteredAndSortedServices.length} of {services.length} services
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch('');
+                    setCategoryFilter('All');
+                  }}
+                  className="text-[11px] font-medium text-[var(--aws-interactive)] hover:underline cursor-pointer bg-transparent border-0 p-0"
+                >
+                  Clear filters
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Sticky Header Table */}
@@ -204,7 +225,7 @@ const ConceptVaultTable: React.FC<{
                   <th
                     scope="col"
                     onClick={() => handleSort('name')}
-                    className="px-4 py-2.5 cursor-pointer hover:text-[var(--aws-text-primary)] transition-colors"
+                    className={`px-4 ${headPad} cursor-pointer hover:text-[var(--aws-text-primary)] transition-colors`}
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Service</span>
@@ -218,7 +239,7 @@ const ConceptVaultTable: React.FC<{
                   <th
                     scope="col"
                     onClick={() => handleSort('category')}
-                    className="px-4 py-2.5 cursor-pointer hover:text-[var(--aws-text-primary)] transition-colors"
+                    className={`px-4 ${headPad} cursor-pointer hover:text-[var(--aws-text-primary)] transition-colors`}
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Category</span>
@@ -232,7 +253,7 @@ const ConceptVaultTable: React.FC<{
                   <th
                     scope="col"
                     onClick={() => handleSort('tier')}
-                    className="px-4 py-2.5 cursor-pointer hover:text-[var(--aws-text-primary)] transition-colors"
+                    className={`px-4 ${headPad} cursor-pointer hover:text-[var(--aws-text-primary)] transition-colors`}
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Tier</span>
@@ -243,621 +264,619 @@ const ConceptVaultTable: React.FC<{
                       )}
                     </div>
                   </th>
-                  <th scope="col" className="px-4 py-2.5">
-                    CLI prefix
-                  </th>
-                  <th
-                    scope="col"
-                    onClick={() => handleSort('studyStatus')}
-                    className="px-4 py-2.5 cursor-pointer hover:text-[var(--aws-text-primary)] transition-colors"
+                    <th scope="col" className={`px-4 ${headPad}`}>
+                      CLI prefix
+                    </th>
+                    <th
+                      scope="col"
+                      onClick={() => handleSort('studyStatus')}
+                      className={`px-4 ${headPad} cursor-pointer hover:text-[var(--aws-text-primary)] transition-colors`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Study status</span>
+                        {sortKey === 'studyStatus' ? (
+                          sortOrder === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-50" />
+                        )}
+                      </div>
+                    </th>
+                      <th scope="col" className={`px-4 ${headPad} hidden lg:table-cell`}>
+                        Summary
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody
+                    style={{
+                      borderColor: 'var(--aws-border)',
+                    }}
+                    className="divide-y divide-[var(--aws-border)] text-[13px] leading-[18px]"
                   >
-                    <div className="flex items-center gap-1.5">
-                      <span>Study status</span>
-                      {sortKey === 'studyStatus' ? (
-                        sortOrder === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
-                      ) : (
-                        <ArrowUpDown className="w-3 h-3 opacity-50" />
-                      )}
-                    </div>
-                  </th>
-                  <th scope="col" className="px-4 py-2.5 hidden lg:table-cell">
-                    Summary
-                  </th>
-                </tr>
-              </thead>
-              <tbody
-                style={{
-                  borderColor: 'var(--aws-border)',
-                }}
-                className="divide-y divide-[var(--aws-border)] text-[13px] leading-[18px]"
-              >
-                {filteredAndSortedServices.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="text-center py-12 text-[var(--aws-text-muted)] text-[13px]"
-                    >
-                      No services match the current filters.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredAndSortedServices.map((svc) => (
-                    <tr
-                      key={svc.id}
-                      onClick={() => onSelectService(svc.id)}
-                      className="hover:bg-[var(--aws-page-bg)] cursor-pointer transition-colors py-3"
-                    >
-                      {/* Service column with 24x24px AWSServiceIcon */}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <AWSServiceIcon
-                            serviceId={svc.id}
-                            size={24}
-                            className="shrink-0"
-                          />
-                          <div className="min-w-0">
-                            <span
+                    {filteredAndSortedServices.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="text-center py-12 text-[var(--aws-text-muted)] text-[13px]"
+                        >
+                          No services match the current filters.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredAndSortedServices.map((svc) => (
+                        <tr
+                          key={svc.id}
+                          onClick={() => onSelectService(svc.id)}
+                          className={`hover:bg-[var(--aws-page-bg)] cursor-pointer transition-colors ${rowPad}`}
+                        >
+                            {/* Service column with AWSServiceIcon */}
+                            <td className={`px-4 ${rowPad}`}>
+                              <div className="flex items-center gap-2.5">
+                                <AWSServiceIcon
+                                  serviceId={svc.id}
+                                  size={isCompact ? 20 : 24}
+                                  className="shrink-0"
+                                />
+                                <div className="min-w-0">
+                                  <span
+                                    style={{ color: 'var(--aws-text-primary)' }}
+                                    className="font-medium hover:text-[var(--aws-interactive)] hover:underline truncate block"
+                                  >
+                                    {svc.name}
+                                  </span>
+                                  <span className="text-[11px] font-mono text-[var(--aws-text-muted)] uppercase">
+                                    {svc.id}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Category */}
+                            <td
                               style={{ color: 'var(--aws-text-primary)' }}
-                              className="font-medium hover:text-[var(--aws-interactive)] hover:underline truncate block"
+                              className={`px-4 ${rowPad}`}
                             >
-                              {svc.name}
-                            </span>
-                            <span className="text-[11px] font-mono text-[var(--aws-text-muted)] uppercase">
-                              {svc.id}
-                            </span>
+                              {svc.category}
+                            </td>
+
+                            {/* Tier */}
+                              <td className={`px-4 ${rowPad} font-mono text-[12px]`}>
+                                <span
+                                  style={{
+                                    color:
+                                      svc.tier === 1
+                                        ? 'var(--aws-brand)'
+                                        : 'var(--aws-text-primary)',
+                                  }}
+                                >
+                                  Tier {svc.tier}
+                                </span>
+                              </td>
+
+                              {/* CLI Prefix */}
+                                <td className={`px-4 ${rowPad} font-mono text-[12px] text-[var(--aws-text-muted)]`}>
+                                  aws {svc.id}
+                                </td>
+
+                                {/* Study Status */}
+                                  <td className={`px-4 ${rowPad}`}>
+                                    <CloudscapeStatusIndicator status={svc.studyStatus} />
+                                  </td>
+
+                                  {/* Summary */}
+                                  <td
+                                    style={{ color: 'var(--aws-text-muted)' }}
+                                    className={`px-4 ${rowPad} text-[12px] hidden lg:table-cell max-w-xs xl:max-w-md truncate`}
+                                  >
+                                    {svc.summary}
+                                  </td>
+                                </tr>
+                                ))
+                )}
+                              </tbody>
+                            </table>
                           </div>
                         </div>
-                      </td>
-
-                      {/* Category */}
-                      <td
-                        style={{ color: 'var(--aws-text-primary)' }}
-                        className="px-4 py-3"
-                      >
-                        {svc.category}
-                      </td>
-
-                      {/* Tier */}
-                      <td className="px-4 py-3 font-mono text-[12px]">
-                        <span
-                          style={{
-                            color:
-                              svc.tier === 1
-                                ? 'var(--aws-brand)'
-                                : 'var(--aws-text-primary)',
-                          }}
-                        >
-                          Tier {svc.tier}
-                        </span>
-                      </td>
-
-                      {/* CLI Prefix */}
-                      <td className="px-4 py-3 font-mono text-[12px] text-[var(--aws-text-muted)]">
-                        aws {svc.id}
-                      </td>
-
-                      {/* Study Status */}
-                      <td className="px-4 py-3">
-                        <CloudscapeStatusIndicator status={svc.studyStatus} />
-                      </td>
-
-                      {/* Summary */}
-                      <td
-                        style={{ color: 'var(--aws-text-muted)' }}
-                        className="px-4 py-3 text-[12px] hidden lg:table-cell max-w-xs xl:max-w-md truncate"
-                      >
-                        {svc.summary}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
-    </div>
-  );
+                </div>
+                );
 };
 
-/* -------------------------------------------------------------------------- */
-/*                           SERVICE DOSSIER CONTENT                          */
-/* -------------------------------------------------------------------------- */
+                /* -------------------------------------------------------------------------- */
+                /*                           SERVICE DOSSIER CONTENT                          */
+                /* -------------------------------------------------------------------------- */
 
-interface ServiceDossierContentProps {
-  service: AWSService;
+                interface ServiceDossierContentProps {
+                  service: AWSService;
   onBackToTable: () => void;
   onUpdateStatus: (id: string, status: StudyStatus) => Promise<void>;
   onUpdateDoc: (id: string, markdownDoc: string) => Promise<void>;
 }
 
-const STUDY_STATUS_OPTIONS: CloudscapeSelectOption[] = [
-  { value: 'not-started', label: 'Unstudied' },
-  { value: 'in-progress', label: 'In progress' },
-  { value: 'mastered', label: 'Mastered' },
-  { value: 'review', label: 'Review' },
-];
+                    const STUDY_STATUS_OPTIONS: CloudscapeSelectOption[] = [
+                    {value: 'not-started', label: 'Unstudied' },
+                    {value: 'in-progress', label: 'In progress' },
+                    {value: 'mastered', label: 'Mastered' },
+                    {value: 'review', label: 'Review' },
+                    ];
 
-const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
-  service,
-  onBackToTable,
-  onUpdateStatus,
-  onUpdateDoc,
+                    const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
+                      service,
+                      onBackToTable,
+                      onUpdateStatus,
+                      onUpdateDoc,
 }) => {
   const isSidebarOpen = useCompassStore((s) => s.isSidebarOpen);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editorContent, setEditorContent] = useState(service.markdownDoc);
-  const [savedSuccess, setSavedSuccess] = useState(false);
+                      const [isEditing, setIsEditing] = useState(false);
+                      const [editorContent, setEditorContent] = useState(service.markdownDoc);
+                      const [savedSuccess, setSavedSuccess] = useState(false);
 
   const handleSaveDoc = async () => {
-    await onUpdateDoc(service.id, editorContent);
-    setSavedSuccess(true);
+                        await onUpdateDoc(service.id, editorContent);
+                      setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 2000);
-    setIsEditing(false);
+                      setIsEditing(false);
   };
 
   const handleResetToSeed = async () => {
     const original = SEED_SERVICES.find((s) => s.id === service.id);
-    if (original) {
-      setEditorContent(original.markdownDoc);
-      await onUpdateDoc(service.id, original.markdownDoc);
-      setSavedSuccess(true);
+                      if (original) {
+                        setEditorContent(original.markdownDoc);
+                      await onUpdateDoc(service.id, original.markdownDoc);
+                      setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 2000);
     }
   };
 
-  return (
-    <div
-      style={{ backgroundColor: 'var(--aws-page-bg)' }}
-      className="flex flex-col h-full overflow-hidden"
-    >
-      {/* Top Breadcrumb & Action Bar */}
-      <div
-        style={{
-          backgroundColor: 'var(--aws-card-bg)',
-          borderBottomColor: 'var(--aws-border)',
-        }}
-        className={`border-b ${!isSidebarOpen ? 'pl-24 pr-4 sm:pr-6' : 'px-4 sm:px-6'} py-2.5 shrink-0 flex items-center justify-between gap-3 select-none`}
-      >
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-[13px]">
-          <button
-            type="button"
-            onClick={onBackToTable}
-            className="flex items-center gap-1 text-[var(--aws-interactive)] hover:underline cursor-pointer font-medium"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span>Services</span>
-          </button>
-          <span className="text-[var(--aws-text-muted)]">/</span>
-          <span
-            style={{ color: 'var(--aws-text-primary)' }}
-            className="font-semibold truncate"
-          >
-            {service.name}
-          </span>
-        </div>
-
-        {/* View / Edit Mode & Docs link */}
-        <div className="flex items-center gap-2">
-          {/* Read / Edit Segmented Switch */}
-          <div
-            style={{
-              backgroundColor: 'var(--aws-page-bg)',
-              borderColor: 'var(--aws-border)',
-            }}
-            className="flex items-center p-0.5 rounded-[6px] border select-none shadow-2xs"
-          >
-            <button
-              type="button"
-              onClick={() => setIsEditing(false)}
-              style={
-                !isEditing
-                  ? {
-                      backgroundColor: 'var(--aws-card-bg)',
-                      color: 'var(--aws-text-primary)',
-                      borderColor: 'var(--aws-border)',
-                    }
-                  : {
-                      color: 'var(--aws-text-muted)',
-                      borderColor: 'transparent',
-                    }
-              }
-              className={`flex items-center gap-1.5 px-3 py-1 text-[12px] font-medium rounded-[4px] border transition-all duration-150 cursor-pointer ${
-                !isEditing
-                  ? 'shadow-xs font-semibold'
-                  : 'hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)]'
-              }`}
-            >
-              <BookOpen
-                className={`w-3.5 h-3.5 ${!isEditing ? 'text-[#FF9900]' : 'opacity-70'}`}
-                strokeWidth={2}
-              />
-              <span>Read</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setEditorContent(service.markdownDoc);
-                setIsEditing(true);
-              }}
-              style={
-                isEditing
-                  ? {
-                      backgroundColor: 'var(--aws-card-bg)',
-                      color: 'var(--aws-text-primary)',
-                      borderColor: 'var(--aws-border)',
-                    }
-                  : {
-                      color: 'var(--aws-text-muted)',
-                      borderColor: 'transparent',
-                    }
-              }
-              className={`flex items-center gap-1.5 px-3 py-1 text-[12px] font-medium rounded-[4px] border transition-all duration-150 cursor-pointer ${
-                isEditing
-                  ? 'shadow-xs font-semibold'
-                  : 'hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)]'
-              }`}
-            >
-              <Edit3
-                className={`w-3.5 h-3.5 ${isEditing ? 'text-[#FF9900]' : 'opacity-70'}`}
-                strokeWidth={2}
-              />
-              <span>Edit</span>
-            </button>
-          </div>
-
-          {/* 1px Vertical Divider */}
-          <div
-            style={{ backgroundColor: 'var(--aws-border)' }}
-            className="h-4 w-px mx-0.5"
-            aria-hidden="true"
-          />
-
-          {/* External AWS Docs Button */}
-          {(() => {
-            const docsUrl = getVerifiedAWSDocsUrl(service.id, service.docsUrl);
-            if (!docsUrl) return null;
-            return (
-              <a
-                href={docsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  backgroundColor: 'var(--aws-card-bg)',
-                  borderColor: 'var(--aws-border)',
-                  color: 'var(--aws-text-primary)',
-                }}
-                className="group flex items-center gap-1.5 text-[12px] font-medium px-3 py-1 h-[29px] rounded-[6px] border hover:border-[#FF9900] hover:text-[#FF9900] active:scale-[0.98] transition-all duration-150 cursor-pointer shadow-2xs select-none"
-                title="Open official AWS documentation in a new tab"
-                aria-label={`Open official ${service.name} documentation`}
-              >
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="shrink-0 text-[#FF9900]"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M14 2V8H20"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M16 13H8"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M16 17H8"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span>AWS docs</span>
-                <ExternalLink
-                  className="w-3 h-3 text-[var(--aws-text-muted)] group-hover:text-[#FF9900] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-150"
-                  strokeWidth={2}
-                />
-              </a>
-            );
-          })()}
-        </div>
-      </div>
-
-      {/* Main Workspace Body */}
-      {isEditing ? (
-        /* Editor Layout */
-        <div
-          style={{ backgroundColor: 'var(--aws-page-bg)' }}
-          className="flex flex-col flex-1 min-h-0 overflow-hidden relative"
-        >
-          {/* Editor Action Header */}
-          <div
-            style={{
-              backgroundColor: 'var(--aws-card-bg)',
-              borderBottomColor: 'var(--aws-border)',
-            }}
-            className="flex items-center justify-between px-6 py-2 border-b text-[12px] shrink-0"
-          >
-            <span style={{ color: 'var(--aws-text-muted)' }}>
-              Editing 6-part concept dossier (Markdown + Mermaid)
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleResetToSeed}
-                style={{
-                  backgroundColor: 'var(--aws-page-bg)',
-                  borderColor: 'var(--aws-border)',
-                  color: 'var(--aws-text-muted)',
-                }}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] border transition-colors cursor-pointer hover:text-[var(--aws-text-primary)]"
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>Reset to seed</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveDoc}
-                style={{
-                  backgroundColor: 'var(--aws-brand)',
-                  color: '#0F141A',
-                }}
-                className="flex items-center gap-1 px-3 py-1 rounded-[4px] font-bold transition-[background-color,transform] duration-150 ease-out enabled:active:scale-[0.96] cursor-pointer hover:bg-[var(--aws-brand-hover)]"
-              >
-                {savedSuccess ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
-                <span>{savedSuccess ? 'Saved' : 'Save changes'}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Split Editor / Preview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 flex-1 min-h-0 overflow-hidden">
-            <div
-              style={{ borderRightColor: 'var(--aws-border)' }}
-              className="flex flex-col h-full border-r overflow-hidden"
-            >
-              <CloudscapeTextarea
-                value={editorContent}
-                onChange={setEditorContent}
-                placeholder="Enter markdown document with mermaid diagrams..."
-                spellCheck={false}
-                className="w-full h-full border-0 rounded-none font-mono text-[12px] p-4"
-              />
-            </div>
-
-            <div className="flex flex-col h-full overflow-hidden">
-              <div className="flex-1 overflow-y-auto p-6 vault-prose scrollbar-thin custom-scrollbar">
-                <Markdown
-                  components={{
-                    code(props) {
-                      const { children, className, ...rest } = props;
-                      const match = /language-(\w+)/.exec(className || '');
-                      const language = match ? match[1] : '';
-                      if (language === 'mermaid') {
-                        return <MermaidViewer chart={String(children).replace(/\n$/, '')} />;
-                      }
                       return (
-                        <code className={className} {...rest}>
-                          {children}
-                        </code>
-                      );
-                    },
-                  }}
-                >
-                  {editorContent}
-                </Markdown>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* Reading View Layout: strictly a single flex-1 overflow-y-auto scroll container under the sticky breadcrumb bar */
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 scrollbar-thin custom-scrollbar">
-          <div className="max-w-4xl mx-auto space-y-5 pb-8">
-            {/* Cloudscape Container: Service Header & Key-Value Grid */}
-            <CloudscapeContainer
-              className="relative z-10"
-              header={
-                <div className="flex items-center gap-3">
-                  <AWSServiceIcon serviceId={service.id} size={32} />
-                  <div>
-                    <h2
-                      style={{ color: 'var(--aws-text-primary)' }}
-                      className="text-[18px] font-bold leading-[22px]"
-                    >
-                      {service.name}
-                    </h2>
-                    <span className="text-[11px] font-mono text-[var(--aws-text-muted)] uppercase">
-                      {service.id}
-                    </span>
-                  </div>
-                </div>
-              }
-            >
-              {/* Key-Value Grid with 1px vertical dividers between the 4 metadata columns */}
-              <div
-                style={{ borderColor: 'var(--aws-border)' }}
-                className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2"
-              >
-                {/* Category */}
-                <div className="border-r border-[var(--aws-border)] pr-6">
-                  <span
-                    style={{ color: 'var(--aws-text-muted)' }}
-                    className="text-[12px] block font-medium"
-                  >
-                    Category
-                  </span>
-                  <span
-                    style={{ color: 'var(--aws-text-primary)' }}
-                    className="text-[13px] font-semibold mt-0.5 block"
-                  >
-                    {service.category}
-                  </span>
-                </div>
-
-                {/* Tier */}
-                <div className="border-r border-[var(--aws-border)] pr-6">
-                  <span
-                    style={{ color: 'var(--aws-text-muted)' }}
-                    className="text-[12px] block font-medium"
-                  >
-                    Study tier
-                  </span>
-                  <span
-                    style={{ color: 'var(--aws-text-primary)' }}
-                    className="text-[13px] font-semibold mt-0.5 block font-mono"
-                  >
-                    Tier {service.tier}{' '}
-                    <span className="text-[11px] font-sans font-normal text-[var(--aws-text-muted)]">
-                      {service.tier === 1
-                        ? '(Core)'
-                        : service.tier === 2
-                        ? '(Exam essential)'
-                        : '(Specialized)'}
-                    </span>
-                  </span>
-                </div>
-
-                {/* CLI Prefix */}
-                <div className="border-r border-[var(--aws-border)] pr-6">
-                  <span
-                    style={{ color: 'var(--aws-text-muted)' }}
-                    className="text-[12px] block font-medium"
-                  >
-                    CLI prefix
-                  </span>
-                  <span
-                    style={{ color: 'var(--aws-interactive)' }}
-                    className="text-[13px] font-mono mt-0.5 block font-medium"
-                  >
-                    aws {service.id}
-                  </span>
-                </div>
-
-                {/* Study Status */}
-                <div className="relative z-20">
-                  <span
-                    style={{ color: 'var(--aws-text-muted)' }}
-                    className="text-[12px] block font-medium mb-1"
-                  >
-                    Study status
-                  </span>
-                  <CloudscapeSelect
-                    value={service.studyStatus}
-                    options={STUDY_STATUS_OPTIONS}
-                    onChange={(val) =>
-                      onUpdateStatus(service.id, val as StudyStatus)
-                    }
-                    ariaLabel="Update study status"
-                    align="right"
-                    className="w-36"
-                  />
-                </div>
-              </div>
-
-              {/* ARN Example Row */}
-              {service.arnExample && (
-                <div
-                  style={{
-                    borderTopColor: 'var(--aws-border)',
-                    backgroundColor: 'var(--aws-page-bg)',
-                  }}
-                  className="mt-3 pt-3 border-t p-2.5 rounded-[4px] flex items-center justify-between gap-3 text-[12px] font-mono"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-[var(--aws-text-muted)] shrink-0 font-sans">
-                      ARN pattern:
-                    </span>
-                    <span
-                      style={{ color: 'var(--aws-text-primary)' }}
-                      className="truncate select-all"
-                    >
-                      {service.arnExample}
-                    </span>
-                  </div>
-                  <CloudscapeCopyButton
-                    textToCopy={service.arnExample}
-                    ariaLabel="Copy ARN pattern"
-                    showLabel={false}
-                    className="shrink-0"
-                  />
-                </div>
-              )}
-            </CloudscapeContainer>
-
-            {/* Unified Cloudscape Container for 6-Part Concept Dossier */}
-            <div
-              style={{
-                backgroundColor: 'var(--aws-card-bg)',
-                borderColor: 'var(--aws-border)',
-              }}
-              className="rounded-[8px] border p-6 shadow-none"
-            >
-              <div className="vault-prose">
-                <Markdown
-                  components={{
-                    code(props) {
-                      const { children, className, ...rest } = props;
-                      const match = /language-(\w+)/.exec(className || '');
-                      const language = match ? match[1] : '';
-                      if (language === 'mermaid') {
-                        return <MermaidViewer chart={String(children).replace(/\n$/, '')} />;
-                      }
-                      if (language === 'bash' || language === 'sh' || language === 'shell') {
-                        return (
-                          <CloudscapeCodeBlock
-                            code={String(children).replace(/\n$/, '')}
-                            title="aws-cli"
-                          />
-                        );
-                      }
-                      return (
-                        <code className={className} {...rest}>
-                          {children}
-                        </code>
-                      );
-                    },
-                    blockquote(props) {
-                      return (
-                        <CloudscapeAlert
-                          type="warning"
-                          header="Exam & Production Gotcha"
-                          className="my-4"
+                      <div
+                        style={{ backgroundColor: 'var(--aws-page-bg)' }}
+                        className="flex flex-col h-full overflow-hidden"
+                      >
+                        {/* Top Breadcrumb & Action Bar */}
+                        <div
+                          style={{
+                            backgroundColor: 'var(--aws-card-bg)',
+                            borderBottomColor: 'var(--aws-border)',
+                          }}
+                          className={`border-b ${!isSidebarOpen ? 'pl-24 pr-4 sm:pr-6' : 'px-4 sm:px-6'} py-2.5 shrink-0 flex items-center justify-between gap-3 select-none`}
                         >
-                          {props.children}
-                        </CloudscapeAlert>
+                          {/* Breadcrumb */}
+                          <div className="flex items-center gap-2 text-[13px]">
+                            <button
+                              type="button"
+                              onClick={onBackToTable}
+                              className="flex items-center gap-1 text-[var(--aws-interactive)] hover:underline cursor-pointer font-medium"
+                            >
+                              <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.75} />
+                              <span>Services</span>
+                            </button>
+                            <span className="text-[var(--aws-text-muted)]">/</span>
+                            <span
+                              style={{ color: 'var(--aws-text-primary)' }}
+                              className="font-semibold truncate"
+                            >
+                              {service.name}
+                            </span>
+                          </div>
+
+                          {/* View / Edit Mode & Docs link */}
+                          <div className="flex items-center gap-2">
+                            {/* Read / Edit Segmented Switch */}
+                            <div
+                              style={{
+                                backgroundColor: 'var(--aws-page-bg)',
+                                borderColor: 'var(--aws-border)',
+                              }}
+                              className="flex items-center p-0.5 rounded-[6px] border select-none shadow-2xs"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setIsEditing(false)}
+                                style={
+                                  !isEditing
+                                    ? {
+                                      backgroundColor: 'var(--aws-card-bg)',
+                                      color: 'var(--aws-text-primary)',
+                                      borderColor: 'var(--aws-border)',
+                                    }
+                                    : {
+                                      color: 'var(--aws-text-muted)',
+                                      borderColor: 'transparent',
+                                    }
+                                }
+                                className={`flex items-center gap-1.5 px-3 py-1 text-[12px] font-medium rounded-[4px] border transition-all duration-150 cursor-pointer ${!isEditing
+                                    ? 'shadow-xs font-semibold'
+                                    : 'hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)]'
+                                  }`}
+                              >
+                                <BookOpen
+                                  className={`w-3.5 h-3.5 ${!isEditing ? 'text-[#FF9900]' : 'opacity-70'}`}
+                                  strokeWidth={2}
+                                />
+                                <span>Read</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditorContent(service.markdownDoc);
+                                  setIsEditing(true);
+                                }}
+                                style={
+                                  isEditing
+                                    ? {
+                                      backgroundColor: 'var(--aws-card-bg)',
+                                      color: 'var(--aws-text-primary)',
+                                      borderColor: 'var(--aws-border)',
+                                    }
+                                    : {
+                                      color: 'var(--aws-text-muted)',
+                                      borderColor: 'transparent',
+                                    }
+                                }
+                                className={`flex items-center gap-1.5 px-3 py-1 text-[12px] font-medium rounded-[4px] border transition-all duration-150 cursor-pointer ${isEditing
+                                    ? 'shadow-xs font-semibold'
+                                    : 'hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)]'
+                                  }`}
+                              >
+                                <Edit3
+                                  className={`w-3.5 h-3.5 ${isEditing ? 'text-[#FF9900]' : 'opacity-70'}`}
+                                  strokeWidth={2}
+                                />
+                                <span>Edit</span>
+                              </button>
+                            </div>
+
+                            {/* 1px Vertical Divider */}
+                            <div
+                              style={{ backgroundColor: 'var(--aws-border)' }}
+                              className="h-4 w-px mx-0.5"
+                              aria-hidden="true"
+                            />
+
+                            {/* External AWS Docs Button */}
+                            {(() => {
+                              const docsUrl = getVerifiedAWSDocsUrl(service.id, service.docsUrl);
+                              if (!docsUrl) return null;
+                              return (
+                                <a
+                                  href={docsUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    backgroundColor: 'var(--aws-card-bg)',
+                                    borderColor: 'var(--aws-border)',
+                                    color: 'var(--aws-text-primary)',
+                                  }}
+                                  className="group flex items-center gap-1.5 text-[12px] font-medium px-3 py-1 h-[29px] rounded-[6px] border hover:border-[#FF9900] hover:text-[#FF9900] active:scale-[0.98] transition-all duration-150 cursor-pointer shadow-2xs select-none"
+                                  title="Open official AWS documentation in a new tab"
+                                  aria-label={`Open official ${service.name} documentation`}
+                                >
+                                  <svg
+                                    width="13"
+                                    height="13"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="shrink-0 text-[#FF9900]"
+                                    aria-hidden="true"
+                                  >
+                                    <path
+                                      d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                    <path
+                                      d="M14 2V8H20"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                    <path
+                                      d="M16 13H8"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                    <path
+                                      d="M16 17H8"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                  <span>AWS docs</span>
+                                  <ExternalLink
+                                    className="w-3 h-3 text-[var(--aws-text-muted)] group-hover:text-[#FF9900] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-150"
+                                    strokeWidth={2}
+                                  />
+                                </a>
+                              );
+                            })()}
+                          </div>
+                        </div>
+
+                        {/* Main Workspace Body */}
+                        {isEditing ? (
+                          /* Editor Layout */
+                          <div
+                            style={{ backgroundColor: 'var(--aws-page-bg)' }}
+                            className="flex flex-col flex-1 min-h-0 overflow-hidden relative"
+                          >
+                            {/* Editor Action Header */}
+                            <div
+                              style={{
+                                backgroundColor: 'var(--aws-card-bg)',
+                                borderBottomColor: 'var(--aws-border)',
+                              }}
+                              className="flex items-center justify-between px-6 py-2 border-b text-[12px] shrink-0"
+                            >
+                              <span style={{ color: 'var(--aws-text-muted)' }}>
+                                Editing 6-part concept dossier (Markdown + Mermaid)
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={handleResetToSeed}
+                                  style={{
+                                    backgroundColor: 'var(--aws-page-bg)',
+                                    borderColor: 'var(--aws-border)',
+                                    color: 'var(--aws-text-muted)',
+                                  }}
+                                  className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] border transition-colors cursor-pointer hover:text-[var(--aws-text-primary)]"
+                                >
+                                  <RotateCcw className="w-3 h-3" />
+                                  <span>Reset to seed</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={handleSaveDoc}
+                                  style={{
+                                    backgroundColor: 'var(--aws-brand)',
+                                    color: '#0F141A',
+                                  }}
+                                  className="flex items-center gap-1 px-3 py-1 rounded-[4px] font-bold transition-[background-color,transform] duration-150 ease-out enabled:active:scale-[0.96] cursor-pointer hover:bg-[var(--aws-brand-hover)]"
+                                >
+                                  {savedSuccess ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                                  <span>{savedSuccess ? 'Saved' : 'Save changes'}</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Split Editor / Preview */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 flex-1 min-h-0 overflow-hidden">
+                              <div
+                                style={{ borderRightColor: 'var(--aws-border)' }}
+                                className="flex flex-col h-full border-r overflow-hidden"
+                              >
+                                <CloudscapeTextarea
+                                  value={editorContent}
+                                  onChange={setEditorContent}
+                                  placeholder="Enter markdown document with mermaid diagrams..."
+                                  spellCheck={false}
+                                  className="w-full h-full border-0 rounded-none font-mono text-[12px] p-4"
+                                />
+                              </div>
+
+                              <div className="flex flex-col h-full overflow-hidden">
+                                <div className="flex-1 overflow-y-auto p-6 vault-prose scrollbar-thin custom-scrollbar">
+                                  <Markdown
+                                    components={{
+                                      code(props) {
+                                        const { children, className, ...rest } = props;
+                                        const match = /language-(\w+)/.exec(className || '');
+                                        const language = match ? match[1] : '';
+                                        if (language === 'mermaid') {
+                                          return <MermaidViewer chart={String(children).replace(/\n$/, '')} />;
+                                        }
+                                        return (
+                                          <code className={className} {...rest}>
+                                            {children}
+                                          </code>
+                                        );
+                                      },
+                                    }}
+                                  >
+                                    {editorContent}
+                                  </Markdown>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          /* Reading View Layout: strictly a single flex-1 overflow-y-auto scroll container under the sticky breadcrumb bar */
+                          <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 scrollbar-thin custom-scrollbar">
+                            <div className="max-w-4xl mx-auto space-y-5 pb-8">
+                              {/* Cloudscape Container: Service Header & Key-Value Grid */}
+                              <CloudscapeContainer
+                                className="relative z-10"
+                                header={
+                                  <div className="flex items-center gap-3">
+                                    <AWSServiceIcon serviceId={service.id} size={32} />
+                                    <div>
+                                      <h2
+                                        style={{ color: 'var(--aws-text-primary)' }}
+                                        className="text-[18px] font-bold leading-[22px]"
+                                      >
+                                        {service.name}
+                                      </h2>
+                                      <span className="text-[11px] font-mono text-[var(--aws-text-muted)] uppercase">
+                                        {service.id}
+                                      </span>
+                                    </div>
+                                  </div>
+                                }
+                              >
+                                {/* Key-Value Grid with 1px vertical dividers between the 4 metadata columns */}
+                                <div
+                                  style={{ borderColor: 'var(--aws-border)' }}
+                                  className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2"
+                                >
+                                  {/* Category */}
+                                  <div className="border-r border-[var(--aws-border)] pr-6">
+                                    <span
+                                      style={{ color: 'var(--aws-text-muted)' }}
+                                      className="text-[12px] block font-medium"
+                                    >
+                                      Category
+                                    </span>
+                                    <span
+                                      style={{ color: 'var(--aws-text-primary)' }}
+                                      className="text-[13px] font-semibold mt-0.5 block"
+                                    >
+                                      {service.category}
+                                    </span>
+                                  </div>
+
+                                  {/* Tier */}
+                                  <div className="border-r border-[var(--aws-border)] pr-6">
+                                    <span
+                                      style={{ color: 'var(--aws-text-muted)' }}
+                                      className="text-[12px] block font-medium"
+                                    >
+                                      Study tier
+                                    </span>
+                                    <span
+                                      style={{ color: 'var(--aws-text-primary)' }}
+                                      className="text-[13px] font-semibold mt-0.5 block font-mono"
+                                    >
+                                      Tier {service.tier}{' '}
+                                      <span className="text-[11px] font-sans font-normal text-[var(--aws-text-muted)]">
+                                        {service.tier === 1
+                                          ? '(Core)'
+                                          : service.tier === 2
+                                            ? '(Exam essential)'
+                                            : '(Specialized)'}
+                                      </span>
+                                    </span>
+                                  </div>
+
+                                  {/* CLI Prefix */}
+                                  <div className="border-r border-[var(--aws-border)] pr-6">
+                                    <span
+                                      style={{ color: 'var(--aws-text-muted)' }}
+                                      className="text-[12px] block font-medium"
+                                    >
+                                      CLI prefix
+                                    </span>
+                                    <span
+                                      style={{ color: 'var(--aws-interactive)' }}
+                                      className="text-[13px] font-mono mt-0.5 block font-medium"
+                                    >
+                                      aws {service.id}
+                                    </span>
+                                  </div>
+
+                                  {/* Study Status */}
+                                  <div className="relative z-20">
+                                    <span
+                                      style={{ color: 'var(--aws-text-muted)' }}
+                                      className="text-[12px] block font-medium mb-1"
+                                    >
+                                      Study status
+                                    </span>
+                                    <CloudscapeSelect
+                                      value={service.studyStatus}
+                                      options={STUDY_STATUS_OPTIONS}
+                                      onChange={(val) =>
+                                        onUpdateStatus(service.id, val as StudyStatus)
+                                      }
+                                      ariaLabel="Update study status"
+                                      align="right"
+                                      className="w-36"
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* ARN Example Row */}
+                                {service.arnExample && (
+                                  <div
+                                    style={{
+                                      borderTopColor: 'var(--aws-border)',
+                                      backgroundColor: 'var(--aws-page-bg)',
+                                    }}
+                                    className="mt-3 pt-3 border-t p-2.5 rounded-[4px] flex items-center justify-between gap-3 text-[12px] font-mono"
+                                  >
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <span className="text-[var(--aws-text-muted)] shrink-0 font-sans">
+                                        ARN pattern:
+                                      </span>
+                                      <span
+                                        style={{ color: 'var(--aws-text-primary)' }}
+                                        className="truncate select-all"
+                                      >
+                                        {service.arnExample}
+                                      </span>
+                                    </div>
+                                    <CloudscapeCopyButton
+                                      textToCopy={service.arnExample}
+                                      ariaLabel="Copy ARN pattern"
+                                      showLabel={false}
+                                      className="shrink-0"
+                                    />
+                                  </div>
+                                )}
+                              </CloudscapeContainer>
+
+                              {/* Unified Cloudscape Container for 6-Part Concept Dossier */}
+                              <div
+                                style={{
+                                  backgroundColor: 'var(--aws-card-bg)',
+                                  borderColor: 'var(--aws-border)',
+                                }}
+                                className="rounded-[8px] border p-6 shadow-none"
+                              >
+                                <div className="vault-prose">
+                                  <Markdown
+                                    components={{
+                                      code(props) {
+                                        const { children, className, ...rest } = props;
+                                        const match = /language-(\w+)/.exec(className || '');
+                                        const language = match ? match[1] : '';
+                                        if (language === 'mermaid') {
+                                          return <MermaidViewer chart={String(children).replace(/\n$/, '')} />;
+                                        }
+                                        if (language === 'bash' || language === 'sh' || language === 'shell') {
+                                          return (
+                                            <CloudscapeCodeBlock
+                                              code={String(children).replace(/\n$/, '')}
+                                              title="aws-cli"
+                                            />
+                                          );
+                                        }
+                                        return (
+                                          <code className={className} {...rest}>
+                                            {children}
+                                          </code>
+                                        );
+                                      },
+                                      blockquote(props) {
+                                        return (
+                                          <CloudscapeAlert
+                                            type="warning"
+                                            header="Exam & Production Gotcha"
+                                            className="my-4"
+                                          >
+                                            {props.children}
+                                          </CloudscapeAlert>
+                                        );
+                                      },
+                                    }}
+                                  >
+                                    {service.markdownDoc}
+                                  </Markdown>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                       );
-                    },
-                  }}
-                >
-                  {service.markdownDoc}
-                </Markdown>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
 };
 
 /* -------------------------------------------------------------------------- */
@@ -866,33 +885,33 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
 
 export const ConceptVault: React.FC = () => {
   const {
-    services,
-    selectedServiceId,
-    setSelectedServiceId,
-    updateServiceStatus,
-    updateServiceDoc,
+                        services,
+                        selectedServiceId,
+                        setSelectedServiceId,
+                        updateServiceStatus,
+                        updateServiceDoc,
   } = useCompassStore();
 
   const selectedService = services.find((s) => s.id === selectedServiceId);
 
-  if (!selectedService) {
+                      if (!selectedService) {
     return (
-      <ConceptVaultTable
-        services={services}
-        onSelectService={(id) => setSelectedServiceId(id)}
-      />
-    );
+                      <ConceptVaultTable
+                        services={services}
+                        onSelectService={(id) => setSelectedServiceId(id)}
+                      />
+                      );
   }
 
-  return (
-    <ServiceDossierContent
-      key={selectedService.id}
-      service={selectedService}
-      onBackToTable={() => setSelectedServiceId(null)}
-      onUpdateStatus={updateServiceStatus}
-      onUpdateDoc={updateServiceDoc}
-    />
-  );
+                      return (
+                      <ServiceDossierContent
+                        key={selectedService.id}
+                        service={selectedService}
+                        onBackToTable={() => setSelectedServiceId(null)}
+                        onUpdateStatus={updateServiceStatus}
+                        onUpdateDoc={updateServiceDoc}
+                      />
+                      );
 };
 
-export default ConceptVault;
+                      export default ConceptVault;

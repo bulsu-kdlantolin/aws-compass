@@ -2,20 +2,23 @@ import React, { useState } from 'react';
 import {
   AWS_SERVICE_VECTORS,
   AWS_GROUP_VECTORS,
+  AWS_ACTOR_VECTORS,
 } from './awsOfficialVectors';
 import { useCompassStore } from '../../store/useCompassStore';
 
 export interface AWSServiceIconProps {
   serviceId?: string;
   groupId?: string;
+  actorId?: string;
   size?: number;
   className?: string;
-  variant?: 'service' | 'resource' | 'group';
+  variant?: 'service' | 'resource' | 'group' | 'actor';
 }
 
 export const AWSServiceIcon: React.FC<AWSServiceIconProps> = ({
   serviceId,
   groupId,
+  actorId,
   size = 24,
   className = '',
   variant = 'service',
@@ -24,8 +27,35 @@ export const AWSServiceIcon: React.FC<AWSServiceIconProps> = ({
   const [assetLoadFailed, setAssetLoadFailed] = useState(false);
 
   // Normalize service key: lowercase, trim
-  const rawKey = (variant === 'group' ? groupId : serviceId) || '';
+  const rawKey = (variant === 'group' ? groupId : variant === 'actor' ? actorId : serviceId) || '';
   const normalizedKey = rawKey.toLowerCase().trim().replace(/\s+/g, '-');
+
+  // External Actor Variant
+  if (variant === 'actor') {
+    const actorDef = AWS_ACTOR_VECTORS[normalizedKey] || AWS_ACTOR_VECTORS['user-browser'];
+    const borderRadius = size <= 24 ? 2 : 4;
+    return (
+      <span
+        className={`inline-flex items-center justify-center shrink-0 overflow-hidden select-none ${className}`}
+        style={{
+          width: size,
+          height: size,
+          borderRadius,
+          backgroundColor: actorDef.bg,
+        }}
+        title={actorDef.label}
+      >
+        <svg
+          viewBox="0 0 32 32"
+          width={size * 0.72}
+          height={size * 0.72}
+          className="block pointer-events-none"
+        >
+          {actorDef.paths}
+        </svg>
+      </span>
+    );
+  }
 
   // Group Icon Variant
   if (variant === 'group') {

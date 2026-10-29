@@ -645,4 +645,85 @@ export const AWS_GROUP_VECTORS: Record<string, { label: string; paths: React.Rea
       </g>
     ),
   },
+  'corporate-datacenter': {
+    label: 'Corporate data center',
+    paths: (
+      <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="3" width="16" height="18" rx="2" />
+        <line x1="8" y1="7" x2="16" y2="7" />
+        <line x1="8" y1="11" x2="16" y2="11" />
+        <line x1="8" y1="15" x2="16" y2="15" />
+        <circle cx="6" cy="7" r="0.8" fill="currentColor" />
+        <circle cx="6" cy="11" r="0.8" fill="currentColor" />
+        <circle cx="6" cy="15" r="0.8" fill="currentColor" />
+      </g>
+    ),
+  },
+};
+
+export const AWS_ACTOR_VECTORS: Record<
+  string,
+  { label: string; stroke: string; bg: string; paths: React.ReactNode }
+> = {
+  'user-browser': {
+    label: 'User / Client Browser',
+    stroke: '#0972D3',
+    bg: '#0972D3',
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="5" width="24" height="18" rx="2" />
+        <line x1="4" y1="10" x2="28" y2="10" />
+        <circle cx="7.5" cy="7.5" r="0.75" fill="#FFFFFF" />
+        <circle cx="10.5" cy="7.5" r="0.75" fill="#FFFFFF" />
+        <circle cx="16" cy="15" r="2.5" />
+        <path d="M12 21C12 18.8 13.8 17 16 17C18.2 17 20 18.8 20 21" />
+      </g>
+    ),
+  },
+  'mobile-client': {
+    label: 'Mobile / IoT Client',
+    stroke: '#1D8102',
+    bg: '#1D8102',
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="8" y="4" width="16" height="24" rx="3" />
+        <line x1="14" y1="7" x2="18" y2="7" />
+        <circle cx="16" cy="24" r="1" fill="#FFFFFF" />
+        <path d="M5 8C3.5 10.5 3.5 13.5 5 16" />
+        <path d="M27 8C28.5 10.5 28.5 13.5 27 16" />
+      </g>
+    ),
+  },
+  'corporate-datacenter': {
+    label: 'Corporate On-Premises Data Center',
+    stroke: '#545B64',
+    bg: '#545B64',
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="6" y="4" width="20" height="24" rx="2" />
+        <line x1="6" y1="12" x2="26" y2="12" />
+        <line x1="6" y1="20" x2="26" y2="20" />
+        <circle cx="10" cy="8" r="1" fill="#FFFFFF" />
+        <circle cx="10" cy="16" r="1" fill="#FFFFFF" />
+        <circle cx="10" cy="24" r="1" fill="#FFFFFF" />
+        <line x1="14" y1="8" x2="22" y2="8" />
+        <line x1="14" y1="16" x2="22" y2="16" />
+        <line x1="14" y1="24" x2="22" y2="24" />
+      </g>
+    ),
+  },
+  'external-webhook': {
+    label: 'External Webhook / 3rd-Party API',
+    stroke: '#8C4FFF',
+    bg: '#8C4FFF',
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="9" cy="16" r="3" />
+        <circle cx="23" cy="9" r="3" />
+        <circle cx="23" cy="23" r="3" />
+        <path d="M11.5 14.5L20.5 10.5" />
+        <path d="M11.5 17.5L20.5 21.5" />
+      </g>
+    ),
+  },
 };

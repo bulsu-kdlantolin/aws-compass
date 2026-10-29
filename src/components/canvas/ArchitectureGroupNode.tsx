@@ -86,6 +86,14 @@ const BOUNDARY_CONFIGS: Record<GroupBoundaryType, BoundaryStyle> = {
     badge: 'AUTO SCALING GROUP',
     icon: <Layers className="w-3.5 h-3.5 text-orange-400" />,
   },
+  'corporate-datacenter': {
+    border: 'border-slate-500/30 border-dashed',
+    bg: 'bg-slate-950/10',
+    headerBg: 'bg-slate-900/80 border-slate-700',
+    text: 'text-slate-300',
+    badge: 'CORPORATE DATA CENTER',
+    icon: <Network className="w-3.5 h-3.5 text-slate-400" />,
+  },
 };
 
 export const ArchitectureGroupNode = memo((props: NodeProps) => {
