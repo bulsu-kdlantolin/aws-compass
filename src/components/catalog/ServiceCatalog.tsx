@@ -242,7 +242,7 @@ export const ServiceCatalog: React.FC = () => {
       }}
       className="w-72 md:w-80 flex flex-col h-full border-r shrink-0 select-none rounded-none"
     >
-      {/* Top Header: Search Input + Category Tree Collapse/Expand + Sidebar Collapse Button */}
+      {/* Top Header: Full-Width Search Input + Sleek Sidebar Collapse Icon Button */}
       <div
         style={{
           borderBottomColor: 'var(--aws-border)',
@@ -273,57 +273,70 @@ export const ServiceCatalog: React.FC = () => {
             </div>
           </div>
 
-        {/* Tree Collapse / Expand All Button */}
-        <button
-          type="button"
-          onClick={toggleCollapseAll}
-          className="h-8 px-2 rounded-[6px] flex items-center gap-1 text-[11px] font-medium text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border border-[var(--aws-border)]/70 hover:border-[var(--aws-border)] transition-all cursor-pointer shadow-2xs shrink-0"
-          title={allCollapsed ? 'Expand all categories' : 'Collapse all categories'}
-          aria-label={allCollapsed ? 'Expand all categories' : 'Collapse all categories'}
-        >
-          <ChevronsUpDown className="w-3.5 h-3.5" strokeWidth={1.75} />
-        </button>
+          {/* Sidebar Collapse Button */}
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className="h-8 w-8 rounded-[6px] flex items-center justify-center text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border border-[var(--aws-border)]/70 hover:border-[var(--aws-border)] transition-all cursor-pointer shadow-2xs shrink-0 group"
+            title="Collapse sidebar"
+            aria-label="Collapse sidebar"
+          >
+            <ChevronLeft className="w-4 h-4 text-[var(--aws-text-muted)] group-hover:text-[var(--aws-text-primary)] transition-colors" strokeWidth={2} />
+          </button>
+        </div>
 
-        {/* Sidebar Collapse Button */}
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          className="h-8 px-2 rounded-[6px] flex items-center gap-1.5 text-[11px] font-medium text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border border-[var(--aws-border)]/70 hover:border-[var(--aws-border)] transition-all cursor-pointer shadow-2xs shrink-0 group"
-          title="Collapse sidebar"
-          aria-label="Collapse sidebar"
+        {/* Segmented Tier Filter Track */}
+        <div
+          style={{
+            borderBottomColor: 'var(--aws-border)',
+            backgroundColor: 'var(--aws-card-bg)',
+          }}
+          className="p-2 border-b shrink-0"
         >
-          <ChevronLeft className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[var(--aws-text-primary)] transition-colors" strokeWidth={2} />
-          <span className="text-[11px]">Collapse</span>
-        </button>
-      </div>
-
-      {/* Segmented Tier Filter Track */}
-      <div
-        style={{
-          borderBottomColor: 'var(--aws-border)',
-          backgroundColor: 'var(--aws-card-bg)',
-        }}
-        className="p-2 border-b shrink-0"
-      >
-        <div className="h-7 p-0.5 rounded-[6px] bg-[var(--aws-page-bg)] border border-[var(--aws-border)] grid grid-cols-4 gap-0.5">
-          {(['All', 1, 2, 3] as const).map((tierVal) => {
-            const isSelected = filter.tier === tierVal;
-            const label = tierVal === 'All' ? 'All' : `Tier ${tierVal}`;
-            return (
-              <button
-                key={tierVal}
-                type="button"
-                onClick={() => setTierFilter(tierVal)}
+          <div className="h-7 p-0.5 rounded-[6px] bg-[var(--aws-page-bg)] border border-[var(--aws-border)] grid grid-cols-4 gap-0.5">
+            {(['All', 1, 2, 3] as const).map((tierVal) => {
+              const isSelected = filter.tier === tierVal;
+              const label = tierVal === 'All' ? 'All' : `Tier ${tierVal}`;
+              return (
+                <button
+                  key={tierVal}
+                  type="button"
+                  onClick={() => setTierFilter(tierVal)}
                 className={`rounded-[4px] text-[11px] font-medium flex items-center justify-center transition-all duration-150 cursor-pointer ${isSelected
-                    ? 'bg-[var(--aws-card-bg)] text-[var(--aws-text-primary)] font-semibold shadow-xs'
-                    : 'text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)]'
-                  }`}
+                      ? 'bg-[var(--aws-card-bg)] text-[var(--aws-text-primary)] font-semibold shadow-xs'
+                      : 'text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)]'
+                }`}
               >
                 {label}
               </button>
             );
           })}
         </div>
+      </div>
+
+      {/* Service Count & Category Expand/Collapse All Row */}
+      <div
+        style={{
+          borderBottomColor: 'var(--aws-border)',
+          backgroundColor: 'var(--aws-card-bg)',
+        }}
+        className="px-3 py-1.5 border-b flex items-center justify-between text-[11px] text-[var(--aws-text-muted)] shrink-0"
+      >
+        <span className="tabular-nums font-mono">
+          {filteredServices.length} of {services.length} services
+        </span>
+
+        {/* Tree Collapse / Expand All Button */}
+        <button
+          type="button"
+          onClick={toggleCollapseAll}
+          className="h-6 px-1.5 rounded flex items-center gap-1 text-[11px] font-medium text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] transition-colors cursor-pointer"
+          title={allCollapsed ? 'Expand all categories' : 'Collapse all categories'}
+          aria-label={allCollapsed ? 'Expand all categories' : 'Collapse all categories'}
+        >
+          <ChevronsUpDown className="w-3.5 h-3.5" strokeWidth={1.75} />
+          <span>{allCollapsed ? 'Expand all' : 'Collapse all'}</span>
+        </button>
       </div>
 
       {/* Tree Content */}
@@ -394,115 +407,114 @@ export const ServiceCatalog: React.FC = () => {
                       ? 'rgba(255, 153, 0, 0.15)'
                       : 'var(--aws-card-bg)',
                   }}
-                  className={`group w-full ${isCompact ? 'h-6 px-1.5' : 'h-7 px-2'} flex items-center justify-between text-left transition-[background-color,box-shadow] duration-150 relative ${
-                    isHeaderTarget && draggedServiceId
-                      ? 'ring-2 ring-[#FF9900] border-l-4 border-l-[#FF9900]'
-                      : 'hover:bg-[var(--aws-page-bg)]'
+                  className={`group w - full ${ isCompact? 'h-6 px-1.5': 'h-7 px-2' } flex items - center justify - between text - left transition - [background - color, box - shadow] duration - 150 relative ${
+              isHeaderTarget && draggedServiceId
+              ? 'ring-2 ring-[#FF9900] border-l-4 border-l-[#FF9900]'
+              : 'hover:bg-[var(--aws-page-bg)]'
                   }`}
                 >
-                  {/* Category Header Left: Chevron + Label */}
-                  <button
-                    type="button"
-                    onClick={() => toggleCategory(cat)}
-                    className="flex items-center gap-1.5 min-w-0 flex-1 text-left cursor-pointer focus:outline-none"
-                  >
-                    <ChevronRight
-                      className={`w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-150 shrink-0 ${
-                  isCollapsed ? '' : 'rotate-90'
-                }`}
+            {/* Category Header Left: Chevron + Label */}
+            <button
+              type="button"
+              onClick={() => toggleCategory(cat)}
+              className="flex items-center gap-1.5 min-w-0 flex-1 text-left cursor-pointer focus:outline-none"
+            >
+              <ChevronRight
+                className={`w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-150 shrink-0 ${isCollapsed ? '' : 'rotate-90'
+                  }`}
                 strokeWidth={2}
-                    />
-                <span className="text-[12px] font-semibold text-[var(--aws-text-primary)] truncate">
-                  {cat}
-                </span>
-              </button>
+              />
+              <span className="text-[12px] font-semibold text-[var(--aws-text-primary)] truncate">
+                {cat}
+              </span>
+            </button>
 
-                  {/* Category Header Right: Active Drop Badge or Count */ }
+            {/* Category Header Right: Active Drop Badge or Count */}
             {
               isHeaderTarget && draggedServiceId ? (
                 <span className="text-[10px] font-bold text-[#FF9900] bg-[#FF9900]/20 px-1.5 py-0.5 rounded animate-pulse shrink-0">
                   + Move to {cat}
                 </span>
               ) : (
-              <span className="text-[10px] font-mono text-[var(--aws-text-muted)] shrink-0">
-                {catServices.length}
-              </span>
-            )
+                <span className="text-[10px] font-mono text-[var(--aws-text-muted)] shrink-0">
+                  {catServices.length}
+                </span>
+              )
             }
-                </div>
+          </div>
 
-      {/* Category Service Items */}
-      {!isCollapsed && (
-        <div
-          className="pl-2 relative"
-          onDragOver={(e) => {
-            if (draggedServiceId) {
-              e.preventDefault();
-              e.dataTransfer.dropEffect = 'move';
-            }
-          }}
-          onDrop={async (e) => {
-            if (e.target === e.currentTarget && draggedServiceId) {
-              e.preventDefault();
-              await moveServiceToCategory(draggedServiceId, cat, 'end');
-              handleCardDragEnd();
-            }
-          }}
-        >
-          {catServices.length === 0 ? (
+          {/* Category Service Items */}
+          {!isCollapsed && (
             <div
+              className="pl-2 relative"
               onDragOver={(e) => {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-                setTargetCategoryHeader(cat);
-              }}
-              onDragLeave={() => setTargetCategoryHeader(null)}
-              onDrop={async (e) => {
-                e.preventDefault();
-                const sourceId =
-                  e.dataTransfer.getData('application/aws-service-id') ||
-                  draggedServiceId;
-                setTargetCategoryHeader(null);
-                setDraggedServiceId(null);
-                if (sourceId) {
-                  await moveServiceToCategory(sourceId, cat, 'start');
+                if (draggedServiceId) {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
                 }
               }}
-              className="py-2 px-3 text-center border border-dashed border-[var(--aws-border)] rounded mx-2 my-1.5 text-[11px] text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)]/50 hover:border-[#FF9900] transition-colors"
+              onDrop={async (e) => {
+                if (e.target === e.currentTarget && draggedServiceId) {
+                  e.preventDefault();
+                  await moveServiceToCategory(draggedServiceId, cat, 'end');
+                  handleCardDragEnd();
+                }
+              }}
             >
-              Drop service here to move to {cat}
+              {catServices.length === 0 ? (
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    setTargetCategoryHeader(cat);
+                  }}
+                  onDragLeave={() => setTargetCategoryHeader(null)}
+                  onDrop={async (e) => {
+                    e.preventDefault();
+                    const sourceId =
+                      e.dataTransfer.getData('application/aws-service-id') ||
+                      draggedServiceId;
+                    setTargetCategoryHeader(null);
+                    setDraggedServiceId(null);
+                    if (sourceId) {
+                      await moveServiceToCategory(sourceId, cat, 'start');
+                    }
+                  }}
+                  className="py-2 px-3 text-center border border-dashed border-[var(--aws-border)] rounded mx-2 my-1.5 text-[11px] text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)]/50 hover:border-[#FF9900] transition-colors"
+                >
+                  Drop service here to move to {cat}
+                </div>
+              ) : (
+                catServices.map((svc, index) => (
+                  <ServiceCard
+                    key={svc.id}
+                    service={svc}
+                    isSelected={svc.id === selectedServiceId}
+                    isDragging={draggedServiceId === svc.id}
+                    dropPosition={targetCardId === svc.id ? targetCardDropPosition : null}
+                    onSelect={() => setSelectedServiceId(svc.id)}
+                    onDragStart={handleCardDragStart}
+                    onDragOver={handleCardDragOver}
+                    onDragLeave={handleCardDragLeave}
+                    onDrop={handleCardDrop}
+                    onDragEnd={handleCardDragEnd}
+                    onMoveUp={() => {
+                      if (index > 0) {
+                        reorderService(svc.id, catServices[index - 1].id, 'before', cat);
+                      }
+                    }}
+                    onMoveDown={() => {
+                      if (index < catServices.length - 1) {
+                        reorderService(svc.id, catServices[index + 1].id, 'after', cat);
+                      }
+                    }}
+                  />
+                ))
+              )}
             </div>
-          ) : (
-            catServices.map((svc, index) => (
-              <ServiceCard
-                key={svc.id}
-                service={svc}
-                isSelected={svc.id === selectedServiceId}
-                isDragging={draggedServiceId === svc.id}
-                dropPosition={targetCardId === svc.id ? targetCardDropPosition : null}
-                onSelect={() => setSelectedServiceId(svc.id)}
-                onDragStart={handleCardDragStart}
-                onDragOver={handleCardDragOver}
-                onDragLeave={handleCardDragLeave}
-                onDrop={handleCardDrop}
-                onDragEnd={handleCardDragEnd}
-                onMoveUp={() => {
-                  if (index > 0) {
-                    reorderService(svc.id, catServices[index - 1].id, 'before', cat);
-                  }
-                }}
-                onMoveDown={() => {
-                  if (index < catServices.length - 1) {
-                    reorderService(svc.id, catServices[index + 1].id, 'after', cat);
-                  }
-                }}
-              />
-            ))
           )}
         </div>
-      )}
-    </div>
-  );
+        );
 })
         )}
       </div >

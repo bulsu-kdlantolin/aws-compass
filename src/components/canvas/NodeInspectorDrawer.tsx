@@ -27,6 +27,9 @@ import { CloudscapeTabs } from '../ui/CloudscapeTabs';
 import { CloudscapeStatusIndicator } from '../ui/CloudscapeStatusIndicator';
 import { CloudscapeCodeBlock } from '../ui/CloudscapeCodeBlock';
 import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
+import { CloudscapeSelect, type CloudscapeSelectOption } from '../ui/CloudscapeSelect';
+import { SegmentedControl } from '../ui/SegmentedControl';
+import { ToggleSwitch } from '../ui/ToggleSwitch';
 import { getVerifiedAWSDocsUrl } from '../../utils/awsDocs';
 import type {
   EdgeProtocol,
@@ -35,6 +38,7 @@ import type {
   GroupBoundaryType,
   ExternalActorType,
   NodeEnvironment,
+  StudyStatus,
 } from '../../types/aws';
 
 const PROTOCOLS: EdgeProtocol[] = [
@@ -46,6 +50,11 @@ const PROTOCOLS: EdgeProtocol[] = [
   'gRPC',
   'WebSocket',
 ];
+
+const PROTOCOL_OPTIONS: CloudscapeSelectOption<EdgeProtocol>[] = PROTOCOLS.map((p) => ({
+  value: p,
+  label: p,
+}));
 
 const BOUNDARY_TYPES: { type: GroupBoundaryType; label: string }[] = [
   { type: 'aws-cloud', label: 'AWS Cloud Perimeter' },
@@ -60,11 +69,28 @@ const BOUNDARY_TYPES: { type: GroupBoundaryType; label: string }[] = [
   { type: 'corporate-datacenter', label: 'Corporate Data Center' },
 ];
 
+const BOUNDARY_TYPE_OPTIONS: CloudscapeSelectOption<GroupBoundaryType>[] = BOUNDARY_TYPES.map((b) => ({
+  value: b.type,
+  label: b.label,
+}));
+
 const ACTOR_TYPES: { type: ExternalActorType; label: string }[] = [
   { type: 'user-browser', label: 'User / Client Browser' },
   { type: 'mobile-client', label: 'Mobile / IoT Device Client' },
   { type: 'corporate-datacenter', label: 'Corporate On-Premises Data Center' },
   { type: 'external-webhook', label: 'External Webhook / 3rd-Party API' },
+];
+
+const ACTOR_TYPE_OPTIONS: CloudscapeSelectOption<ExternalActorType>[] = ACTOR_TYPES.map((a) => ({
+  value: a.type,
+  label: a.label,
+}));
+
+const ENV_OPTIONS: CloudscapeSelectOption<NodeEnvironment>[] = [
+  { value: 'None', label: 'None (Global Scope)' },
+  { value: 'Prod', label: 'Production (Prod)' },
+  { value: 'Staging', label: 'Staging' },
+  { value: 'Dev', label: 'Development (Dev)' },
 ];
 
 const COLOR_PRESETS = [
@@ -75,6 +101,33 @@ const COLOR_PRESETS = [
   { label: 'Orange', color: '#ED7100' },
   { label: 'Red', color: '#DD344C' },
   { label: 'Neutral', color: '#879596' },
+];
+
+const STUDY_STATUS_OPTIONS: { value: StudyStatus; label: string }[] = [
+  { value: 'not-started', label: 'Not started' },
+  { value: 'in-progress', label: 'In progress' },
+  { value: 'mastered', label: 'Mastered' },
+  { value: 'review', label: 'Review' },
+];
+
+const LINE_STYLE_OPTIONS: { value: EdgeLineStyle; label: string }[] = [
+  { value: 'solid', label: 'Solid' },
+  { value: 'dashed', label: 'Dashed' },
+  { value: 'dotted', label: 'Dotted' },
+];
+
+const DIRECTION_OPTIONS: { value: EdgeDirectionality; label: string }[] = [
+  { value: 'one-way', label: 'One-Way ➔' },
+  { value: 'bi-directional', label: 'Bi-Dir ⇄' },
+  { value: 'none', label: 'None ──' },
+];
+
+const NOTE_COLOR_OPTIONS = [
+  { value: 'amber', label: 'Amber' },
+  { value: 'blue', label: 'Blue' },
+  { value: 'purple', label: 'Purple' },
+  { value: 'green', label: 'Green' },
+  { value: 'slate', label: 'Slate' },
 ];
 
 export const NodeInspectorDrawer: React.FC = () => {
@@ -115,6 +168,16 @@ export const NodeInspectorDrawer: React.FC = () => {
     [nodes]
   );
 
+  const parentBoundaryOptions = useMemo<CloudscapeSelectOption<string>[]>(() => {
+    return [
+      { value: 'none', label: '(None - Global Scope)' },
+      ...groupBoundaries.map((g) => ({
+        value: g.id,
+        label: `${g.data.boundaryLabel || g.data.label} (${g.data.boundaryType || 'AWS Boundary'})`,
+      })),
+    ];
+  }, [groupBoundaries]);
+
   // Close on ESC
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -149,7 +212,7 @@ export const NodeInspectorDrawer: React.FC = () => {
   const outgoingEdges = currentNode ? edges.filter((e) => e.source === currentNode.id) : [];
 
   // Determine Title & Header Icon
-  let headerIcon = <Sliders className="w-5 h-5 text-[var(--aws-interactive)]" />;
+  let headerIcon = <Sliders className="w-5 h-5 text-[#0972D3] dark:text-[#539FE5]" />;
   let headerMainTitle = 'Inspector';
   let headerSubtitle = 'Configure properties';
 
@@ -174,7 +237,7 @@ export const NodeInspectorDrawer: React.FC = () => {
   } else if (currentEdge) {
     const srcNode = nodes.find((n) => n.id === currentEdge.source);
     const tgtNode = nodes.find((n) => n.id === currentEdge.target);
-    headerIcon = <ArrowLeftRight className="w-5 h-5 text-[var(--aws-interactive)]" />;
+    headerIcon = <ArrowLeftRight className="w-5 h-5 text-[#0972D3] dark:text-[#539FE5]" />;
     headerMainTitle = currentEdge.data?.customLabel || currentEdge.protocol || 'Connection Flow';
     headerSubtitle = `${srcNode?.data.label || currentEdge.source} ➔ ${tgtNode?.data.label || currentEdge.target}`;
   }
@@ -183,10 +246,10 @@ export const NodeInspectorDrawer: React.FC = () => {
     <div className="flex items-center gap-2.5 truncate">
       {headerIcon}
       <div className="truncate">
-        <div className="text-[14px] leading-[20px] font-bold text-[var(--aws-text-primary)] truncate">
+        <div className="text-[14px] leading-[20px] font-bold text-[#16191F] dark:text-[#EAEDED] truncate">
           {headerMainTitle}
         </div>
-        <div className="text-[12px] leading-[16px] text-[var(--aws-text-muted)] font-mono truncate">
+        <div className="text-[12px] leading-[16px] text-[#545B64] dark:text-[#879596] font-mono truncate">
           {headerSubtitle}
         </div>
       </div>
@@ -197,8 +260,7 @@ export const NodeInspectorDrawer: React.FC = () => {
     <button
       type="button"
       onClick={handleFocusNode}
-      style={{ color: 'var(--aws-text-muted)' }}
-      className="p-1 rounded-[4px] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] transition-colors cursor-pointer"
+      className="p-1 rounded-[4px] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] hover:bg-[#EAEDED]/60 dark:hover:bg-[#1E2B3D] transition-colors cursor-pointer"
       title="Center canvas on this node"
     >
       <Maximize2 className="w-4 h-4" />
@@ -232,230 +294,169 @@ export const NodeInspectorDrawer: React.FC = () => {
         }}
       />
 
-      {/* Panel Body */}
-      <div className="p-4 space-y-4 overflow-y-auto custom-scrollbar">
+      {/* Flush Property Sheet (No nested bordered cards) */}
+      <div className="overflow-y-auto custom-scrollbar flex-1 bg-white dark:bg-[#141C28]">
         {inspectorActiveTab === 'properties' ? (
-          <div className="space-y-4 text-[13px]">
-            {/* ================= SERVICE NODE CUSTOMIZER ================= */}
+          <div>
+            {/* ================= AWS SERVICE NODE CUSTOMIZER ================= */}
             {currentNode && !currentNode.data.isBoundary && !currentNode.data.isActor && !currentNode.data.isAnnotation && (
               <>
-                {/* Titles & Roles */}
-                <div
-                  style={{
-                    backgroundColor: 'var(--aws-card-bg)',
-                    borderColor: 'var(--aws-border)',
-                  }}
-                  className="p-3.5 rounded-[8px] border space-y-3"
-                >
-                  <div className="text-[12px] font-bold text-[var(--aws-text-primary)] flex items-center justify-between">
-                    <span>Node Identity &amp; Title</span>
-                    <span className="font-mono text-[10px] text-[var(--aws-text-muted)]">
+                {/* 1. Node Identity & Title */}
+                <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596] flex items-center justify-between">
+                    <span>Node Identity</span>
+                    <span className="font-mono text-[10px] text-[#0972D3] dark:text-[#539FE5] normal-case font-medium">
                       {currentNode.data.serviceId}
                     </span>
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
-                      Custom Title (Instance Name)
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      Title
                     </label>
                     <input
                       type="text"
                       value={currentNode.data.customTitle || currentNode.data.label}
                       onChange={(e) => updateNodeProperties(currentNode.id, { customTitle: e.target.value })}
                       placeholder="e.g. Orders API Lambda"
-                      className="w-full h-8 px-2.5 rounded-[4px] border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] text-[12px] outline-none focus:border-[var(--aws-interactive)]"
+                      className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[12px] text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
-                      Resource Subtitle / Role
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      Subtitle / Role
                     </label>
                     <input
                       type="text"
                       value={currentNode.data.roleSubtitle || currentNode.data.customNotes || ''}
                       onChange={(e) => updateNodeProperties(currentNode.id, { roleSubtitle: e.target.value })}
                       placeholder="e.g. Python 3.12 · 512MB · arm64"
-                      className="w-full h-8 px-2.5 rounded-[4px] border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] text-[12px] font-mono outline-none focus:border-[var(--aws-interactive)]"
+                      className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
                     />
                   </div>
                 </div>
 
-                {/* Environment, AZ, and Metadata Badges */}
-                <div
-                  style={{
-                    backgroundColor: 'var(--aws-card-bg)',
-                    borderColor: 'var(--aws-border)',
-                  }}
-                  className="p-3.5 rounded-[8px] border space-y-3"
-                >
-                  <div className="text-[12px] font-bold text-[var(--aws-text-primary)]">
-                    Deployment &amp; Cloud Attributes
+                {/* 2. Cloud Attributes & Deployment */}
+                <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
+                    Cloud Attributes
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
-                        Environment Badge
-                      </label>
-                      <select
-                        value={currentNode.data.env || 'None'}
-                        onChange={(e) => updateNodeProperties(currentNode.id, { env: e.target.value as NodeEnvironment })}
-                        className="w-full h-8 px-2 rounded-[4px] border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] text-[12px] outline-none cursor-pointer"
-                      >
-                        <option value="None">None</option>
-                        <option value="Prod">Prod (Production)</option>
-                        <option value="Staging">Staging</option>
-                        <option value="Dev">Dev (Development)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
-                        Availability Zone
-                      </label>
-                      <input
-                        type="text"
-                        value={currentNode.data.az || ''}
-                        onChange={(e) => updateNodeProperties(currentNode.id, { az: e.target.value })}
-                        placeholder="e.g. Multi-AZ or us-east-1a"
-                        className="w-full h-8 px-2.5 rounded-[4px] border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] text-[12px] font-mono outline-none focus:border-[var(--aws-interactive)]"
-                      />
-                    </div>
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      Environment
+                    </label>
+                    <CloudscapeSelect<NodeEnvironment>
+                      value={currentNode.data.env || 'None'}
+                      options={ENV_OPTIONS}
+                      onChange={(val) => updateNodeProperties(currentNode.id, { env: val })}
+                    />
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
-                      Custom Metadata Pill
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      Avail. Zone
+                    </label>
+                    <input
+                      type="text"
+                      value={currentNode.data.az || ''}
+                      onChange={(e) => updateNodeProperties(currentNode.id, { az: e.target.value })}
+                      placeholder="e.g. Multi-AZ or us-east-1a"
+                      className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      Metadata Pill
                     </label>
                     <input
                       type="text"
                       value={currentNode.data.metadataPill || ''}
                       onChange={(e) => updateNodeProperties(currentNode.id, { metadataPill: e.target.value })}
                       placeholder="e.g. 10.0.1.24 or kms:Encrypted"
-                      className="w-full h-8 px-2.5 rounded-[4px] border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] text-[12px] font-mono outline-none focus:border-[var(--aws-interactive)]"
+                      className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
                     />
                   </div>
 
-                  {/* Parent Boundary Group Assignment */}
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1 flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-[var(--aws-interactive)]" />
-                      <span>Parent Boundary Container</span>
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596] flex items-center gap-1.5">
+                      <Layers className="size-3.5 text-[#0972D3] dark:text-[#539FE5]" />
+                      <span>Container</span>
                     </label>
-                    <select
+                    <CloudscapeSelect<string>
                       value={currentNode.parentId || 'none'}
-                      onChange={(e) => updateNodeParent(currentNode.id, e.target.value)}
-                      className="w-full h-8 px-2 rounded-[4px] border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] text-[12px] outline-none cursor-pointer"
-                    >
-                      <option value="none">(None - Global Scope)</option>
-                      {groupBoundaries.map((g) => (
-                        <option key={g.id} value={g.id}>
-                          {g.data.boundaryLabel || g.data.label} ({g.data.boundaryType})
-                        </option>
-                      ))}
-                    </select>
+                      options={parentBoundaryOptions}
+                      onChange={(val) => updateNodeParent(currentNode.id, val)}
+                    />
                   </div>
                 </div>
 
-                {/* Study Mastery Status */}
-                <div
-                  style={{
-                    backgroundColor: 'var(--aws-card-bg)',
-                    borderColor: 'var(--aws-border)',
-                  }}
-                  className="p-3.5 rounded-[8px] border space-y-2.5"
-                >
+                {/* 3. Study Mastery Status */}
+                <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[12px] font-bold text-[var(--aws-text-primary)]">
-                      Study Mastery Status
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
+                      Study Mastery
                     </span>
                     <CloudscapeStatusIndicator status={currentNode.data.status} />
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-0.5">
-                    {(['not-started', 'in-progress', 'mastered', 'review'] as const).map((st) => {
-                      const isActive = currentNode.data.status === st;
-                      const labels = {
-                        'not-started': 'Not started',
-                        'in-progress': 'In progress',
-                        mastered: 'Mastered',
-                        review: 'Review needed',
-                      };
-                      return (
-                        <button
-                          key={st}
-                          type="button"
-                          onClick={async () => {
-                            await updateServiceStatus(currentNode.data.serviceId, st);
-                            updateNodeStatus(currentNode.data.serviceId, st);
-                          }}
-                          style={
-                            isActive
-                              ? {
-                                  backgroundColor: 'var(--aws-interactive)',
-                                  borderColor: 'var(--aws-interactive)',
-                                  color: '#FFFFFF',
-                                }
-                              : {
-                                  backgroundColor: 'var(--aws-page-bg)',
-                                  borderColor: 'var(--aws-border)',
-                                  color: 'var(--aws-text-primary)',
-                                }
-                          }
-                          className="px-2 py-1.5 rounded-[4px] border text-[11px] font-medium transition-colors cursor-pointer text-center truncate"
-                        >
-                          {labels[st]}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <SegmentedControl<StudyStatus>
+                    size="sm"
+                    options={STUDY_STATUS_OPTIONS}
+                    value={(currentNode.data.status as StudyStatus) || 'not-started'}
+                    onChange={async (st) => {
+                      await updateServiceStatus(currentNode.data.serviceId, st);
+                      updateNodeStatus(currentNode.data.serviceId, st);
+                    }}
+                    className="w-full justify-between"
+                  />
                 </div>
 
-                {/* Active Canvas Connections */}
-                <div
-                  style={{
-                    backgroundColor: 'var(--aws-card-bg)',
-                    borderColor: 'var(--aws-border)',
-                  }}
-                  className="p-3.5 rounded-[8px] border space-y-2.5"
-                >
-                  <div className="text-[12px] font-bold text-[var(--aws-text-primary)]">
-                    Active Canvas Connections
+                {/* 4. Active Canvas Connections */}
+                <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
+                      Canvas Connections
+                    </span>
+                    <span className="font-mono text-[11px] text-[#545B64] dark:text-[#879596]">
+                      {incomingEdges.length} in · {outgoingEdges.length} out
+                    </span>
                   </div>
 
-                  {/* Incoming */}
-                  <div>
-                    <div className="text-[11px] text-[var(--aws-text-muted)] flex items-center gap-1.5 mb-1 font-semibold">
-                      <ArrowLeft className="w-3.5 h-3.5 text-[var(--aws-interactive)]" />
+                  {/* Incoming Connections */}
+                  <div className="space-y-1.5">
+                    <div className="text-[11px] font-semibold text-[#545B64] dark:text-[#879596] flex items-center gap-1.5">
+                      <ArrowLeft className="size-3 text-[#0972D3] dark:text-[#539FE5]" />
                       <span>Incoming ({incomingEdges.length})</span>
                     </div>
                     {incomingEdges.length === 0 ? (
-                      <div className="text-[11px] text-[var(--aws-text-muted)] pl-4 italic">
+                      <div className="text-[12px] text-[#545B64] dark:text-[#879596] italic pl-4 py-0.5">
                         No incoming connections
                       </div>
                     ) : (
-                      <div className="space-y-1 pl-1">
+                      <div className="space-y-1">
                         {incomingEdges.map((e) => {
                           const src = nodes.find((n) => n.id === e.source);
                           return (
                             <div
                               key={e.id}
-                              style={{
-                                backgroundColor: 'var(--aws-page-bg)',
-                                borderColor: 'var(--aws-border)',
-                              }}
-                              className="flex items-center justify-between p-1.5 rounded-[4px] border text-[11px] group"
+                              onClick={() => openNodeInspector(e.source)}
+                              className="flex items-center justify-between py-1.5 px-2 rounded-[6px] hover:bg-[#F2F3F3] dark:hover:bg-[#1E2B3D] transition-colors group cursor-pointer"
                             >
-                              <button
-                                type="button"
-                                onClick={() => openNodeInspector(e.source)}
-                                className="text-left font-medium text-[var(--aws-text-primary)] hover:text-[var(--aws-interactive)] truncate cursor-pointer"
-                              >
-                                {src?.data.label || e.source}
-                              </button>
-                              <span className="font-mono text-[9px] text-[var(--aws-text-muted)]">
-                                {e.protocol}
+                              <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
+                                <AWSServiceIcon
+                                  serviceId={src?.data.serviceId || 'aws'}
+                                  size={18}
+                                  variant="service"
+                                />
+                                <span className="text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] group-hover:text-[#0972D3] dark:group-hover:text-[#539FE5] truncate">
+                                  {src?.data.customTitle || src?.data.label || e.source}
+                                </span>
+                              </div>
+                              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#EAEDED] dark:bg-[#222D3C] text-[#545B64] dark:text-[#879596] shrink-0">
+                                {e.protocol || 'TCP'}
                               </span>
                             </div>
                           );
@@ -464,38 +465,38 @@ export const NodeInspectorDrawer: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Outgoing */}
-                  <div>
-                    <div className="text-[11px] text-[var(--aws-text-muted)] flex items-center gap-1.5 mb-1 font-semibold">
-                      <ArrowRight className="w-3.5 h-3.5 text-[#3F8624]" />
+                  {/* Outgoing Connections */}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="text-[11px] font-semibold text-[#545B64] dark:text-[#879596] flex items-center gap-1.5">
+                      <ArrowRight className="size-3 text-[#3F8624] dark:text-[#4ADE80]" />
                       <span>Outgoing ({outgoingEdges.length})</span>
                     </div>
                     {outgoingEdges.length === 0 ? (
-                      <div className="text-[11px] text-[var(--aws-text-muted)] pl-4 italic">
+                      <div className="text-[12px] text-[#545B64] dark:text-[#879596] italic pl-4 py-0.5">
                         No outgoing connections
                       </div>
                     ) : (
-                      <div className="space-y-1 pl-1">
+                      <div className="space-y-1">
                         {outgoingEdges.map((e) => {
                           const tgt = nodes.find((n) => n.id === e.target);
                           return (
                             <div
                               key={e.id}
-                              style={{
-                                backgroundColor: 'var(--aws-page-bg)',
-                                borderColor: 'var(--aws-border)',
-                              }}
-                              className="flex items-center justify-between p-1.5 rounded-[4px] border text-[11px] group"
+                              onClick={() => openNodeInspector(e.target)}
+                              className="flex items-center justify-between py-1.5 px-2 rounded-[6px] hover:bg-[#F2F3F3] dark:hover:bg-[#1E2B3D] transition-colors group cursor-pointer"
                             >
-                              <button
-                                type="button"
-                                onClick={() => openNodeInspector(e.target)}
-                                className="text-left font-medium text-[var(--aws-text-primary)] hover:text-[var(--aws-interactive)] truncate cursor-pointer"
-                              >
-                                {tgt?.data.label || e.target}
-                              </button>
-                              <span className="font-mono text-[9px] text-[var(--aws-text-muted)]">
-                                {e.protocol}
+                              <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
+                                <AWSServiceIcon
+                                  serviceId={tgt?.data.serviceId || 'aws'}
+                                  size={18}
+                                  variant="service"
+                                />
+                                <span className="text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] group-hover:text-[#0972D3] dark:group-hover:text-[#539FE5] truncate">
+                                  {tgt?.data.customTitle || tgt?.data.label || e.target}
+                                </span>
+                              </div>
+                              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#EAEDED] dark:bg-[#222D3C] text-[#545B64] dark:text-[#879596] shrink-0">
+                                {e.protocol || 'TCP'}
                               </span>
                             </div>
                           );
@@ -505,17 +506,11 @@ export const NodeInspectorDrawer: React.FC = () => {
                   </div>
                 </div>
 
-                {/* ARN Specification Pattern */}
+                {/* 5. ARN Pattern (if available) */}
                 {service?.arnExample && (
-                  <div
-                    style={{
-                      backgroundColor: 'var(--aws-card-bg)',
-                      borderColor: 'var(--aws-border)',
-                    }}
-                    className="p-3 rounded-[8px] border space-y-1.5"
-                  >
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-bold text-[var(--aws-text-primary)]">
+                  <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
                         ARN Pattern
                       </span>
                       <CloudscapeCopyButton
@@ -524,40 +519,30 @@ export const NodeInspectorDrawer: React.FC = () => {
                         copiedLabel="Copied"
                       />
                     </div>
-                    <div className="font-mono text-[10px] p-2 rounded-[4px] border border-[var(--aws-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-muted)] break-all select-all">
+                    <div className="font-mono text-[11px] p-2.5 rounded-[6px] border border-[#EAEDED] dark:border-[#222D3C] bg-[#F8F9FA] dark:bg-[#0F141A] text-[#545B64] dark:text-[#879596] break-all select-all">
                       {service.arnExample}
                     </div>
                   </div>
                 )}
 
-                {/* Quick Actions */}
-                <div className="grid grid-cols-2 gap-2">
+                {/* 6. Pinned Action Controls */}
+                <div className="px-5 py-4 flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => duplicateNode(currentNode.id)}
-                    style={{
-                      backgroundColor: 'var(--aws-card-bg)',
-                      borderColor: 'var(--aws-border)',
-                      color: 'var(--aws-text-primary)',
-                    }}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-[4px] border text-[12px] font-medium hover:border-[var(--aws-interactive)] transition-colors cursor-pointer"
+                    className="flex-1 h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <CopyPlus className="w-3.5 h-3.5 text-[var(--aws-interactive)]" />
+                    <CopyPlus className="size-3.5 text-[#0972D3] dark:text-[#539FE5]" />
                     <span>Duplicate (Ctrl+D)</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => removeNode(currentNode.id)}
-                    style={{
-                      backgroundColor: 'var(--aws-card-bg)',
-                      borderColor: 'var(--aws-border)',
-                      color: 'var(--aws-text-muted)',
-                    }}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-[4px] border text-[12px] font-medium hover:text-[#DD344C] hover:border-[#DD344C] transition-colors cursor-pointer"
+                    className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[#545B64] dark:text-[#879596] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Delete (Del)</span>
+                    <Trash2 className="size-3.5" />
+                    <span>Delete</span>
                   </button>
                 </div>
               </>
@@ -565,187 +550,160 @@ export const NodeInspectorDrawer: React.FC = () => {
 
             {/* ================= GROUP BOUNDARY CUSTOMIZER ================= */}
             {currentNode && currentNode.data.isBoundary && (
-              <div className="space-y-4">
-                <div
-                  style={{
-                    backgroundColor: 'var(--aws-card-bg)',
-                    borderColor: 'var(--aws-border)',
-                  }}
-                  className="p-3.5 rounded-[8px] border space-y-3"
-                >
-                  <div className="text-[12px] font-bold text-[var(--aws-text-primary)]">
+              <>
+                <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
                     Boundary Configuration
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
-                      Boundary Type
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      Type
                     </label>
-                    <select
+                    <CloudscapeSelect<GroupBoundaryType>
                       value={currentNode.data.boundaryType || 'aws-cloud'}
-                      onChange={(e) =>
+                      options={BOUNDARY_TYPE_OPTIONS}
+                      onChange={(val) =>
                         updateNodeProperties(currentNode.id, {
-                          boundaryType: e.target.value as GroupBoundaryType,
+                          boundaryType: val,
                         })
                       }
-                      className="w-full h-8 px-2 rounded-[4px] border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] text-[12px] outline-none cursor-pointer"
-                    >
-                      {BOUNDARY_TYPES.map((b) => (
-                        <option key={b.type} value={b.type}>
-                          {b.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
-                      Custom Label
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      Label
                     </label>
                     <input
                       type="text"
                       value={currentNode.data.boundaryLabel || currentNode.data.label}
                       onChange={(e) => updateNodeProperties(currentNode.id, { boundaryLabel: e.target.value })}
                       placeholder="e.g. Production VPC"
-                      className="w-full h-8 px-2.5 rounded-[4px] border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] text-[12px] outline-none focus:border-[var(--aws-interactive)]"
+                      className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[12px] text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
-                      CIDR Block / Region Tag
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      CIDR / Scope
                     </label>
                     <input
                       type="text"
                       value={currentNode.data.cidr || ''}
                       onChange={(e) => updateNodeProperties(currentNode.id, { cidr: e.target.value })}
                       placeholder="e.g. 10.0.0.0/16 or us-east-1"
-                      className="w-full h-8 px-2.5 rounded-[4px] border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] text-[12px] font-mono outline-none focus:border-[var(--aws-interactive)]"
+                      className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-3">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
+                    Boundary Style
+                  </div>
+
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      Border Style
+                    </label>
+                    <SegmentedControl<'solid' | 'dashed' | 'dotted'>
+                      size="sm"
+                      options={LINE_STYLE_OPTIONS}
+                      value={(currentNode.data.borderStyle as 'solid' | 'dashed' | 'dotted') || 'solid'}
+                      onChange={(style) => updateNodeProperties(currentNode.id, { borderStyle: style })}
+                      className="w-full justify-between"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
-                      Border Style
-                    </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {(['solid', 'dashed', 'dotted'] as const).map((style) => (
-                        <button
-                          key={style}
-                          type="button"
-                          onClick={() => updateNodeProperties(currentNode.id, { borderStyle: style })}
-                          className={`h-7 px-2 text-[11px] capitalize rounded-[4px] border transition-colors cursor-pointer ${
-                            (currentNode.data.borderStyle || 'solid') === style
-                              ? 'border-[var(--aws-interactive)] bg-[var(--aws-interactive)]/15 text-[var(--aws-interactive)] font-semibold'
-                              : 'border-[var(--aws-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-muted)]'
-                          }`}
-                        >
-                          {style}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1.5">
-                      Accent Color Override
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-1">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      Accent Color
                     </label>
                     <div className="flex items-center gap-2 flex-wrap">
                       <button
                         type="button"
                         onClick={() => updateNodeProperties(currentNode.id, { accentColor: undefined })}
-                        className={`text-[10px] px-2 py-1 rounded-[4px] border cursor-pointer ${
+                        className={`text-[11px] h-6 px-2 rounded-[4px] border cursor-pointer font-medium transition-colors ${
                           !currentNode.data.accentColor
-                            ? 'border-[var(--aws-interactive)] bg-[var(--aws-interactive)]/15 text-[var(--aws-interactive)] font-semibold'
-                            : 'border-[var(--aws-border)] text-[var(--aws-text-muted)]'
+                            ? 'border-[#0972D3] bg-[#0972D3]/10 text-[#0972D3] dark:border-[#539FE5] dark:text-[#539FE5]'
+                            : 'border-[#D5DBDB] dark:border-[#2A3647] text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D]'
                         }`}
                       >
                         Default
                       </button>
-                      {COLOR_PRESETS.map((p) => (
-                        <button
-                          key={p.color}
-                          type="button"
-                          onClick={() => updateNodeProperties(currentNode.id, { accentColor: p.color })}
-                          style={{ backgroundColor: p.color }}
-                          className={`w-5 h-5 rounded-full border-2 transition-transform cursor-pointer ${
-                            currentNode.data.accentColor === p.color
-                              ? 'scale-125 border-white ring-2 ring-[var(--aws-brand)]'
-                              : 'border-transparent hover:scale-110'
-                          }`}
-                          title={p.label}
-                        />
-                      ))}
+                      {COLOR_PRESETS.map((p) => {
+                        const isSelected = currentNode.data.accentColor === p.color;
+                        return (
+                          <button
+                            key={p.color}
+                            type="button"
+                            onClick={() => updateNodeProperties(currentNode.id, { accentColor: p.color })}
+                            style={{ backgroundColor: p.color }}
+                            className={`size-5 rounded-full transition-transform cursor-pointer ${
+                              isSelected
+                                ? 'scale-110 ring-2 ring-[#0972D3] dark:ring-[#539FE5] ring-offset-2 ring-offset-white dark:ring-offset-[#141C28]'
+                                : 'hover:scale-105 opacity-80 hover:opacity-100'
+                            }`}
+                            title={p.label}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => removeNode(currentNode.id)}
-                  style={{
-                    backgroundColor: 'var(--aws-card-bg)',
-                    borderColor: 'var(--aws-border)',
-                    color: 'var(--aws-text-muted)',
-                  }}
-                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-[4px] border text-[12px] font-medium hover:text-[#DD344C] hover:border-[#DD344C] transition-colors cursor-pointer"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Delete group boundary</span>
-                </button>
-              </div>
+                <div className="px-5 py-4">
+                  <button
+                    type="button"
+                    onClick={() => removeNode(currentNode.id)}
+                    className="w-full h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[#545B64] dark:text-[#879596] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="size-3.5" />
+                    <span>Delete group boundary</span>
+                  </button>
+                </div>
+              </>
             )}
 
             {/* ================= EXTERNAL ACTOR CUSTOMIZER ================= */}
             {currentNode && currentNode.data.isActor && (
-              <div className="space-y-4">
-                <div
-                  style={{
-                    backgroundColor: 'var(--aws-card-bg)',
-                    borderColor: 'var(--aws-border)',
-                  }}
-                  className="p-3.5 rounded-[8px] border space-y-3"
-                >
-                  <div className="text-[12px] font-bold text-[var(--aws-text-primary)]">
+              <>
+                <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
                     Actor Configuration
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
                       Actor Type
                     </label>
-                    <select
+                    <CloudscapeSelect<ExternalActorType>
                       value={currentNode.data.actorType || 'user-browser'}
-                      onChange={(e) =>
+                      options={ACTOR_TYPE_OPTIONS}
+                      onChange={(val) =>
                         updateNodeProperties(currentNode.id, {
-                          actorType: e.target.value as ExternalActorType,
+                          actorType: val,
                         })
                       }
-                      className="w-full h-8 px-2 rounded-[4px] border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] text-[12px] outline-none cursor-pointer"
-                    >
-                      {ACTOR_TYPES.map((a) => (
-                        <option key={a.type} value={a.type}>
-                          {a.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
-                      Display Title
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      Title
                     </label>
                     <input
                       type="text"
                       value={currentNode.data.customTitle || currentNode.data.label}
                       onChange={(e) => updateNodeProperties(currentNode.id, { customTitle: e.target.value })}
                       placeholder="e.g. Client Web Browser"
-                      className="w-full h-8 px-2.5 rounded-[4px] border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] text-[12px] outline-none focus:border-[var(--aws-interactive)]"
+                      className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[12px] text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
                       Role / Subtitle
                     </label>
                     <input
@@ -753,59 +711,43 @@ export const NodeInspectorDrawer: React.FC = () => {
                       value={currentNode.data.roleSubtitle || currentNode.data.customNotes || ''}
                       onChange={(e) => updateNodeProperties(currentNode.id, { roleSubtitle: e.target.value })}
                       placeholder="e.g. Next.js SPA / React"
-                      className="w-full h-8 px-2.5 rounded-[4px] border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] text-[12px] font-mono outline-none focus:border-[var(--aws-interactive)]"
+                      className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="px-5 py-4 flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => duplicateNode(currentNode.id)}
-                    style={{
-                      backgroundColor: 'var(--aws-card-bg)',
-                      borderColor: 'var(--aws-border)',
-                      color: 'var(--aws-text-primary)',
-                    }}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-[4px] border text-[12px] font-medium hover:border-[var(--aws-interactive)] transition-colors cursor-pointer"
+                    className="flex-1 h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <CopyPlus className="w-3.5 h-3.5 text-[var(--aws-interactive)]" />
+                    <CopyPlus className="size-3.5 text-[#0972D3] dark:text-[#539FE5]" />
                     <span>Duplicate</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => removeNode(currentNode.id)}
-                    style={{
-                      backgroundColor: 'var(--aws-card-bg)',
-                      borderColor: 'var(--aws-border)',
-                      color: 'var(--aws-text-muted)',
-                    }}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-[4px] border text-[12px] font-medium hover:text-[#DD344C] hover:border-[#DD344C] transition-colors cursor-pointer"
+                    className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[#545B64] dark:text-[#879596] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="size-3.5" />
                     <span>Delete</span>
                   </button>
                 </div>
-              </div>
+              </>
             )}
 
-            {/* ================= ANNOTATION / NOTE CUSTOMIZER ================= */}
+            {/* ================= ARCHITECTURE NOTE CUSTOMIZER ================= */}
             {currentNode && currentNode.data.isAnnotation && (
-              <div className="space-y-4">
-                <div
-                  style={{
-                    backgroundColor: 'var(--aws-card-bg)',
-                    borderColor: 'var(--aws-border)',
-                  }}
-                  className="p-3.5 rounded-[8px] border space-y-3"
-                >
-                  <div className="text-[12px] font-bold text-[var(--aws-text-primary)]">
-                    Architecture Note Configuration
+              <>
+                <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
+                    Note Configuration
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
                       Note Title
                     </label>
                     <input
@@ -813,244 +755,196 @@ export const NodeInspectorDrawer: React.FC = () => {
                       value={currentNode.data.annotationTitle || currentNode.data.label}
                       onChange={(e) => updateNodeProperties(currentNode.id, { annotationTitle: e.target.value })}
                       placeholder="e.g. Architecture Decision Record"
-                      className="w-full h-8 px-2.5 rounded-[4px] border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] text-[12px] outline-none focus:border-[var(--aws-interactive)]"
+                      className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[12px] text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
-                      Note Content (Markdown supported)
+                  <div className="space-y-1.5 pt-1">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      Content (Markdown)
                     </label>
                     <textarea
                       value={currentNode.data.annotationContent || ''}
                       onChange={(e) => updateNodeProperties(currentNode.id, { annotationContent: e.target.value })}
                       rows={4}
                       placeholder="Write notes, architecture decisions, SLA rules, or gotchas..."
-                      className="w-full p-2.5 rounded-[4px] border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] text-[12px] outline-none focus:border-[var(--aws-interactive)]"
+                      className="w-full p-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[12px] text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] resize-y transition-colors"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
-                      Color Theme
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-1">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      Theme Color
                     </label>
-                    <div className="grid grid-cols-5 gap-1.5">
-                      {[
-                        { id: 'amber', label: 'Amber' },
-                        { id: 'blue', label: 'Blue' },
-                        { id: 'purple', label: 'Purple' },
-                        { id: 'green', label: 'Green' },
-                        { id: 'slate', label: 'Slate' },
-                      ].map((t) => (
-                        <button
-                          key={t.id}
-                          type="button"
-                          onClick={() => updateNodeProperties(currentNode.id, { annotationColor: t.id })}
-                          className={`h-7 px-1 text-[11px] rounded-[4px] border cursor-pointer capitalize ${
-                            (currentNode.data.annotationColor || 'amber') === t.id
-                              ? 'border-[var(--aws-interactive)] bg-[var(--aws-interactive)]/15 text-[var(--aws-interactive)] font-semibold'
-                              : 'border-[var(--aws-border)] text-[var(--aws-text-muted)]'
-                          }`}
-                        >
-                          {t.label}
-                        </button>
-                      ))}
-                    </div>
+                    <SegmentedControl<string>
+                      size="sm"
+                      options={NOTE_COLOR_OPTIONS}
+                      value={currentNode.data.annotationColor || 'amber'}
+                      onChange={(color) => updateNodeProperties(currentNode.id, { annotationColor: color })}
+                      className="w-full justify-between"
+                    />
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => removeNode(currentNode.id)}
-                  style={{
-                    backgroundColor: 'var(--aws-card-bg)',
-                    borderColor: 'var(--aws-border)',
-                    color: 'var(--aws-text-muted)',
-                  }}
-                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-[4px] border text-[12px] font-medium hover:text-[#DD344C] hover:border-[#DD344C] transition-colors cursor-pointer"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Delete note</span>
-                </button>
-              </div>
+                <div className="px-5 py-4">
+                  <button
+                    type="button"
+                    onClick={() => removeNode(currentNode.id)}
+                    className="w-full h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[#545B64] dark:text-[#879596] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="size-3.5" />
+                    <span>Delete note</span>
+                  </button>
+                </div>
+              </>
             )}
 
             {/* ================= CONNECTION / EDGE CUSTOMIZER ================= */}
             {currentEdge && (
-              <div className="space-y-4">
-                <div
-                  style={{
-                    backgroundColor: 'var(--aws-card-bg)',
-                    borderColor: 'var(--aws-border)',
-                  }}
-                  className="p-3.5 rounded-[8px] border space-y-3"
-                >
-                  <div className="text-[12px] font-bold text-[var(--aws-text-primary)]">
-                    Connection Flow &amp; Protocol
+              <>
+                {/* 1. Protocol & Label */}
+                <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
+                    Flow &amp; Protocol
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
                       Protocol Preset
                     </label>
-                    <select
+                    <CloudscapeSelect<EdgeProtocol>
                       value={currentEdge.protocol || 'HTTPS/REST'}
-                      onChange={(e) => updateEdgeProperties(currentEdge.id, { protocol: e.target.value as EdgeProtocol })}
-                      className="w-full h-8 px-2 rounded-[4px] border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] text-[12px] outline-none cursor-pointer"
-                    >
-                      {PROTOCOLS.map((p) => (
-                        <option key={p} value={p}>
-                          {p}
-                        </option>
-                      ))}
-                    </select>
+                      options={PROTOCOL_OPTIONS}
+                      onChange={(val) => updateEdgeProperties(currentEdge.id, { protocol: val })}
+                    />
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
-                      Custom Label (Override)
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      Custom Label
                     </label>
                     <input
                       type="text"
                       value={currentEdge.data?.customLabel || ''}
                       onChange={(e) => updateEdgeProperties(currentEdge.id, { customLabel: e.target.value })}
                       placeholder="e.g. gRPC / JWT Bearer"
-                      className="w-full h-8 px-2.5 rounded-[4px] border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] text-[12px] outline-none focus:border-[var(--aws-interactive)]"
+                      className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[12px] text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Line Style, Directionality, and Swatches */}
+                <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-3">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
+                    Flow Appearance
+                  </div>
+
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      Line Style
+                    </label>
+                    <SegmentedControl<EdgeLineStyle>
+                      size="sm"
+                      options={LINE_STYLE_OPTIONS}
+                      value={(currentEdge.data?.lineStyle as EdgeLineStyle) || 'solid'}
+                      onChange={(style) => updateEdgeProperties(currentEdge.id, { lineStyle: style })}
+                      className="w-full justify-between"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
-                      Line Style
-                    </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {(['solid', 'dashed', 'dotted'] as const).map((style) => (
-                        <button
-                          key={style}
-                          type="button"
-                          onClick={() => updateEdgeProperties(currentEdge.id, { lineStyle: style as EdgeLineStyle })}
-                          className={`h-7 px-2 text-[11px] capitalize rounded-[4px] border transition-colors cursor-pointer ${
-                            (currentEdge.data?.lineStyle || 'solid') === style
-                              ? 'border-[var(--aws-interactive)] bg-[var(--aws-interactive)]/15 text-[var(--aws-interactive)] font-semibold'
-                              : 'border-[var(--aws-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-muted)]'
-                          }`}
-                        >
-                          {style}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1">
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
                       Directionality
                     </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { id: 'one-way', label: 'One-Way ➔' },
-                        { id: 'bi-directional', label: 'Bi-Dir ⇄' },
-                        { id: 'none', label: 'None ──' },
-                      ].map((d) => (
-                        <button
-                          key={d.id}
-                          type="button"
-                          onClick={() => updateEdgeProperties(currentEdge.id, { directionality: d.id as EdgeDirectionality })}
-                          className={`h-7 px-2 text-[11px] rounded-[4px] border transition-colors cursor-pointer ${
-                            (currentEdge.data?.directionality || 'one-way') === d.id
-                              ? 'border-[var(--aws-interactive)] bg-[var(--aws-interactive)]/15 text-[var(--aws-interactive)] font-semibold'
-                              : 'border-[var(--aws-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-muted)]'
-                          }`}
-                        >
-                          {d.label}
-                        </button>
-                      ))}
-                    </div>
+                    <SegmentedControl<EdgeDirectionality>
+                      size="sm"
+                      options={DIRECTION_OPTIONS}
+                      value={(currentEdge.data?.directionality as EdgeDirectionality) || 'one-way'}
+                      onChange={(dir) => updateEdgeProperties(currentEdge.id, { directionality: dir })}
+                      className="w-full justify-between"
+                    />
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--aws-text-muted)] mb-1.5">
+                  <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-1">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
                       Edge Color
                     </label>
                     <div className="flex items-center gap-2 flex-wrap">
                       <button
                         type="button"
                         onClick={() => updateEdgeProperties(currentEdge.id, { edgeColor: undefined })}
-                        className={`text-[10px] px-2 py-1 rounded-[4px] border cursor-pointer ${
+                        className={`text-[11px] h-6 px-2 rounded-[4px] border cursor-pointer font-medium transition-colors ${
                           !currentEdge.data?.edgeColor
-                            ? 'border-[var(--aws-interactive)] bg-[var(--aws-interactive)]/15 text-[var(--aws-interactive)] font-semibold'
-                            : 'border-[var(--aws-border)] text-[var(--aws-text-muted)]'
+                            ? 'border-[#0972D3] bg-[#0972D3]/10 text-[#0972D3] dark:border-[#539FE5] dark:text-[#539FE5]'
+                            : 'border-[#D5DBDB] dark:border-[#2A3647] text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D]'
                         }`}
                       >
                         Default
                       </button>
-                      {COLOR_PRESETS.map((p) => (
-                        <button
-                          key={p.color}
-                          type="button"
-                          onClick={() => updateEdgeProperties(currentEdge.id, { edgeColor: p.color })}
-                          style={{ backgroundColor: p.color }}
-                          className={`w-5 h-5 rounded-full border-2 transition-transform cursor-pointer ${
-                            currentEdge.data?.edgeColor === p.color
-                              ? 'scale-125 border-white ring-2 ring-[var(--aws-brand)]'
-                              : 'border-transparent hover:scale-110'
-                          }`}
-                          title={p.label}
-                        />
-                      ))}
+                      {COLOR_PRESETS.map((p) => {
+                        const isSelected = currentEdge.data?.edgeColor === p.color;
+                        return (
+                          <button
+                            key={p.color}
+                            type="button"
+                            onClick={() => updateEdgeProperties(currentEdge.id, { edgeColor: p.color })}
+                            style={{ backgroundColor: p.color }}
+                            className={`size-5 rounded-full transition-transform cursor-pointer ${
+                              isSelected
+                                ? 'scale-110 ring-2 ring-[#0972D3] dark:ring-[#539FE5] ring-offset-2 ring-offset-white dark:ring-offset-[#141C28]'
+                                : 'hover:scale-105 opacity-80 hover:opacity-100'
+                            }`}
+                            title={p.label}
+                          />
+                        );
+                      })}
                     </div>
-                  </div>
-
-                  <div className="pt-1">
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={currentEdge.data?.animated ?? currentEdge.animated ?? false}
-                        onChange={(e) => updateEdgeProperties(currentEdge.id, { animated: e.target.checked })}
-                        className="rounded border-[var(--aws-border)] text-[var(--aws-interactive)] focus:ring-0"
-                      />
-                      <Activity className="w-3.5 h-3.5 text-[#1D8102]" />
-                      <span className="text-[12px] font-medium text-[var(--aws-text-primary)]">
-                        Active Traffic Animation (Dashed pulse)
-                      </span>
-                    </label>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                {/* 3. Traffic Simulation */}
+                <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C]">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Activity className="size-3.5 text-[#3F8624] dark:text-[#4ADE80]" />
+                      <span className="text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED]">
+                        Active Traffic Animation (dashed pulse)
+                      </span>
+                    </div>
+                    <ToggleSwitch
+                      checked={currentEdge.data?.animated ?? currentEdge.animated ?? false}
+                      onChange={(checked) => updateEdgeProperties(currentEdge.id, { animated: checked })}
+                      ariaLabel="Toggle active traffic animation"
+                    />
+                  </div>
+                </div>
+
+                {/* 4. Action Controls */}
+                <div className="px-5 py-4 flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => reverseEdgeDirection(currentEdge.id)}
-                    style={{
-                      backgroundColor: 'var(--aws-card-bg)',
-                      borderColor: 'var(--aws-border)',
-                      color: 'var(--aws-text-primary)',
-                    }}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-[4px] border text-[12px] font-medium hover:border-[var(--aws-interactive)] transition-colors cursor-pointer"
+                    className="flex-1 h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <ArrowLeftRight className="w-3.5 h-3.5 text-[var(--aws-interactive)]" />
+                    <ArrowLeftRight className="size-3.5 text-[#0972D3] dark:text-[#539FE5]" />
                     <span>Reverse direction</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => removeEdge(currentEdge.id)}
-                    style={{
-                      backgroundColor: 'var(--aws-card-bg)',
-                      borderColor: 'var(--aws-border)',
-                      color: 'var(--aws-text-muted)',
-                    }}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-[4px] border text-[12px] font-medium hover:text-[#DD344C] hover:border-[#DD344C] transition-colors cursor-pointer"
+                    className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[#545B64] dark:text-[#879596] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="size-3.5" />
                     <span>Disconnect</span>
                   </button>
                 </div>
-              </div>
+              </>
             )}
           </div>
         ) : (
           /* ================= 6-PART DOSSIER / REFERENCE TAB ================= */
-          <div className="vault-prose space-y-4">
+          <div className="p-5 vault-prose space-y-4">
             {service ? (
               <>
                 <Markdown
@@ -1105,12 +999,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                         href={docsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{
-                          backgroundColor: 'var(--aws-card-bg)',
-                          borderColor: 'var(--aws-border)',
-                          color: 'var(--aws-text-primary)',
-                        }}
-                        className="group w-full flex items-center justify-center gap-2 px-3 py-2 rounded-[6px] border text-[12px] font-medium hover:border-[#FF9900] hover:text-[#FF9900] transition-colors cursor-pointer shadow-2xs select-none"
+                        className="group w-full flex items-center justify-center gap-2 px-3 py-2 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[#16191F] dark:text-[#EAEDED] text-[12px] font-medium hover:border-[#FF9900] hover:text-[#FF9900] transition-colors cursor-pointer shadow-2xs select-none"
                       >
                         <ExternalLink className="w-3.5 h-3.5 text-[#FF9900]" />
                         <span>Official AWS reference documentation</span>
@@ -1120,12 +1009,12 @@ export const NodeInspectorDrawer: React.FC = () => {
                 </div>
               </>
             ) : (
-              <div className="text-[var(--aws-text-muted)] text-center py-8 space-y-2">
-                <Sparkles className="w-6 h-6 mx-auto opacity-50" />
-                <p className="text-[13px] font-medium text-[var(--aws-text-primary)]">
+              <div className="text-[#545B64] dark:text-[#879596] text-center py-12 space-y-2">
+                <Sparkles className="w-6 h-6 mx-auto opacity-50 text-[#0972D3] dark:text-[#539FE5]" />
+                <p className="text-[13px] font-medium text-[#16191F] dark:text-[#EAEDED]">
                   Architecture Element Reference
                 </p>
-                <p className="text-[12px] max-w-xs mx-auto">
+                <p className="text-[12px] max-w-xs mx-auto leading-relaxed">
                   {currentNode?.data.isBoundary
                     ? 'Architecture group boundaries delineate network tiers, security scopes, regions, and VPC containment per AWS Well-Architected Framework.'
                     : currentNode?.data.isActor

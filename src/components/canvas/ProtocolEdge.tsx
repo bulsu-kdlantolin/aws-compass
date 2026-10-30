@@ -1,4 +1,5 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -96,6 +97,80 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
   const isMounted = useAnimatedOpen(isDropdownOpen, 180);
 
   const [isHovered, setIsHovered] = useState(false);
+  const badgeRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; left: number }>({ left: 0 });
+
+  // Floating portal positioning anchored to screen coordinates of the badge
+  useEffect(() => {
+    if (!isDropdownOpen || !badgeRef.current) return;
+
+    const updateMenuCoords = () => {
+      if (!badgeRef.current) return;
+      const rect = badgeRef.current.getBoundingClientRect();
+      const menuWidth = 240;
+      const menuHeight = 280;
+
+      let left = rect.left + rect.width / 2 - menuWidth / 2;
+      left = Math.max(8, Math.min(left, window.innerWidth - menuWidth - 8));
+
+      const overflowBottom = rect.bottom + menuHeight + 10 > window.innerHeight;
+      const canFitTop = rect.top - menuHeight > 10;
+
+      if (overflowBottom && canFitTop) {
+        setMenuPos({
+          bottom: window.innerHeight - rect.top + 6,
+          left,
+        });
+      } else {
+        setMenuPos({
+          top: rect.bottom + 6,
+          left,
+        });
+      }
+    };
+
+    updateMenuCoords();
+    window.addEventListener('resize', updateMenuCoords);
+    window.addEventListener('scroll', updateMenuCoords, true);
+    return () => {
+      window.removeEventListener('resize', updateMenuCoords);
+      window.removeEventListener('scroll', updateMenuCoords, true);
+    };
+  }, [isDropdownOpen]);
+
+  // Click outside & Escape dismiss
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(target) &&
+        (!badgeRef.current || !badgeRef.current.contains(target))
+      ) {
+        closePopover(popoverId);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closePopover(popoverId);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 0);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isDropdownOpen, closePopover, popoverId]);
 
   // Dynamic orthogonal routing offset
   const customOffset = edgeData?.offset;
@@ -190,7 +265,7 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
           transition: 'stroke 150ms ease-out',
         }}
       />
-      {/* Invisible wider hit-box stroke to make hover / selection easier */}
+      {/* Hit-box stroke to make hover / selection easier */}
       <path
         d={edgePath}
         fill="none"
@@ -212,6 +287,7 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
           {/* Protocol Badge with opaque canvas-matching pill */}
           <div className="flex items-center gap-1">
             <button
+              ref={badgeRef}
               type="button"
               onClick={() => (isDropdownOpen ? closePopover(popoverId) : openPopover(popoverId))}
               onDoubleClick={(e) => {
@@ -223,8 +299,8 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
                 backgroundColor: 'var(--aws-card-bg)',
               }}
               className={`h-6 px-2 rounded-full border text-[11px] font-mono flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${isDropdownOpen || selected || isEdgeSelected
-                    ? 'border-[var(--aws-interactive)] text-[var(--aws-text-primary)] ring-1 ring-[var(--aws-interactive)]/20'
-                    : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)] text-[var(--aws-text-primary)]'
+                  ? 'border-[var(--aws-interactive)] text-[var(--aws-text-primary)] ring-1 ring-[var(--aws-interactive)]/20'
+                  : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)] text-[var(--aws-text-primary)]'
                 }`}
               title={`Protocol: ${displayLabel}. Click to switch protocol, double-click to customize line properties.`}
             >
@@ -258,17 +334,25 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
               <X className="w-3 h-3" />
             </button>
           </div>
+        </div>
+      </EdgeLabelRenderer>
 
-          {/* Protocol Selection Dropdown Menu */}
-          {isMounted && (
+      {/* Protocol Selection Dropdown Menu - Elevated Portal to document.body (fixed z-[9999]) */}
+          {isMounted && typeof document !== 'undefined' && createPortal(
             <div
+              ref={menuRef}
               data-state={isDropdownOpen ? 'open' : 'closed'}
               style={{
+                position: 'fixed',
+                top: menuPos.top !== undefined ? `${menuPos.top}px` : undefined,
+                bottom: menuPos.bottom !== undefined ? `${menuPos.bottom}px` : undefined,
+                left: `${menuPos.left}px`,
+                zIndex: 9999,
                 overscrollBehavior: 'contain',
               }}
-              className={`absolute top-7 left-1/2 -translate-x-1/2 min-w-[240px] rounded-[12px] p-1.5 border z-[1000] bg-[var(--aws-popover-bg)] border-[var(--aws-border)] text-[var(--aws-text-primary)] shadow-[0px_2px_6px_rgba(0,0,0,0.04),0px_8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_10px_30px_-5px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] origin-top ${isDropdownOpen
-                ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
-                : 'opacity-0 scale-[0.96] -translate-y-1.5 pointer-events-none'
+              className={`min-w-[240px] rounded-[12px] p-1.5 border bg-[var(--aws-popover-bg)] border-[var(--aws-border)] text-[var(--aws-text-primary)] shadow-[0px_4px_16px_rgba(0,0,0,0.2),0px_16px_36px_rgba(0,0,0,0.25)] dark:shadow-[0_12px_36px_-5px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.08)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] origin-top ${isDropdownOpen
+                  ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
+                  : 'opacity-0 scale-[0.96] -translate-y-1.5 pointer-events-none'
                 }`}
             >
               <div
@@ -287,7 +371,7 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
                   }}
                   className="text-[10px] text-[var(--aws-interactive)] hover:underline cursor-pointer"
                 >
-                  More options...
+                    More options...
                 </button>
               </div>
               <div className="space-y-0.5">
@@ -300,8 +384,8 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
                       type="button"
                       onClick={() => handleProtocolSelect(p)}
                       className={`w-full text-left px-2.5 py-1.5 rounded-[6px] text-[11px] font-mono flex items-center justify-between gap-4 transition-colors duration-100 cursor-pointer ${isCurrent
-                        ? 'bg-[var(--aws-interactive)]/15 text-[var(--aws-interactive)] font-semibold'
-                        : 'text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)]'
+                          ? 'bg-[var(--aws-interactive)]/15 text-[var(--aws-interactive)] font-semibold'
+                          : 'text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)]'
                         }`}
                     >
                       <div className="flex items-center gap-2 truncate">
@@ -323,13 +407,12 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
                         )}
                       </div>
                     </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      </EdgeLabelRenderer>
+              );
+            })}
+          </div >
+        </div >,
+  document.body
+      )}
     </g >
   );
 });

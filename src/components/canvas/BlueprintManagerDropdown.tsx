@@ -109,11 +109,10 @@ export const BlueprintManagerDropdown: React.FC = () => {
         onClick={() => togglePopover(popoverId)}
         aria-expanded={isOpen}
         data-open={isOpen ? 'true' : 'false'}
-        className={`h-8 px-3 rounded-[6px] border text-[12px] font-medium flex items-center justify-between gap-2 enabled:active:scale-[0.98] transition-[background-color,border-color,color] duration-150 cursor-pointer bg-[var(--aws-card-bg)] text-[var(--aws-text-primary)] min-w-[210px] max-w-[260px] shadow-xs ${
-          isOpen
+        className={`h-8 px-3 rounded-[6px] border text-[12px] font-medium flex items-center justify-between gap-2 enabled:active:scale-[0.98] transition-[background-color,border-color,color] duration-150 cursor-pointer bg-[var(--aws-card-bg)] text-[var(--aws-text-primary)] min-w-[210px] max-w-[260px] shadow-xs ${isOpen
             ? 'border-[var(--aws-interactive)] ring-1 ring-[var(--aws-interactive)]/20'
             : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)]'
-        }`}
+          }`}
       >
         <div className="flex items-center gap-2 truncate">
           <Sparkles className="w-3.5 h-3.5 text-[#FF9900] shrink-0" />
@@ -133,7 +132,7 @@ export const BlueprintManagerDropdown: React.FC = () => {
         }}
         triggerRef={triggerRef}
         align="left"
-        className="top-9.5 left-0 w-80 p-1.5 space-y-2 max-h-[460px] overflow-y-auto custom-scrollbar"
+        className="w-80 p-1.5 space-y-2 max-h-[460px] overflow-y-auto custom-scrollbar"
       >
         {/* Section 1: Quick Action -> New Blank Blueprint */}
         <div className="border-b border-[var(--aws-border)] pb-1.5">
@@ -167,11 +166,10 @@ export const BlueprintManagerDropdown: React.FC = () => {
                 return (
                   <div
                     key={diag.id}
-                    className={`group flex items-center justify-between px-2.5 py-1.5 rounded-[6px] text-[12px] transition-colors ${
-                      isActive
+                    className={`group flex items-center justify-between px-2.5 py-1.5 rounded-[6px] text-[12px] transition-colors ${isActive
                         ? 'bg-[var(--aws-interactive)]/15 text-[var(--aws-interactive)] font-semibold'
                         : 'text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)]'
-                    }`}
+                      }`}
                   >
                     {isRenaming ? (
                       <div className="flex items-center gap-1.5 flex-1 pr-1">
@@ -254,11 +252,10 @@ export const BlueprintManagerDropdown: React.FC = () => {
               return (
                 <div
                   key={tpl.id}
-                  className={`group flex items-center justify-between px-2.5 py-1.5 rounded-[6px] text-[12px] transition-colors ${
-                    isActive
+                  className={`group flex items-center justify-between px-2.5 py-1.5 rounded-[6px] text-[12px] transition-colors ${isActive
                       ? 'bg-[var(--aws-interactive)]/15 text-[var(--aws-interactive)] font-semibold'
                       : 'text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)]'
-                  }`}
+                    }`}
                 >
                   <button
                     type="button"

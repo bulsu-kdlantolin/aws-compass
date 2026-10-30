@@ -121,6 +121,11 @@ export interface CanvasState {
   isInspectorOpen: boolean;
   inspectorActiveTab: 'properties' | 'dossier';
 
+  // Fullscreen / Zen Mode
+  isCanvasFullscreen: boolean;
+  setIsCanvasFullscreen: (fullscreen: boolean) => void;
+  toggleCanvasFullscreen: () => void;
+
   // Context Menu State
   contextMenu: CanvasContextMenuState | null;
   openContextMenu: (menu: CanvasContextMenuState) => void;
@@ -189,6 +194,11 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   activeDiagramName: 'Serverless Microservice',
   savedDiagrams: [],
   saveStatus: 'idle',
+
+  // Fullscreen / Zen Mode
+  isCanvasFullscreen: false,
+  setIsCanvasFullscreen: (isCanvasFullscreen) => set({ isCanvasFullscreen }),
+  toggleCanvasFullscreen: () => set((state) => ({ isCanvasFullscreen: !state.isCanvasFullscreen })),
 
   // History Stacks
   past: [],
@@ -327,7 +337,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
           const src = nodeMap.get(e.source);
           const tgt = nodeMap.get(e.target);
           if (src && tgt && !src.data?.isBoundary && !tgt.data?.isBoundary) {
-            const optimal = resolveOptimalHandles(src, tgt);
+            const optimal = resolveOptimalHandles(src, tgt, updatedNodes);
             return {
               ...e,
               sourceHandle: optimal.sourceHandle,
@@ -360,7 +370,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     let targetHandle = connection.targetHandle;
 
     if ((!sourceHandle || !targetHandle) && sourceNode && targetNode) {
-      const optimal = resolveOptimalHandles(sourceNode, targetNode);
+      const optimal = resolveOptimalHandles(sourceNode, targetNode, get().nodes);
       sourceHandle = sourceHandle || optimal.sourceHandle;
       targetHandle = targetHandle || optimal.targetHandle;
     }

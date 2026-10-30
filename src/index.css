@@ -195,6 +195,12 @@
     box-sizing: border-box;
   }
 
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--aws-text-muted);
+    opacity: 1;
+  }
+
   html, body, #root {
     height: 100%;
     width: 100%;

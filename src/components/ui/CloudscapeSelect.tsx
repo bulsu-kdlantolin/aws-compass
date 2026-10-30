@@ -1,4 +1,5 @@
-import React, { useRef, useEffect, useId, useState } from 'react';
+import React, { useRef, useEffect, useId, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check } from 'lucide-react';
 import { usePopoverStore } from '../../store/usePopoverStore';
 import { useAnimatedOpen } from './AnimatedPopover';
@@ -14,7 +15,7 @@ export interface CloudscapeSelectOption<T extends string = string> {
 
 export interface CloudscapeSelectProps<T extends string = string> {
   value: T;
-  options: CloudscapeSelectOption<T>[];
+  options: readonly CloudscapeSelectOption<T>[] | CloudscapeSelectOption<T>[];
   onChange: (value: T) => void;
   placeholder?: string;
   disabled?: boolean;
@@ -22,6 +23,7 @@ export interface CloudscapeSelectProps<T extends string = string> {
   ariaLabel?: string;
   size?: 'sm' | 'md';
   align?: 'left' | 'right';
+  id?: string;
 }
 
 export function CloudscapeSelect<T extends string = string>({
@@ -34,6 +36,7 @@ export function CloudscapeSelect<T extends string = string>({
   ariaLabel,
   size = 'md',
   align = 'left',
+  id,
 }: CloudscapeSelectProps<T>) {
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
@@ -42,8 +45,8 @@ export function CloudscapeSelect<T extends string = string>({
   const listboxRef = useRef<HTMLDivElement>(null);
 
   const uniqueId = useId();
-  const listboxId = `listbox-${uniqueId}`;
-  const triggerId = `trigger-${uniqueId}`;
+  const listboxId = `listbox-${id || uniqueId}`;
+  const triggerId = `trigger-${id || uniqueId}`;
 
   const activePopoverId = usePopoverStore((s) => s.activePopoverId);
   const openPopover = usePopoverStore((s) => s.openPopover);
@@ -51,26 +54,97 @@ export function CloudscapeSelect<T extends string = string>({
   const isOpen = activePopoverId === listboxId;
   const isMounted = useAnimatedOpen(isOpen, 180);
 
+  const [coords, setCoords] = useState<{
+    top?: number;
+    bottom?: number;
+    left: number;
+    width: number;
+    transformOrigin: string;
+  }>({
+    left: 0,
+    width: 200,
+    transformOrigin: 'top left',
+  });
+
   const selectedIndex = options.findIndex((opt) => opt.value === value);
   const selectedOption = options[selectedIndex];
 
+  const updatePosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const triggerRect = triggerRef.current.getBoundingClientRect();
+    const popoverEl = listboxRef.current;
+    const popoverHeight = popoverEl ? popoverEl.offsetHeight : 220;
+    const popoverWidth = Math.max(triggerRect.width, 180);
+
+    let left = triggerRect.left;
+    if (align === 'right') {
+      left = triggerRect.right - popoverWidth;
+    }
+    // Clamp horizontally within viewport
+    left = Math.max(8, Math.min(left, window.innerWidth - popoverWidth - 8));
+
+    // Determine auto-flip upward if too close to viewport bottom
+    const spaceBelow = window.innerHeight - triggerRect.bottom;
+    const spaceAbove = triggerRect.top;
+    const shouldFlip = spaceBelow < popoverHeight + 12 && spaceAbove > spaceBelow;
+
+    if (shouldFlip) {
+      setCoords({
+        bottom: window.innerHeight - triggerRect.top + 4,
+        left,
+        width: popoverWidth,
+        transformOrigin: align === 'right' ? 'bottom right' : 'bottom left',
+      });
+    } else {
+      setCoords({
+        top: triggerRect.bottom + 4,
+        left,
+        width: popoverWidth,
+        transformOrigin: align === 'right' ? 'top right' : 'top left',
+      });
+    }
+  }, [align]);
+
   const openListbox = (initialIdx?: number) => {
+    updatePosition();
     openPopover(listboxId);
     const idx = initialIdx ?? (selectedIndex >= 0 ? selectedIndex : 0);
     setHighlightedIndex(idx);
   };
 
-  // Click outside listener
+  // Sync position on mount, resize, scroll
   useEffect(() => {
+    if (!isOpen) return;
+    updatePosition();
+
+    const handleScrollOrResize = () => {
+      updatePosition();
+    };
+
+    window.addEventListener('resize', handleScrollOrResize, { passive: true });
+    window.addEventListener('scroll', handleScrollOrResize, { passive: true, capture: true });
+    return () => {
+      window.removeEventListener('resize', handleScrollOrResize);
+      window.removeEventListener('scroll', handleScrollOrResize, { capture: true });
+    };
+  }, [isOpen, updatePosition]);
+
+  // Click outside listener for portal
+  useEffect(() => {
+    if (!isOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        if (isOpen) closePopover(listboxId);
+      const target = e.target as Node;
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(target) &&
+        listboxRef.current &&
+        !listboxRef.current.contains(target)
+      ) {
+        closePopover(listboxId);
       }
     };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside, true);
+    return () => document.removeEventListener('mousedown', handleClickOutside, true);
   }, [isOpen, listboxId, closePopover]);
 
   // Scroll highlighted option into view
@@ -170,13 +244,14 @@ export function CloudscapeSelect<T extends string = string>({
   };
 
   const heightClass = size === 'sm' ? 'h-7 text-[11px]' : 'h-8 text-[12px]';
+  const widthClass = className.includes('w-') ? '' : 'w-full';
 
   return (
     <div
       ref={containerRef}
-      className={`relative inline-block ${isOpen ? 'z-50' : ''} ${className}`}
+      className={`relative inline-block ${widthClass} ${className}`}
     >
-      {/* Refined elevated pill trigger with subtle depth */}
+      {/* Sleek Cloudscape Trigger */}
       <button
         ref={triggerRef}
         id={triggerId}
@@ -192,102 +267,100 @@ export function CloudscapeSelect<T extends string = string>({
         aria-activedescendant={
           isOpen && highlightedIndex >= 0 ? `opt-${uniqueId}-${highlightedIndex}` : undefined
         }
-        className={`w-full ${heightClass} px-3 rounded-[6px] border flex items-center justify-between gap-2 cursor-pointer font-medium transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out outline-none disabled:opacity-50 disabled:cursor-not-allowed enabled:active:scale-[0.97] bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] shadow-xs ${
-          isOpen
-            ? 'border-[var(--aws-interactive)] ring-1 ring-[var(--aws-interactive)]/20'
-            : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)]'
-        }`}
+        className={`group ${heightClass} w-full px-2.5 rounded-[6px] bg-[#F8F9FA] dark:bg-[#0F141A] hover:bg-[#EAEDED]/60 dark:hover:bg-[#192534] border border-[#D5DBDB] dark:border-[#2A3647] data-[open=true]:border-[#0972D3] dark:data-[open=true]:border-[#539FE5] flex items-center justify-between text-[#16191F] dark:text-[#EAEDED] transition-colors duration-150 outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
       >
-        <span className="flex items-center gap-2 truncate text-left">
+        <span className="flex items-center gap-2 truncate text-left min-w-0 flex-1 mr-1">
           {selectedOption?.icon}
           <span className="truncate">
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </span>
 
-        {/* 180deg rotating chevron with 200ms cubic-bezier */}
         <ChevronDown
-          className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] text-[var(--aws-text-muted)]"
-          style={{
-            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-          }}
+          className="size-3.5 text-[#879596] shrink-0 transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] group-data-[open=true]:rotate-180"
           aria-hidden="true"
         />
       </button>
 
-      {/* Floating Menu Popover with concentric rounded-[12px], p-1.5 and layered elevation */}
-      {isMounted && (
-        <div
-          ref={listboxRef}
-          id={listboxId}
-          role="listbox"
-          tabIndex={-1}
-          aria-label={ariaLabel || placeholder}
-          data-state={isOpen ? 'open' : 'closed'}
-          style={{
-            overscrollBehavior: 'contain',
-          }}
-          className={`absolute ${
-            align === 'right' ? 'right-0 origin-top-right' : 'left-0 origin-top-left'
-          } mt-1.5 w-full min-w-[210px] max-h-64 overflow-y-auto custom-scrollbar rounded-[12px] p-1.5 border z-50 bg-[var(--aws-popover-bg)] border-[var(--aws-border)] text-[var(--aws-text-primary)] shadow-2xl dark:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.08)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-            isOpen
+      {/* Floating Menu Popover rendered in document.body Portal */}
+      {
+        isMounted &&
+        createPortal(
+          <div
+            ref={listboxRef}
+            id={listboxId}
+            role="listbox"
+            tabIndex={-1}
+            aria-label={ariaLabel || placeholder}
+            data-state={isOpen ? 'open' : 'closed'}
+            style={{
+              position: 'fixed',
+              top: coords.top !== undefined ? `${coords.top}px` : undefined,
+              bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
+              left: `${coords.left}px`,
+              width: `${coords.width}px`,
+              maxWidth: '340px',
+              transformOrigin: coords.transformOrigin,
+              zIndex: 9999,
+              overscrollBehavior: 'contain',
+            }}
+            className={`max-h-64 overflow-y-auto custom-scrollbar rounded-[10px] p-1 border shadow-[0_12px_32px_rgba(0,0,0,0.22)] backdrop-blur-md bg-white dark:bg-[#141C28] border-[#D5DBDB] dark:border-[#2A3647] text-[#16191F] dark:text-[#EAEDED] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] ${isOpen
               ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
               : 'opacity-0 scale-[0.96] -translate-y-1.5 pointer-events-none'
-          }`}
-        >
-          {options.map((opt, idx) => {
-            const isSelected = opt.value === value;
-            const isHighlighted = idx === highlightedIndex;
+              }`}
+          >
+            {options.map((opt, idx) => {
+              const isSelected = opt.value === value;
+              const isHighlighted = idx === highlightedIndex;
 
-            return (
-              <div
-                key={opt.value}
-                id={`opt-${uniqueId}-${idx}`}
-                role="option"
-                aria-selected={isSelected}
-                onClick={() => handleSelect(opt.value)}
-                onMouseEnter={() => setHighlightedIndex(idx)}
-                className={`px-2.5 py-1.5 rounded-[6px] flex items-center justify-between gap-3 transition-colors duration-100 cursor-pointer text-[12px] select-none ${
-                  isSelected
-                    ? 'bg-[var(--aws-interactive)]/15 text-[var(--aws-interactive)] font-semibold'
+              return (
+                <div
+                  key={opt.value}
+                  id={`opt-${uniqueId}-${idx}`}
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => handleSelect(opt.value)}
+                  onMouseEnter={() => setHighlightedIndex(idx)}
+                  className={`px-2.5 py-1.5 rounded-[6px] flex items-center justify-between gap-2.5 text-[12px] transition-colors duration-100 cursor-pointer select-none ${isSelected
+                    ? 'bg-[#0972D3]/10 dark:bg-[#539FE5]/15 text-[#0972D3] dark:text-[#539FE5] font-semibold'
                     : isHighlighted
-                    ? 'bg-[var(--aws-popover-hover)] text-[var(--aws-text-primary)] font-normal'
-                    : 'text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)] font-normal'
-                }`}
-              >
-                <div className="flex items-center gap-2 truncate flex-1 min-w-0">
-                  {opt.icon}
-                  <div className="truncate">
-                    <div className="truncate leading-tight">{opt.label}</div>
-                    {opt.description && (
-                      <div
-                        className="text-[11px] font-normal truncate text-[var(--aws-text-muted)] opacity-90 mt-0.5"
-                      >
-                        {opt.description}
-                      </div>
+                      ? 'bg-[#F2F3F3] dark:bg-[#1E2B3D] text-[#16191F] dark:text-[#EAEDED]'
+                      : 'text-[#16191F] dark:text-[#EAEDED] hover:bg-[#F2F3F3] dark:hover:bg-[#1E2B3D]'
+                    }`}
+                >
+                  <div className="flex items-center gap-2 truncate flex-1 min-w-0">
+                    {opt.icon}
+                    <div className="truncate">
+                      <div className="truncate leading-tight">{opt.label}</div>
+                      {opt.description && (
+                        <div className="text-[11px] font-normal truncate text-[#545B64] dark:text-[#879596] opacity-90 mt-0.5">
+                          {opt.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {opt.count !== undefined && (
+                      <span className="text-[11px] font-mono tabular-nums text-[#545B64] dark:text-[#879596] font-medium">
+                        {opt.count}
+                      </span>
+                    )}
+                    {opt.badge}
+                    {isSelected && (
+                      <Check
+                        className="size-3.5 text-[#0972D3] dark:text-[#539FE5]"
+                        aria-hidden="true"
+                      />
                     )}
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  {opt.count !== undefined && (
-                    <span className="text-[11px] font-mono tabular-nums text-[var(--aws-text-muted)] font-medium">
-                      {opt.count}
-                    </span>
-                  )}
-                  {opt.badge}
-                  {isSelected && (
-                    <Check
-                      className="w-3.5 h-3.5 text-[var(--aws-interactive)]"
-                      aria-hidden="true"
-                    />
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>,
+          document.body
+        )
+      }
     </div>
   );
 }
