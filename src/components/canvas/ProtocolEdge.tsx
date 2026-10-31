@@ -4,6 +4,8 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   getSmoothStepPath,
+  getBezierPath,
+  getStraightPath,
   type EdgeProps,
 } from '@xyflow/react';
 import { X, ChevronDown, Check } from 'lucide-react';
@@ -172,20 +174,43 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
     };
   }, [isDropdownOpen, closePopover, popoverId]);
 
-  // Dynamic orthogonal routing offset
+  // Dynamic path routing calculation based on routingStyle (smoothstep / bezier / straight)
   const customOffset = edgeData?.offset;
   const routingOffset = typeof customOffset === 'number' ? customOffset : 28;
+  const routing = edgeData?.routingStyle || 'smoothstep';
 
-  const [edgePath, labelX, labelY] = getSmoothStepPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-    borderRadius: 8,
-    offset: routingOffset,
-  });
+  let edgePath: string;
+  let labelX: number;
+  let labelY: number;
+
+  if (routing === 'bezier') {
+    [edgePath, labelX, labelY] = getBezierPath({
+      sourceX,
+      sourceY,
+      sourcePosition,
+      targetX,
+      targetY,
+      targetPosition,
+    });
+  } else if (routing === 'straight') {
+    [edgePath, labelX, labelY] = getStraightPath({
+      sourceX,
+      sourceY,
+      targetX,
+      targetY,
+    });
+  } else {
+    [edgePath, labelX, labelY] = getSmoothStepPath({
+      sourceX,
+      sourceY,
+      sourcePosition,
+      targetX,
+      targetY,
+      targetPosition,
+      borderRadius: 8,
+      offset: routingOffset,
+    });
+  }
 
   const protocolStyle = PROTOCOL_STYLES[protocol] || PROTOCOL_STYLES['HTTPS/REST'];
 
@@ -259,7 +284,7 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
         style={{
           ...style,
           stroke: strokeColor,
-          strokeWidth: selected || isEdgeSelected ? 2.5 : 1.75,
+          strokeWidth: edgeData?.strokeWidth ? edgeData.strokeWidth : (selected || isEdgeSelected ? 2.5 : 1.75),
           strokeDasharray: isAnimated && !dashArray ? '6 4' : dashArray,
           animation: isAnimated ? 'dash 1.2s linear infinite' : undefined,
           transition: 'stroke 150ms ease-out',
@@ -299,8 +324,8 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
                 backgroundColor: 'var(--aws-card-bg)',
               }}
               className={`h-6 px-2 rounded-full border text-[11px] font-mono flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${isDropdownOpen || selected || isEdgeSelected
-                  ? 'border-[var(--aws-interactive)] text-[var(--aws-text-primary)] ring-1 ring-[var(--aws-interactive)]/20'
-                  : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)] text-[var(--aws-text-primary)]'
+                ? 'border-[var(--aws-interactive)] text-[var(--aws-text-primary)] ring-1 ring-[var(--aws-interactive)]/20'
+                : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)] text-[var(--aws-text-primary)]'
                 }`}
               title={`Protocol: ${displayLabel}. Click to switch protocol, double-click to customize line properties.`}
             >
@@ -338,80 +363,80 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
       </EdgeLabelRenderer>
 
       {/* Protocol Selection Dropdown Menu - Elevated Portal to document.body (fixed z-[9999]) */}
-          {isMounted && typeof document !== 'undefined' && createPortal(
-            <div
-              ref={menuRef}
-              data-state={isDropdownOpen ? 'open' : 'closed'}
-              style={{
-                position: 'fixed',
-                top: menuPos.top !== undefined ? `${menuPos.top}px` : undefined,
-                bottom: menuPos.bottom !== undefined ? `${menuPos.bottom}px` : undefined,
-                left: `${menuPos.left}px`,
-                zIndex: 9999,
-                overscrollBehavior: 'contain',
+      {isMounted && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={menuRef}
+          data-state={isDropdownOpen ? 'open' : 'closed'}
+          style={{
+            position: 'fixed',
+            top: menuPos.top !== undefined ? `${menuPos.top}px` : undefined,
+            bottom: menuPos.bottom !== undefined ? `${menuPos.bottom}px` : undefined,
+            left: `${menuPos.left}px`,
+            zIndex: 9999,
+            overscrollBehavior: 'contain',
+          }}
+          className={`min-w-[240px] rounded-[12px] p-1.5 border bg-[var(--aws-popover-bg)] border-[var(--aws-border)] text-[var(--aws-text-primary)] shadow-[0px_4px_16px_rgba(0,0,0,0.2),0px_16px_36px_rgba(0,0,0,0.25)] dark:shadow-[0_12px_36px_-5px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.08)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] origin-top ${isDropdownOpen
+            ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
+            : 'opacity-0 scale-[0.96] -translate-y-1.5 pointer-events-none'
+            }`}
+        >
+          <div
+            style={{
+              borderColor: 'var(--aws-border)',
+              color: 'var(--aws-text-muted)',
+            }}
+            className="px-2.5 py-1 text-[11px] font-mono border-b mb-1 flex items-center justify-between"
+          >
+            <span className="font-semibold">Select protocol</span>
+            <button
+              type="button"
+              onClick={() => {
+                closePopover(popoverId);
+                openEdgeInspector(id);
               }}
-              className={`min-w-[240px] rounded-[12px] p-1.5 border bg-[var(--aws-popover-bg)] border-[var(--aws-border)] text-[var(--aws-text-primary)] shadow-[0px_4px_16px_rgba(0,0,0,0.2),0px_16px_36px_rgba(0,0,0,0.25)] dark:shadow-[0_12px_36px_-5px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.08)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] origin-top ${isDropdownOpen
-                  ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
-                  : 'opacity-0 scale-[0.96] -translate-y-1.5 pointer-events-none'
-                }`}
+              className="text-[10px] text-[var(--aws-interactive)] hover:underline cursor-pointer"
             >
-              <div
-                style={{
-                  borderColor: 'var(--aws-border)',
-                  color: 'var(--aws-text-muted)',
-                }}
-                className="px-2.5 py-1 text-[11px] font-mono border-b mb-1 flex items-center justify-between"
-              >
-                <span className="font-semibold">Select protocol</span>
+              More options...
+            </button>
+          </div>
+          <div className="space-y-0.5">
+            {PROTOCOLS.map((p) => {
+              const pStyle = PROTOCOL_STYLES[p];
+              const isCurrent = p === protocol;
+              return (
                 <button
+                  key={p}
                   type="button"
-                  onClick={() => {
-                    closePopover(popoverId);
-                    openEdgeInspector(id);
-                  }}
-                  className="text-[10px] text-[var(--aws-interactive)] hover:underline cursor-pointer"
+                  onClick={() => handleProtocolSelect(p)}
+                  className={`w-full text-left px-2.5 py-1.5 rounded-[6px] text-[11px] font-mono flex items-center justify-between gap-4 transition-colors duration-100 cursor-pointer ${isCurrent
+                    ? 'bg-[var(--aws-interactive)]/15 text-[var(--aws-interactive)] font-semibold'
+                    : 'text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)]'
+                    }`}
                 >
-                    More options...
-                </button>
-              </div>
-              <div className="space-y-0.5">
-                {PROTOCOLS.map((p) => {
-                  const pStyle = PROTOCOL_STYLES[p];
-                  const isCurrent = p === protocol;
-                  return (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => handleProtocolSelect(p)}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-[6px] text-[11px] font-mono flex items-center justify-between gap-4 transition-colors duration-100 cursor-pointer ${isCurrent
-                          ? 'bg-[var(--aws-interactive)]/15 text-[var(--aws-interactive)] font-semibold'
-                          : 'text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)]'
-                        }`}
+                  <div className="flex items-center gap-2 truncate">
+                    <span
+                      className="w-1.5 h-1.5 rounded-full shrink-0"
+                      style={{ backgroundColor: pStyle.stroke }}
+                    />
+                    <span className="truncate">{p}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span
+                      style={{ color: 'var(--aws-text-muted)' }}
+                      className="text-[10px] font-sans"
                     >
-                      <div className="flex items-center gap-2 truncate">
-                        <span
-                          className="w-1.5 h-1.5 rounded-full shrink-0"
-                          style={{ backgroundColor: pStyle.stroke }}
-                        />
-                        <span className="truncate">{p}</span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span
-                          style={{ color: 'var(--aws-text-muted)' }}
-                          className="text-[10px] font-sans"
-                        >
-                          {pStyle.flowType}
-                        </span>
-                        {isCurrent && (
-                          <Check className="w-3.5 h-3.5 text-[var(--aws-interactive)]" aria-hidden="true" />
-                        )}
-                      </div>
-                    </button>
+                      {pStyle.flowType}
+                    </span>
+                    {isCurrent && (
+                      <Check className="w-3.5 h-3.5 text-[var(--aws-interactive)]" aria-hidden="true" />
+                    )}
+                  </div>
+                </button>
               );
             })}
           </div >
         </div >,
-  document.body
+        document.body
       )}
     </g >
   );

@@ -359,6 +359,32 @@
   font-family: var(--font-sans);
 }
 
+/* React Flow Canvas Cursor Management (Moving & Panning around Canvas) */
+.react-flow__pane,
+.react-flow__pane.selection {
+  cursor: default;
+}
+
+.react-flow__pane.dragging,
+.react-flow__pane.dragging * {
+  cursor: grabbing !important;
+}
+
+/* Global & Local Active Canvas Panning (Right-click & Middle-click moving around) */
+body.canvas-global-panning,
+body.canvas-global-panning *,
+.is-canvas-panning,
+.is-canvas-panning *,
+.is-canvas-panning .react-flow__pane,
+.is-canvas-panning .react-flow__pane.selection,
+.is-canvas-panning .react-flow__node,
+.is-canvas-panning .react-flow__edge,
+.is-canvas-panning .react-flow__edge-text,
+.is-canvas-panning .react-flow__handle {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
 /* Mermaid diagram custom container */
 .mermaid-container svg {
   max-width: 100%;

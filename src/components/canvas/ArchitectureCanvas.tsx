@@ -6,34 +6,28 @@ import {
   MiniMap,
   BackgroundVariant,
   useReactFlow,
-  getNodesBounds,
   type NodeTypes,
   type EdgeTypes,
   MarkerType,
   ConnectionMode,
+  SelectionMode,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import {
-  Plus,
-  Trash2,
   Maximize,
   Maximize2,
   Minimize2,
   ChevronDown,
-  BoxSelect,
+  ChevronRight,
   Download,
   Check,
   ZoomIn,
   ZoomOut,
   Save,
-  LayoutGrid,
   Undo2,
   Redo2,
-  Users,
-  StickyNote,
-  Image as ImageIcon,
-  FileCode,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { useCompassStore } from '../../store/useCompassStore';
 import { useCanvasStore } from '../../store/useCanvasStore';
@@ -47,12 +41,15 @@ import { ProtocolEdge } from './ProtocolEdge';
 import { NodeInspectorDrawer } from './NodeInspectorDrawer';
 import { CanvasContextMenu } from './CanvasContextMenu';
 import { BlueprintManagerDropdown } from './BlueprintManagerDropdown';
+import { CanvasSidebar } from './CanvasSidebar';
+import { CanvasFormatBar } from './CanvasFormatBar';
+import { DiagramExportPopover } from './DiagramExportPopover';
+import { CanvasBomPopover } from './CanvasBomPopover';
+import { QuickConnectPopover } from './QuickConnectPopover';
 import { getAWSCategoryColor } from '../../utils/awsCategoryColors';
-import { CloudscapeSearchInput } from '../ui/CloudscapeSearchInput';
-import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
-import { Blocks, Pulse, Arc } from '../ui/LoadingIndicators';
-import type { AWSService, GroupBoundaryType, ExternalActorType } from '../../types/aws';
+import { Blocks, Pulse } from '../ui/LoadingIndicators';
+import type { AWSService, EdgeProtocol, CanvasNodeItem, CanvasEdgeItem } from '../../types/aws';
 
 // Hoist static node & edge registrations
 const nodeTypes: NodeTypes = {
@@ -65,26 +62,6 @@ const nodeTypes: NodeTypes = {
 const edgeTypes: EdgeTypes = {
   default: ProtocolEdge,
 };
-
-const EXTERNAL_ACTORS: { type: ExternalActorType; label: string; desc: string }[] = [
-  { type: 'user-browser', label: 'User / Client Browser', desc: 'HTTPS / Web Traffic Ingress' },
-  { type: 'mobile-client', label: 'Mobile / IoT Client', desc: 'REST / WebSocket Device Client' },
-  { type: 'corporate-datacenter', label: 'Corporate Data Center', desc: 'Direct Connect / Site-to-Site VPN' },
-  { type: 'external-webhook', label: 'External Webhook / API', desc: '3rd-Party Partner Payload Ingress' },
-];
-
-const GROUP_BOUNDARIES: { id: GroupBoundaryType; label: string; desc: string }[] = [
-  { id: 'aws-cloud', label: 'AWS Cloud', desc: 'Outer perimeter' },
-  { id: 'region', label: 'Region', desc: 'Regional boundary' },
-  { id: 'vpc', label: 'VPC', desc: '10.0.0.0/16' },
-  { id: 'public-subnet', label: 'Public subnet', desc: 'Ingress tier' },
-  { id: 'private-subnet', label: 'Private subnet', desc: 'Application tier' },
-  { id: 'data-subnet', label: 'Data subnet', desc: 'Database isolated' },
-  { id: 'security-group', label: 'Security group', desc: 'Firewall rules' },
-  { id: 'auto-scaling-group', label: 'Auto scaling group', desc: 'Scale cluster' },
-  { id: 'corporate-datacenter', label: 'Corporate Data Center', desc: 'On-premises scope' },
-  { id: 'serverless', label: 'Managed Serverless', desc: 'Event-driven scope' },
-];
 
 const ArchitectureCanvasInner: React.FC = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -99,13 +76,14 @@ const ArchitectureCanvasInner: React.FC = () => {
   const onEdgesChange = useCanvasStore((s) => s.onEdgesChange);
   const onConnect = useCanvasStore((s) => s.onConnect);
   const addServiceNode = useCanvasStore((s) => s.addServiceNode);
+  const addBoundaryNode = useCanvasStore((s) => s.addBoundaryNode);
+  const isCanvasSidebarOpen = useCanvasStore((s) => s.isCanvasSidebarOpen);
+  const setIsCanvasSidebarOpen = useCanvasStore((s) => s.setIsCanvasSidebarOpen);
   const addExternalActor = useCanvasStore((s) => s.addExternalActor);
   const addAnnotationNode = useCanvasStore((s) => s.addAnnotationNode);
-  const clearCanvas = useCanvasStore((s) => s.clearCanvas);
   const openNodeInspector = useCanvasStore((s) => s.openNodeInspector);
   const openEdgeInspector = useCanvasStore((s) => s.openEdgeInspector);
   const closeInspector = useCanvasStore((s) => s.closeInspector);
-  const setNodes = useCanvasStore((s) => s.setNodes);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const selectedEdgeId = useCanvasStore((s) => s.selectedEdgeId);
   const removeNode = useCanvasStore((s) => s.removeNode);
@@ -136,20 +114,131 @@ const ArchitectureCanvasInner: React.FC = () => {
   const showMiniMap = useSettingsStore((s) => s.showMiniMap);
   const animateEdgesByDefault = useSettingsStore((s) => s.animateEdgesByDefault);
 
-  const isAddServiceOpen = activePopoverId === 'canvas-add-service';
-  const isBoundaryOpen = activePopoverId === 'canvas-boundary';
-  const isActorNoteOpen = activePopoverId === 'canvas-actor-note';
   const isSaveAsOpen = activePopoverId === 'canvas-save-as';
   const isExportOpen = activePopoverId === 'canvas-export';
+  const isBomOpen = activePopoverId === 'canvas-bom';
 
-  const addServiceTriggerRef = useRef<HTMLButtonElement>(null);
-  const boundaryTriggerRef = useRef<HTMLButtonElement>(null);
-  const actorNoteTriggerRef = useRef<HTMLButtonElement>(null);
   const saveAsTriggerRef = useRef<HTMLButtonElement>(null);
   const exportTriggerRef = useRef<HTMLButtonElement>(null);
+  const bomTriggerRef = useRef<HTMLButtonElement>(null);
 
   const [layoutDirection, setLayoutDirection] = useState<'LR' | 'TB'>('LR');
-  const [serviceSearch, setServiceSearch] = useState('');
+
+  // Drop wire on empty canvas state (Quick Connect Spawner)
+  const [quickConnectState, setQuickConnectState] = useState<{
+    isOpen: boolean;
+    sourceNodeId: string;
+    sourceNodeLabel: string;
+    sourceServiceId?: string;
+    sourceCategory?: string;
+    sourceHandleId?: string | null;
+    screenPosition: { x: number; y: number };
+    flowPosition: { x: number; y: number };
+  }>({
+    isOpen: false,
+    sourceNodeId: '',
+    sourceNodeLabel: '',
+    screenPosition: { x: 0, y: 0 },
+    flowPosition: { x: 0, y: 0 },
+  });
+
+  const handleConnectEnd = useCallback(
+    (event: MouseEvent | TouchEvent, connectionState: any) => {
+      // If wire dropped on empty canvas space (not connected to a valid target handle)
+      if (!connectionState.isValid && connectionState.fromNode) {
+        const clientX =
+          'clientX' in event
+            ? event.clientX
+            : (event as TouchEvent).touches?.[0]?.clientX || 0;
+        const clientY =
+          'clientY' in event
+            ? event.clientY
+            : (event as TouchEvent).touches?.[0]?.clientY || 0;
+
+        const flowPosition = reactFlowInstance.screenToFlowPosition({
+          x: clientX,
+          y: clientY,
+        });
+
+        const srcNode = connectionState.fromNode;
+        const srcLabel = srcNode.data?.customTitle || srcNode.data?.label || 'Source Component';
+
+        setQuickConnectState({
+          isOpen: true,
+          sourceNodeId: srcNode.id,
+          sourceNodeLabel: srcLabel,
+          sourceServiceId: srcNode.data?.serviceId,
+          sourceCategory: srcNode.data?.category,
+          sourceHandleId: connectionState.fromHandle?.id || null,
+          screenPosition: { x: clientX, y: clientY },
+          flowPosition,
+        });
+      }
+    },
+    [reactFlowInstance]
+  );
+
+  const handleQuickConnectSelectTarget = useCallback(
+    (
+      targetService: AWSService,
+      targetFlowPos: { x: number; y: number },
+      protocol: EdgeProtocol = 'HTTPS/REST'
+    ) => {
+      const targetNodeId = `node-${targetService.id}-${Date.now()}`;
+      const newTargetNode: CanvasNodeItem = {
+        id: targetNodeId,
+        type: 'awsService',
+        position: targetFlowPos,
+        data: {
+          serviceId: targetService.id,
+          label: targetService.name,
+          category: targetService.category,
+          tier: targetService.tier,
+          isFavorite: targetService.isFavorite,
+          customNotes: targetService.summary,
+          arnPattern: targetService.arnExample,
+          customTitle: targetService.name,
+          roleSubtitle: targetService.summary,
+          env: 'Prod',
+        },
+      };
+
+      const newEdgeId = `edge-${quickConnectState.sourceNodeId}-${targetNodeId}-${Date.now()}`;
+      const newEdge: CanvasEdgeItem = {
+        id: newEdgeId,
+        source: quickConnectState.sourceNodeId,
+        target: targetNodeId,
+        sourceHandle: quickConnectState.sourceHandleId || 'right',
+        targetHandle: 'left',
+        protocol,
+        label: protocol,
+        animated: true,
+        data: {
+          protocol,
+          label: protocol,
+          customLabel: protocol,
+          lineStyle: protocol === 'Event Trigger' ? 'dashed' : 'solid',
+          directionality: 'one-way',
+          animated: true,
+        },
+      };
+
+      useCanvasStore.getState().recordSnapshot();
+      useCanvasStore.setState((state) => {
+        const updatedNodes = [...state.nodes, newTargetNode];
+        const updatedEdges = [...state.edges, newEdge];
+        return {
+          nodes: updatedNodes,
+          edges: updatedEdges,
+          selectedNodeId: targetNodeId,
+          selectedEdgeId: null,
+          isInspectorOpen: true,
+          inspectorActiveTab: 'properties',
+        };
+      });
+    },
+    [quickConnectState]
+  );
 
   const isCanvasFullscreen = useCanvasStore((s) => s.isCanvasFullscreen);
   const toggleCanvasFullscreen = useCanvasStore((s) => s.toggleCanvasFullscreen);
@@ -161,7 +250,67 @@ const ArchitectureCanvasInner: React.FC = () => {
 
   // Indicators
   const [isArranging, setIsArranging] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+
+  // Canvas viewport pan-drag cursor state (moving around canvas with right/middle click)
+  const [isCanvasPanning, setIsCanvasPanning] = useState(false);
+  const panStartRef = useRef<{ x: number; y: number; isDown: boolean } | null>(null);
+
+  const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
+    // Button 2 is right click, button 1 is middle click (both pan the canvas via panOnDrag={[1, 2]})
+    if (e.button === 2 || e.button === 1) {
+      panStartRef.current = { x: e.clientX, y: e.clientY, isDown: true };
+    }
+  }, []);
+
+  const handleCanvasMouseMove = useCallback((e: React.MouseEvent) => {
+    if (panStartRef.current?.isDown) {
+      // Bitmask check: button 2 (right-click) is bit 2, button 1 (middle-click) is bit 4
+      if ((e.buttons & 2) !== 0 || (e.buttons & 4) !== 0) {
+        const dist = Math.hypot(e.clientX - panStartRef.current.x, e.clientY - panStartRef.current.y);
+        if (dist >= 2) {
+          setIsCanvasPanning(true);
+        }
+      } else {
+        panStartRef.current = null;
+        setIsCanvasPanning(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleGlobalMouseUp = (e: MouseEvent) => {
+      // Revert panning when right or middle click is released or no buttons remain pressed
+      if (e.button === 2 || e.button === 1 || e.buttons === 0) {
+        panStartRef.current = null;
+        setIsCanvasPanning(false);
+      }
+    };
+
+    const handleGlobalBlur = () => {
+      panStartRef.current = null;
+      setIsCanvasPanning(false);
+    };
+
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    window.addEventListener('blur', handleGlobalBlur);
+
+    return () => {
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+      window.removeEventListener('blur', handleGlobalBlur);
+    };
+  }, []);
+
+  // Sync global body class for uninterrupted grabbing cursor across all canvas elements & boundaries
+  useEffect(() => {
+    if (isCanvasPanning) {
+      document.body.classList.add('canvas-global-panning');
+    } else {
+      document.body.classList.remove('canvas-global-panning');
+    }
+    return () => {
+      document.body.classList.remove('canvas-global-panning');
+    };
+  }, [isCanvasPanning]);
 
   useEffect(() => {
     // When toggling fullscreen / Zen mode, smoothly re-fit the canvas to new bounds
@@ -219,6 +368,13 @@ const ArchitectureCanvasInner: React.FC = () => {
         return;
       }
 
+      // Fit to View: F
+      if (e.key.toLowerCase() === 'f' && !e.ctrlKey && !e.metaKey && !e.shiftKey && !isTyping) {
+        e.preventDefault();
+        reactFlowInstance.fitView({ padding: 0.18, duration: 250 });
+        return;
+      }
+
       // Escape: Close context menu and inspectors
       if (e.key === 'Escape') {
         closeContextMenu();
@@ -228,7 +384,7 @@ const ArchitectureCanvasInner: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, duplicateNode, removeNode, removeEdge, selectedNodeId, selectedEdgeId, closeContextMenu, closeInspector]);
+  }, [undo, redo, duplicateNode, removeNode, removeEdge, selectedNodeId, selectedEdgeId, closeContextMenu, closeInspector, reactFlowInstance]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -239,20 +395,113 @@ const ArchitectureCanvasInner: React.FC = () => {
     (event: React.DragEvent) => {
       event.preventDefault();
 
+      const stencilJson = event.dataTransfer.getData('application/aws-stencil');
       const serviceId = event.dataTransfer.getData('application/aws-service-id');
-      if (!serviceId) return;
-
-      const service = services.find((s) => s.id === serviceId);
-      if (!service) return;
 
       const position = reactFlowInstance.screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
 
-      addServiceNode(service, position);
+      if (stencilJson) {
+        try {
+          const stencil = JSON.parse(stencilJson);
+          if (stencil.type === 'service' && stencil.serviceId) {
+            const service = services.find((s) => s.id === stencil.serviceId);
+            if (service) addServiceNode(service, position);
+          } else if (stencil.type === 'boundary' && stencil.boundaryType) {
+            addBoundaryNode(stencil.boundaryType, stencil.label, position);
+          } else if (stencil.type === 'actor' && stencil.actorType) {
+            addExternalActor(stencil.actorType, stencil.label, position);
+          } else if (stencil.type === 'annotation') {
+            addAnnotationNode(stencil.title || 'Architecture Note', '', position);
+          } else if (stencil.type === 'text-block') {
+            addAnnotationNode(stencil.title || 'Architecture Section Header', '', position, {
+              isTextOnly: true,
+              fontSize: 18,
+            });
+          }
+          return;
+        } catch (e) {
+          console.error('Failed to parse dropped stencil:', e);
+        }
+      }
+
+      if (serviceId) {
+        const service = services.find((s) => s.id === serviceId);
+        if (service) {
+          addServiceNode(service, position);
+        }
+      }
     },
-    [reactFlowInstance, services, addServiceNode]
+    [reactFlowInstance, services, addServiceNode, addBoundaryNode, addExternalActor, addAnnotationNode]
+  );
+
+  // Dynamic Group Nesting when node is dragged into boundary container
+  const handleNodeDragStop = useCallback(
+    (_: unknown, draggedNode: any) => {
+      if (draggedNode.data?.isBoundary) return;
+
+      const allNodes = useCanvasStore.getState().nodes;
+      const boundaryNodes = allNodes.filter(
+        (n) => n.data?.isBoundary && n.id !== draggedNode.id
+      );
+
+      // Compute absolute position of draggedNode
+      let absX = draggedNode.position.x;
+      let absY = draggedNode.position.y;
+      if (draggedNode.parentId) {
+        const parent = allNodes.find((n) => n.id === draggedNode.parentId);
+        if (parent) {
+          absX += parent.position.x;
+          absY += parent.position.y;
+        }
+      }
+
+      const nodeW = (draggedNode.data?.width as number) || 144;
+      const nodeH = (draggedNode.data?.height as number) || 80;
+      const centerX = absX + nodeW / 2;
+      const centerY = absY + nodeH / 2;
+
+      // Find all boundaries enclosing this node's center
+      const matchingBoundaries = boundaryNodes.filter((b) => {
+        const bW = (b.data?.width as number) || (b.style?.width as number) || 540;
+        const bH = (b.data?.height as number) || (b.style?.height as number) || 340;
+        return (
+          centerX >= b.position.x &&
+          centerX <= b.position.x + bW &&
+          centerY >= b.position.y &&
+          centerY <= b.position.y + bH
+        );
+      });
+
+      if (matchingBoundaries.length > 0) {
+        // Pick innermost boundary (smallest area)
+        matchingBoundaries.sort((a, b) => {
+          const areaA = ((a.data?.width as number) || 540) * ((a.data?.height as number) || 340);
+          const areaB = ((b.data?.width as number) || 540) * ((b.data?.height as number) || 340);
+          return areaA - areaB;
+        });
+        const targetBoundary = matchingBoundaries[0];
+
+        if (draggedNode.parentId !== targetBoundary.id) {
+          const relX = Math.max(16, Math.round((absX - targetBoundary.position.x) / 16) * 16);
+          const relY = Math.max(48, Math.round((absY - targetBoundary.position.y) / 16) * 16);
+
+          useCanvasStore.getState().updateNodeParent(draggedNode.id, targetBoundary.id, {
+            x: relX,
+            y: relY,
+          });
+        }
+      } else if (draggedNode.parentId) {
+        // Dragged out of boundary container
+        useCanvasStore.getState().updateNodeParent(draggedNode.id, undefined, {
+          x: absX,
+          y: absY,
+        });
+      }
+    },
+    []
   );
 
   const handleTriggerAutoLayout = (direction: 'LR' | 'TB') => {
@@ -263,81 +512,6 @@ const ArchitectureCanvasInner: React.FC = () => {
       setIsArranging(false);
     }, 220);
   };
-
-  const handleQuickAddService = useCallback(
-    (svc: AWSService) => {
-      const offset = (nodes.length % 5) * 35;
-      const center = reactFlowInstance.screenToFlowPosition({
-        x: window.innerWidth / 2 + offset,
-        y: window.innerHeight / 2 + offset,
-      });
-
-      addServiceNode(svc, center);
-      closePopover('canvas-add-primitives');
-      closePopover('canvas-add-service');
-      setServiceSearch('');
-    },
-    [nodes.length, reactFlowInstance, addServiceNode, closePopover]
-  );
-
-  const handleQuickAddActor = useCallback(
-    (actorType: ExternalActorType, label: string) => {
-      const offset = (nodes.length % 4) * 30;
-      const center = reactFlowInstance.screenToFlowPosition({
-        x: window.innerWidth / 2 - 120 + offset,
-        y: window.innerHeight / 2 - 100 + offset,
-      });
-
-      addExternalActor(actorType, label, center);
-      closePopover('canvas-add-primitives');
-      closePopover('canvas-actor-note');
-    },
-    [nodes.length, reactFlowInstance, addExternalActor, closePopover]
-  );
-
-  const handleQuickAddNote = useCallback(() => {
-    const center = reactFlowInstance.screenToFlowPosition({
-      x: window.innerWidth / 2 - 80,
-      y: window.innerHeight / 2 - 60,
-    });
-
-    addAnnotationNode('Architecture Note', '', center);
-    closePopover('canvas-add-primitives');
-    closePopover('canvas-actor-note');
-  }, [reactFlowInstance, addAnnotationNode, closePopover]);
-
-  const handleAddBoundary = useCallback(
-    (boundaryType: GroupBoundaryType, label: string) => {
-      const center = reactFlowInstance.screenToFlowPosition({
-        x: window.innerWidth / 2 - 220,
-        y: window.innerHeight / 2 - 160,
-      });
-
-      const newBoundary = {
-        id: `boundary-${boundaryType}-${Date.now()}`,
-        type: 'awsGroup',
-        position: center,
-        zIndex: -1,
-        data: {
-          serviceId: `bound-${boundaryType}`,
-          label,
-          category: 'Networking' as const,
-          tier: 1 as const,
-          status: 'not-started' as const,
-          isBoundary: true,
-          boundaryType,
-          boundaryLabel: label,
-          cidr: boundaryType === 'vpc' ? '10.0.0.0/16' : boundaryType.includes('subnet') ? '10.0.1.0/24' : undefined,
-          width: boundaryType === 'aws-cloud' ? 960 : 540,
-          height: boundaryType === 'aws-cloud' ? 520 : 340,
-        },
-      };
-
-      setNodes([newBoundary, ...nodes]);
-      closePopover('canvas-boundary');
-    },
-    [nodes, reactFlowInstance, setNodes, closePopover]
-  );
 
   const handleSaveAsBlueprint = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -351,145 +525,6 @@ const ArchitectureCanvasInner: React.FC = () => {
       setSaveAsNameInput('');
     }, 1200);
   };
-
-  const handleExportJson = useCallback(() => {
-    setIsExporting(true);
-    const dataStr =
-      'data:text/json;charset=utf-8,' +
-      encodeURIComponent(
-        JSON.stringify(
-          {
-            version: '1.0',
-            diagramName: activeDiagramName,
-            nodes,
-            edges,
-            exportedAt: new Date().toISOString(),
-          },
-          null,
-          2
-        )
-      );
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `aws-architecture-${Date.now()}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    setTimeout(() => {
-      setIsExporting(false);
-      closePopover('canvas-export');
-    }, 350);
-  }, [nodes, edges, activeDiagramName, closePopover]);
-
-  const handleExportSvg = useCallback(() => {
-    setIsExporting(true);
-    try {
-      const flowEl = reactFlowWrapper.current?.querySelector('.react-flow__viewport');
-      if (!flowEl) throw new Error('Canvas viewport element not found');
-
-      const bounds = getNodesBounds(nodes);
-      const padding = 50;
-      const x = bounds.x - padding;
-      const y = bounds.y - padding;
-      const width = Math.max(400, bounds.width + padding * 2);
-      const height = Math.max(300, bounds.height + padding * 2);
-
-      const clone = flowEl.cloneNode(true) as HTMLElement;
-      clone.style.transform = `translate(${-x}px, ${-y}px)`;
-
-      const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-        <style>
-          .react-flow__node { position: absolute; }
-          text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        </style>
-        <foreignObject width="100%" height="100%">
-          <div xmlns="http://www.w3.org/1999/xhtml" style="width: 100%; height: 100%; background: ${theme === 'dark' ? '#0F141A' : '#F8F9FA'};">
-            ${clone.outerHTML}
-          </div>
-        </foreignObject>
-      </svg>`;
-
-      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `aws-blueprint-${activeDiagramName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.svg`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Failed to export SVG:', err);
-    } finally {
-      setIsExporting(false);
-      closePopover('canvas-export');
-    }
-  }, [nodes, activeDiagramName, theme, closePopover]);
-
-  const handleExportPng = useCallback(() => {
-    setIsExporting(true);
-    try {
-      const flowEl = reactFlowWrapper.current?.querySelector('.react-flow__viewport');
-      if (!flowEl) throw new Error('Canvas viewport element not found');
-
-      const bounds = getNodesBounds(nodes);
-      const padding = 50;
-      const x = bounds.x - padding;
-      const y = bounds.y - padding;
-      const width = Math.max(400, bounds.width + padding * 2);
-      const height = Math.max(300, bounds.height + padding * 2);
-
-      const clone = flowEl.cloneNode(true) as HTMLElement;
-      clone.style.transform = `translate(${-x}px, ${-y}px)`;
-
-      const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-        <style>
-          .react-flow__node { position: absolute; }
-          text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        </style>
-        <foreignObject width="100%" height="100%">
-          <div xmlns="http://www.w3.org/1999/xhtml" style="width: 100%; height: 100%; background: ${theme === 'dark' ? '#0F141A' : '#F8F9FA'};">
-            ${clone.outerHTML}
-          </div>
-        </foreignObject>
-      </svg>`;
-
-      const img = new Image();
-      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(svgBlob);
-
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = width * 2;
-        canvas.height = height * 2;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.scale(2, 2);
-          ctx.drawImage(img, 0, 0);
-          const pngUrl = canvas.toDataURL('image/png');
-          const a = document.createElement('a');
-          a.href = pngUrl;
-          a.download = `aws-blueprint-${activeDiagramName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.png`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-        }
-        URL.revokeObjectURL(url);
-        setIsExporting(false);
-        closePopover('canvas-export');
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        setIsExporting(false);
-        closePopover('canvas-export');
-      };
-      img.src = url;
-    } catch (err) {
-      console.error('Failed to export PNG:', err);
-      setIsExporting(false);
-      closePopover('canvas-export');
-    }
-  }, [nodes, activeDiagramName, theme, closePopover]);
 
   const markdownSpec = useMemo(() => {
     const serviceNodes = nodes.filter((n) => !n.data.isBoundary && !n.data.isAnnotation);
@@ -514,14 +549,6 @@ const ArchitectureCanvasInner: React.FC = () => {
       }),
     ].join('\n');
   }, [nodes, edges, activeDiagramName]);
-
-  const filteredQuickAddServices = useMemo(() => {
-    if (!serviceSearch.trim()) return services.slice(0, 18);
-    const q = serviceSearch.toLowerCase().trim();
-    return services.filter(
-      (s) => s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q)
-    );
-  }, [services, serviceSearch]);
 
   const miniMapNodeColor = useCallback(
     (node: { data?: unknown }) => {
@@ -559,6 +586,9 @@ const ArchitectureCanvasInner: React.FC = () => {
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
+      {/* Dual-Mode Left Sidebar: AWS Catalog & Diagram Stencils */}
+      <CanvasSidebar />
+
       {/* Main Canvas Viewport Area */}
       <div className="flex-1 h-full relative flex flex-col min-w-0">
         {/* Slim Top Context Header */}
@@ -569,8 +599,21 @@ const ArchitectureCanvasInner: React.FC = () => {
           }}
           className="h-11 border-b px-4 flex items-center justify-between gap-3 shrink-0 relative z-40 bg-[var(--aws-card-bg)] select-none"
         >
-          {/* Left Cluster: Blueprint Switcher, Single Save-As Action, and Auto-Save Status */}
+          {/* Left Cluster: Sidebar Expand (if collapsed), Blueprint Switcher, Single Save-As Action, and Auto-Save Status */}
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 shrink-0">
+            {!isCanvasSidebarOpen && (
+              <button
+                type="button"
+                onClick={() => setIsCanvasSidebarOpen(true)}
+                className="h-8 px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#354150] bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] hover:border-[#FF9900] text-[var(--aws-text-muted)] hover:text-[#FF9900] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs shrink-0 group"
+                title="Open Stencils & Catalog Sidebar"
+                aria-label="Open Stencils & Catalog Sidebar"
+              >
+                <ChevronRight className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[#FF9900] transition-colors" />
+                <span className="text-[11px] font-semibold text-[var(--aws-text-primary)] group-hover:text-[#FF9900]">Stencils</span>
+              </button>
+            )}
+
             <BlueprintManagerDropdown />
 
             {/* Save As Custom Blueprint Button */}
@@ -726,140 +769,117 @@ const ArchitectureCanvasInner: React.FC = () => {
               </button>
             </div>
 
+            {/* Architecture Bill of Materials (BOM) Popover */}
+            <div className="relative">
+              <button
+                ref={bomTriggerRef}
+                type="button"
+                onClick={() => togglePopover('canvas-bom')}
+                data-open={isBomOpen ? 'true' : 'false'}
+                className={`h-8 px-2.5 rounded-[6px] border text-[12px] font-medium text-[var(--aws-text-primary)] bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${isBomOpen
+                  ? 'border-[var(--aws-interactive)] ring-1 ring-[var(--aws-interactive)]/20'
+                  : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)]'
+                  }`}
+                title="Open Architecture Bill of Materials (BOM)"
+                aria-label="Open Bill of Materials"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-[#FF9900]" />
+                <span className="hidden sm:inline">BOM</span>
+                <span className="font-mono text-[10px] px-1 py-0.2 rounded bg-[var(--aws-page-bg)] border border-[var(--aws-border)] text-[var(--aws-text-muted)]">
+                  {nodes.length}
+                </span>
+              </button>
+
+              <CanvasBomPopover
+                isOpen={isBomOpen}
+                onClose={() => closePopover('canvas-bom')}
+                triggerRef={bomTriggerRef}
+              />
+            </div>
+
             {/* Export Menu */}
             <div className="relative">
               <button
                 ref={exportTriggerRef}
                 type="button"
                 onClick={() => togglePopover('canvas-export')}
-                aria-disabled={isExporting ? 'true' : undefined}
                 data-open={isExportOpen ? 'true' : 'false'}
-              className={`h-8 px-2.5 rounded-[6px] border text-[12px] font-medium text-[var(--aws-text-primary)] bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${isExportOpen
+                className={`h-8 px-2.5 rounded-[6px] border text-[12px] font-medium text-[var(--aws-text-primary)] bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${isExportOpen
                   ? 'border-[var(--aws-interactive)] ring-1 ring-[var(--aws-interactive)]/20'
                   : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)]'
-                }`}
-              title="Export diagram (PNG, SVG, JSON)"
-                    >
-              <AnimatedIcon
-                activeKey={isExporting ? 'loading' : 'idle'}
-                size={15}
-                className="w-3.5 h-3.5"
+                  }`}
+                title="Export diagram (PNG, SVG, JSON)"
               >
-                <Download key="idle" className="w-3.5 h-3.5" />
-                <Arc
-                  key="loading"
-                  size={13}
-                  easing="stacked"
-                  cap="round"
-                  color={theme === 'dark' ? '#539FE5' : '#0972D3'}
+                <Download className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Export</span>
+                <ChevronDown
+                  className="w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-200"
+                  style={{ transform: isExportOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
                 />
-              </AnimatedIcon>
-              <span className="hidden sm:inline">Export</span>
-              <ChevronDown
-                className="w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-200"
-                style={{ transform: isExportOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-              />
-            </button>
+              </button>
 
-            <AnimatedPopover
-              isOpen={isExportOpen}
-              onClose={() => closePopover('canvas-export')}
-              triggerRef={exportTriggerRef}
-              align="right"
-              className="w-60 p-1.5 space-y-0.5"
-            >
-              <button
-                type="button"
-                onClick={handleExportPng}
-                aria-disabled={isExporting ? 'true' : undefined}
-                className="w-full text-left px-2.5 py-1.5 rounded-[6px] text-[12px] text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)] transition-colors cursor-pointer flex items-center justify-between"
+              <AnimatedPopover
+                isOpen={isExportOpen}
+                onClose={() => closePopover('canvas-export')}
+                triggerRef={exportTriggerRef}
+                align="right"
+                className="p-0 overflow-hidden shadow-xl"
               >
-                <div className="flex items-center gap-2">
-                  <ImageIcon className="w-3.5 h-3.5 text-[#539FE5]" />
-                  <span className="font-medium">Export PNG image</span>
-                </div>
-                <span className="text-[10px] font-mono text-[var(--aws-text-muted)]">.png</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleExportSvg}
-                aria-disabled={isExporting ? 'true' : undefined}
-                className="w-full text-left px-2.5 py-1.5 rounded-[6px] text-[12px] text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)] transition-colors cursor-pointer flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <FileCode className="w-3.5 h-3.5 text-[#FF9900]" />
-                  <span className="font-medium">Export SVG vector</span>
-                </div>
-                <span className="text-[10px] font-mono text-[var(--aws-text-muted)]">.svg</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleExportJson}
-                aria-disabled={isExporting ? 'true' : undefined}
-                className="w-full text-left px-2.5 py-1.5 rounded-[6px] text-[12px] text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)] transition-colors cursor-pointer flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <Download className="w-3.5 h-3.5 text-[var(--aws-text-muted)]" />
-                  <span className="font-medium">Export JSON spec</span>
-                </div>
-                <span className="text-[10px] font-mono text-[var(--aws-text-muted)]">.json</span>
-              </button>
-              <div className="pt-1 border-t border-[var(--aws-border)] mt-1">
-                <CloudscapeCopyButton
-                  textToCopy={markdownSpec}
-                  label="Copy markdown spec"
-                  copiedLabel="Copied markdown"
-                  className="w-full justify-between !border-transparent hover:!border-[var(--aws-interactive)] !bg-transparent hover:!bg-[var(--aws-popover-hover)] !text-[var(--aws-text-primary)] !text-[12px] !py-1.5 !px-2.5"
+                <DiagramExportPopover
+                  reactFlowWrapperRef={reactFlowWrapper}
+                  markdownSpec={markdownSpec}
+                  onClose={() => closePopover('canvas-export')}
                 />
-              </div>
-            </AnimatedPopover>
+              </AnimatedPopover>
+            </div>
+
+            {/* Fullscreen / Zen Mode Toggle */}
+            {isCanvasFullscreen ? (
+              <button
+                type="button"
+                onClick={toggleCanvasFullscreen}
+                className="h-8 px-2.5 rounded-[6px] bg-[#FF9900]/15 border border-[#FF9900]/40 text-[#FF9900] hover:bg-[#FF9900]/25 flex items-center gap-1.5 text-[11px] font-semibold cursor-pointer shadow-xs transition-colors shrink-0"
+                title="Exit Zen / Fullscreen Mode (Shift+F)"
+              >
+                <Minimize2 className="w-3.5 h-3.5" />
+                <span>Exit Zen (Shift+F)</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={toggleCanvasFullscreen}
+                className="size-8 rounded-[6px] border border-[var(--aws-input-border)] bg-[var(--aws-card-bg)] text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] flex items-center justify-center cursor-pointer shadow-2xs transition-colors shrink-0"
+                title="Zen Mode / Fullscreen (Shift+F)"
+                aria-label="Toggle fullscreen"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
-
-          {/* Fullscreen / Zen Mode Toggle */}
-          {isCanvasFullscreen ? (
-            <button
-              type="button"
-              onClick={toggleCanvasFullscreen}
-              className="h-8 px-2.5 rounded-[6px] bg-[#FF9900]/15 border border-[#FF9900]/40 text-[#FF9900] hover:bg-[#FF9900]/25 flex items-center gap-1.5 text-[11px] font-semibold cursor-pointer shadow-xs transition-colors shrink-0"
-              title="Exit Zen / Fullscreen Mode (Shift+F)"
-            >
-              <Minimize2 className="w-3.5 h-3.5" />
-              <span>Exit Zen (Shift+F)</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={toggleCanvasFullscreen}
-              className="size-8 rounded-[6px] border border-[var(--aws-input-border)] bg-[var(--aws-card-bg)] text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] flex items-center justify-center cursor-pointer shadow-2xs transition-colors shrink-0"
-              title="Zen Mode / Fullscreen (Shift+F)"
-              aria-label="Toggle fullscreen"
-            >
-              <Maximize2 className="w-3.5 h-3.5" />
-            </button>
-          )}
         </div>
-      </div>
 
-      {/* React Flow Core Canvas Viewport (Stacking Isolated) */}
-      <div className="flex-1 h-full relative z-0 isolate">
-        {/* Dagre Auto-Layout & Blueprint Arranging Badge */}
-        {isArranging && (
+        {/* React Flow Core Canvas Viewport (Stacking Isolated) */}
+        <div className="flex-1 h-full relative z-0 isolate">
+          {/* Dagre Auto-Layout & Blueprint Arranging Badge */}
+          {isArranging && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 px-3.5 py-1.5 rounded-[6px] border border-[#FF9900]/40 bg-[#0F141A]/90 text-[#EAEDED] shadow-lg backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150 select-none"
+            >
+              <Blocks size={18} sweep="diagonal" color="#FF9900" />
+              <span className="text-[12px] font-medium tracking-wide">
+                Arranging architecture graph…
+              </span>
+            </div>
+          )}
+
           <div
-            role="status"
-            aria-live="polite"
-            className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 px-3.5 py-1.5 rounded-[6px] border border-[#FF9900]/40 bg-[#0F141A]/90 text-[#EAEDED] shadow-lg backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150 select-none"
+            className={`w-full h-full transition-opacity duration-200 ${isArranging ? 'opacity-75' : 'opacity-100'
+              } ${isCanvasPanning ? 'is-canvas-panning' : ''}`}
+          onMouseDown={handleCanvasMouseDown}
+          onMouseMove={handleCanvasMouseMove}
           >
-            <Blocks size={18} sweep="diagonal" color="#FF9900" />
-            <span className="text-[12px] font-medium tracking-wide">
-              Arranging architecture graph…
-            </span>
-          </div>
-        )}
-
-        <div
-          className={`w-full h-full transition-opacity duration-200 ${isArranging ? 'opacity-75' : 'opacity-100'
-            }`}
-        >
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -867,327 +887,151 @@ const ArchitectureCanvasInner: React.FC = () => {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onConnectEnd={handleConnectEnd}
             onDragOver={onDragOver}
             onDrop={onDrop}
-            onMove={(_, vp) => {
-              setZoomPercent(Math.round(vp.zoom * 100));
-            }}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            defaultEdgeOptions={flowEdgeOptions}
-            connectionMode={ConnectionMode.Loose}
-            snapToGrid={snapToGrid}
-            snapGrid={[snapGridSize, snapGridSize]}
-            onNodeClick={(_, node) => {
-              openNodeInspector(node.id);
-            }}
-            onEdgeClick={(_, edge) => {
-              openEdgeInspector(edge.id);
-            }}
-            onPaneClick={() => {
-              closeInspector();
-              closeContextMenu();
-            }}
-            onNodeContextMenu={(e, node) => {
-              e.preventDefault();
-              openContextMenu({
-                x: e.clientX,
-                y: e.clientY,
-                type: 'node',
-                targetId: node.id,
-              });
-            }}
-            onEdgeContextMenu={(e, edge) => {
-              e.preventDefault();
-              openContextMenu({
-                x: e.clientX,
-                y: e.clientY,
-                type: 'edge',
-                targetId: edge.id,
-              });
-            }}
-            onPaneContextMenu={(e) => {
-              e.preventDefault();
-              openContextMenu({
-                x: e.clientX,
-                y: e.clientY,
-                type: 'canvas',
-              });
-            }}
-            fitView
-            fitViewOptions={{ padding: 0.18 }}
-            minZoom={0.15}
-            maxZoom={2.5}
-            proOptions={{ hideAttribution: true }}
-          >
-            {canvasGridVariant !== 'none' && (
-              <Background
-                variant={
-                  canvasGridVariant === 'dots'
-                    ? BackgroundVariant.Dots
-                    : canvasGridVariant === 'lines'
-                      ? BackgroundVariant.Lines
-                      : BackgroundVariant.Cross
-                }
-                gap={snapGridSize * 1.5}
-                size={canvasGridVariant === 'dots' ? 1.2 : 1}
-                color={theme === 'dark' ? '#354150' : '#D5DBDB'}
-              />
-            )}
-            {showMiniMap && (
-              <MiniMap
-                style={{
-                  backgroundColor: 'var(--aws-card-bg)',
-                  borderColor: 'var(--aws-border)',
-                }}
-                className="!border !rounded-[4px] !shadow-md !overflow-hidden"
-                nodeColor={miniMapNodeColor}
-                maskColor={theme === 'dark' ? 'rgba(15, 27, 42, 0.75)' : 'rgba(242, 243, 243, 0.75)'}
-                zoomable
-                pannable
-              />
-            )}
-          </ReactFlow>
-        </div>
-
-        {/* Floating Bottom-Center Studio Dock */}
-        <div className="bottom-5 left-1/2 -translate-x-1/2 absolute z-30 pointer-events-auto">
-          <div className="h-11 px-2 rounded-[12px] bg-white/95 dark:bg-[#192534]/95 backdrop-blur-md border border-[#D5DBDB] dark:border-[#354150] shadow-[0_12px_32px_-4px_rgba(0,0,0,0.45)] flex items-center gap-1.5 select-none">
-            {/* + Service */}
-            <div className="relative">
-              <button
-                ref={addServiceTriggerRef}
-                type="button"
-                onClick={() => togglePopover('canvas-add-service')}
-                style={{
-                  backgroundColor: '#FF9900',
-                  color: '#0F141A',
-                }}
-                className="h-8 px-3 rounded-[8px] text-[12px] font-bold flex items-center gap-1.5 shadow-xs hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer"
-                title="Add AWS Service"
-              >
-                <Plus className="w-4 h-4 stroke-[2.5]" />
-                <span>Service</span>
-                <ChevronDown
-                  className="w-3.5 h-3.5 transition-transform duration-200"
-                  style={{ transform: isAddServiceOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                />
-              </button>
-
-              <AnimatedPopover
-                isOpen={isAddServiceOpen}
-                onClose={() => closePopover('canvas-add-service')}
-                triggerRef={addServiceTriggerRef}
-                side="top"
-                className="w-76 p-2 space-y-2"
-              >
-                <div className="text-[11px] font-bold text-[var(--aws-text-muted)] border-b border-[var(--aws-border)] pb-1 px-1">
-                  Add AWS service to canvas
-                </div>
-                <CloudscapeSearchInput
-                  value={serviceSearch}
-                  onChange={setServiceSearch}
-                  placeholder="Filter services by name or ID..."
-                  autoFocus
-                  size="sm"
-                  className="w-full"
-                />
-                <div className="max-h-56 overflow-y-auto custom-scrollbar space-y-0.5">
-                  {filteredQuickAddServices.map((svc) => (
-                    <button
-                      key={svc.id}
-                      type="button"
-                      onClick={() => handleQuickAddService(svc)}
-                      className="w-full text-left px-2.5 py-1.5 rounded-[6px] text-[12px] text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)] transition-colors duration-100 flex items-center justify-between cursor-pointer"
-                    >
-                      <span className="truncate font-medium">{svc.name}</span>
-                      <span className="font-mono text-[10px] text-[var(--aws-text-muted)] ml-2 shrink-0">
-                        {svc.id}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </AnimatedPopover>
-            </div>
-
-            {/* + Boundary */}
-            <div className="relative">
-              <button
-                ref={boundaryTriggerRef}
-                type="button"
-                onClick={() => togglePopover('canvas-boundary')}
-                className={`h-8 px-2.5 rounded-[8px] border text-[12px] font-medium text-[var(--aws-text-primary)] bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] flex items-center gap-1.5 transition-all cursor-pointer ${isBoundaryOpen
-                  ? 'border-[var(--aws-interactive)] ring-1 ring-[var(--aws-interactive)]/20'
-                  : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)]'
-                  }`}
-                title="Add architectural group boundary"
-              >
-                <BoxSelect className="w-4 h-4 text-[#8C4FFF]" />
-                <span>Boundary</span>
-                <ChevronDown
-                  className="w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-200"
-                  style={{ transform: isBoundaryOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                />
-              </button>
-
-              <AnimatedPopover
-                isOpen={isBoundaryOpen}
-                onClose={() => closePopover('canvas-boundary')}
-                triggerRef={boundaryTriggerRef}
-                side="top"
-                className="w-68 space-y-0.5"
-              >
-                <div className="px-2.5 py-1 text-[11px] font-bold text-[var(--aws-text-muted)] border-b border-[var(--aws-border)] mb-1">
-                  Add group boundary
-                </div>
-                {GROUP_BOUNDARIES.map((b) => (
-                  <button
-                    key={b.id}
-                    type="button"
-                    onClick={() => handleAddBoundary(b.id, b.label)}
-                    className="w-full text-left px-2.5 py-1.5 rounded-[6px] text-[12px] text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)] transition-colors flex items-center justify-between gap-4 cursor-pointer"
-                  >
-                    <span className="font-medium">{b.label}</span>
-                    <span className="text-[10px] text-[var(--aws-text-muted)] shrink-0">{b.desc}</span>
-                  </button>
-                ))}
-              </AnimatedPopover>
-            </div>
-
-            {/* + Actor / Note */}
-            <div className="relative">
-              <button
-                ref={actorNoteTriggerRef}
-                type="button"
-                onClick={() => togglePopover('canvas-actor-note')}
-                className={`h-8 px-2.5 rounded-[8px] border text-[12px] font-medium text-[var(--aws-text-primary)] bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] flex items-center gap-1.5 transition-all cursor-pointer ${isActorNoteOpen
-                  ? 'border-[var(--aws-interactive)] ring-1 ring-[var(--aws-interactive)]/20'
-                  : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)]'
-                  }`}
-                title="Add external clients or callout notes"
-              >
-                <Users className="w-4 h-4 text-[#0972D3] dark:text-[#539FE5]" />
-                <span>Actor / Note</span>
-                <ChevronDown
-                  className="w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-200"
-                  style={{ transform: isActorNoteOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                />
-              </button>
-
-              <AnimatedPopover
-                isOpen={isActorNoteOpen}
-                onClose={() => closePopover('canvas-actor-note')}
-                triggerRef={actorNoteTriggerRef}
-                side="top"
-                className="w-76 p-2 space-y-2"
-              >
-                <div className="text-[10px] font-bold text-[var(--aws-text-muted)] uppercase tracking-wider px-1">
-                  External Clients & Callers
-                </div>
-                <div className="space-y-0.5">
-                  {EXTERNAL_ACTORS.map((act) => (
-                    <button
-                      key={act.type}
-                      type="button"
-                      onClick={() => handleQuickAddActor(act.type, act.label)}
-                      className="w-full text-left px-2.5 py-1.5 rounded-[6px] text-[12px] text-[var(--aws-text-primary)] hover:bg-[var(--aws-popover-hover)] transition-colors flex items-center justify-between gap-3 cursor-pointer"
-                    >
-                      <div className="truncate">
-                        <div className="font-medium truncate">{act.label}</div>
-                        <div className="text-[10px] text-[var(--aws-text-muted)] truncate">{act.desc}</div>
-                      </div>
-                      <Users className="w-3.5 h-3.5 text-[var(--aws-interactive)] shrink-0" />
-                    </button>
-                  ))}
-                </div>
-
-                <div className="border-t border-[var(--aws-border)] pt-2">
-                  <div className="text-[10px] font-bold text-[var(--aws-text-muted)] uppercase tracking-wider px-1 mb-1">
-                    Topology Sticky Note
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleQuickAddNote}
-                    className="w-full flex items-center gap-2 p-2 rounded-[6px] border border-dashed border-[var(--aws-border)] hover:border-[var(--aws-interactive)] hover:bg-[var(--aws-interactive)]/10 text-[var(--aws-text-primary)] cursor-pointer text-left transition-colors"
-                  >
-                    <StickyNote className="w-4 h-4 text-[#ED7100] shrink-0" />
-                    <div>
-                      <div className="text-[12px] font-semibold">Add sticky callout note</div>
-                      <div className="text-[10px] text-[var(--aws-text-muted)]">
-                        Document decisions or SLA targets
-                      </div>
-                    </div>
-                  </button>
-                </div>
-              </AnimatedPopover>
-            </div>
-
-            {/* 1px Vertical Divider */}
-            <div className="h-5 w-px bg-[#D5DBDB] dark:bg-[#354150] mx-0.5" aria-hidden="true" />
-
-            {/* Auto-Layout (LR | TB) */}
-            <div className="flex items-center border border-[var(--aws-input-border)] rounded-[8px] overflow-hidden h-8 bg-[var(--aws-card-bg)]">
-              <button
-                type="button"
-                onClick={() => handleTriggerAutoLayout(layoutDirection)}
-                aria-disabled={isArranging ? 'true' : undefined}
-                className="px-2.5 h-full text-[12px] font-medium text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] enabled:active:scale-[0.97] transition-all cursor-pointer flex items-center gap-1.5"
-                title={`Auto-layout diagram using Dagre (${layoutDirection})`}
-              >
-                <AnimatedIcon
-                  activeKey={isArranging ? 'arranging' : 'idle'}
-                  size={14}
-                  className="w-3.5 h-3.5 text-[#0972D3] dark:text-[#539FE5]"
-                >
-                  <LayoutGrid key="idle" className="w-3.5 h-3.5 text-[#0972D3] dark:text-[#539FE5]" />
-                  <Blocks key="arranging" size={14} sweep="diagonal" color="#FF9900" />
-                </AnimatedIcon>
-                <span>Auto-Layout</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const nextDir = layoutDirection === 'LR' ? 'TB' : 'LR';
-                  setLayoutDirection(nextDir);
-                  handleTriggerAutoLayout(nextDir);
-                }}
-                aria-disabled={isArranging ? 'true' : undefined}
-                className="px-2 h-full text-[11px] font-mono font-semibold text-[var(--aws-interactive)] hover:bg-[var(--aws-page-bg)] border-l border-[var(--aws-border)] cursor-pointer"
-                title={`Switch layout direction to ${layoutDirection === 'LR' ? 'Top-to-Bottom (TB)' : 'Left-to-Right (LR)'}`}
-              >
-                {layoutDirection}
-              </button>
-            </div>
-
-            {/* 1px Vertical Divider */}
-            <div className="h-5 w-px bg-[#D5DBDB] dark:bg-[#354150] mx-0.5" aria-hidden="true" />
-
-            {/* Clear Canvas */}
-            <button
-              type="button"
-              onClick={() => {
-                if (window.confirm('Clear all nodes and edges from canvas?')) {
-                  clearCanvas();
+            selectionOnDrag={true}
+            panOnDrag={[1, 2]}
+            selectionMode={SelectionMode.Partial}
+            multiSelectionKeyCode={['Shift', 'Meta', 'Control']}
+            onNodeDragStop={handleNodeDragStop}
+              onMoveStart = {(event) => {
+                if (event && ('button' in event || 'buttons' in event)) {
+                  const me = event as MouseEvent;
+          if (me.button === 2 || me.button === 1 || (me.buttons && ((me.buttons & 2) !== 0 || (me.buttons & 4) !== 0))) {
+            setIsCanvasPanning(true);
+                  }
                 }
               }}
-              className="size-8 rounded-[8px] flex items-center justify-center text-[var(--aws-text-muted)] hover:text-[#DD344C] hover:bg-[#DD344C]/10 transition-colors cursor-pointer"
-              title="Clear canvas"
-              aria-label="Clear canvas"
+          onMove={(event, vp) => {
+            setZoomPercent(Math.round(vp.zoom * 100));
+            if (event && 'buttons' in event) {
+              const me = event as MouseEvent;
+              if ((me.buttons & 2) !== 0 || (me.buttons & 4) !== 0) {
+                setIsCanvasPanning(true);
+              }
+            }
+          }}
+          onMoveEnd={() => {
+            panStartRef.current = null;
+            setIsCanvasPanning(false);
+          }}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          defaultEdgeOptions={flowEdgeOptions}
+          connectionMode={ConnectionMode.Loose}
+          snapToGrid={snapToGrid}
+          snapGrid={[snapGridSize, snapGridSize]}
+          onNodeClick={(_, node) => {
+            openNodeInspector(node.id);
+          }}
+          onEdgeClick={(_, edge) => {
+            openEdgeInspector(edge.id);
+          }}
+          onPaneClick={() => {
+            closeInspector();
+            closeContextMenu();
+          }}
+          onNodeContextMenu={(e, node) => {
+            e.preventDefault();
+            panStartRef.current = null;
+            setIsCanvasPanning(false);
+            openContextMenu({
+              x: e.clientX,
+              y: e.clientY,
+              type: 'node',
+              targetId: node.id,
+            });
+          }}
+          onEdgeContextMenu={(e, edge) => {
+            e.preventDefault();
+            panStartRef.current = null;
+            setIsCanvasPanning(false);
+            openContextMenu({
+              x: e.clientX,
+              y: e.clientY,
+              type: 'edge',
+              targetId: edge.id,
+            });
+          }}
+          onPaneContextMenu={(e) => {
+            e.preventDefault();
+            panStartRef.current = null;
+            setIsCanvasPanning(false);
+            openContextMenu({
+              x: e.clientX,
+              y: e.clientY,
+              type: 'canvas',
+            });
+          }}
+          fitView
+          fitViewOptions={{ padding: 0.18 }}
+          minZoom={0.15}
+          maxZoom={2.5}
+          proOptions={{ hideAttribution: true }}
             >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+          {canvasGridVariant !== 'none' && (
+            <Background
+              variant={
+                canvasGridVariant === 'dots'
+                  ? BackgroundVariant.Dots
+                  : canvasGridVariant === 'lines'
+                    ? BackgroundVariant.Lines
+                    : BackgroundVariant.Cross
+              }
+              gap={snapGridSize * 1.5}
+              size={canvasGridVariant === 'dots' ? 1.2 : 1}
+              color={theme === 'dark' ? '#354150' : '#D5DBDB'}
+            />
+          )}
+          {showMiniMap && (
+            <MiniMap
+              style={{
+                backgroundColor: 'var(--aws-card-bg)',
+                borderColor: 'var(--aws-border)',
+              }}
+              className="!border !rounded-[4px] !shadow-md !overflow-hidden"
+              nodeColor={miniMapNodeColor}
+              maskColor={theme === 'dark' ? 'rgba(15, 27, 42, 0.75)' : 'rgba(242, 243, 243, 0.75)'}
+              zoomable
+              pannable
+            />
+          )}
+        </ReactFlow>
       </div>
-    </div>
 
-              {/* Right Context Menu Floating Popover */ }
-  <CanvasContextMenu />
+      {/* Unified Floating Studio Dock (Context-Sensitive & Responsive) */}
+      <CanvasFormatBar
+        onFitView={() => reactFlowInstance.fitView({ padding: 0.18, duration: 250 })}
+        onAutoLayout={(dir) => handleTriggerAutoLayout(dir)}
+        layoutDirection={layoutDirection}
+        onChangeLayoutDirection={setLayoutDirection}
+        isArranging={isArranging}
+      />
+    </div>
+      </div >
+
+  {/* Right Context Menu Floating Popover */ }
+  < CanvasContextMenu />
 
   {/* Docked Resizable Dual-Tab Split Panel */ }
-  <NodeInspectorDrawer />
-            </div >
-            );
+  < NodeInspectorDrawer />
+
+  {/* Drop Wire on Empty Canvas - Quick Connect Node Spawner */ }
+  < QuickConnectPopover
+isOpen = { quickConnectState.isOpen }
+onClose = {() => setQuickConnectState((s) => ({ ...s, isOpen: false }))}
+sourceNodeId = { quickConnectState.sourceNodeId }
+sourceNodeLabel = { quickConnectState.sourceNodeLabel }
+sourceServiceId = { quickConnectState.sourceServiceId }
+sourceCategory = { quickConnectState.sourceCategory }
+sourceHandleId = { quickConnectState.sourceHandleId }
+screenPosition = { quickConnectState.screenPosition }
+flowPosition = { quickConnectState.flowPosition }
+onSelectTarget = { handleQuickConnectSelectTarget }
+  />
+    </div >
+  );
 };
 
 export const ArchitectureCanvas: React.FC = () => {

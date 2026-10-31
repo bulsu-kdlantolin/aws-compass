@@ -4,6 +4,7 @@ import {
   ChevronRight,
   ChevronsUpDown,
   Search,
+  Star,
   X,
 } from 'lucide-react';
 import { useCompassStore, DEFAULT_CATEGORIES } from '../../store/useCompassStore';
@@ -22,7 +23,7 @@ export const ServiceCatalog: React.FC = () => {
     setSearch,
     setCategoryFilter,
     setTierFilter,
-    setStudyStatusFilter,
+    setFavoritesFilter,
     reorderService,
     moveServiceToCategory,
   } = useCompassStore();
@@ -75,8 +76,8 @@ export const ServiceCatalog: React.FC = () => {
         return false;
       }
 
-      // Study status filter
-      if (filter.studyStatus !== 'All' && svc.studyStatus !== filter.studyStatus) {
+      // Favorites filter
+      if (filter.favoritesOnly && !svc.isFavorite) {
         return false;
       }
 
@@ -88,7 +89,7 @@ export const ServiceCatalog: React.FC = () => {
     filter.search.trim() !== '' ||
     filter.category !== 'All' ||
     filter.tier !== 'All' ||
-    filter.studyStatus !== 'All';
+    filter.favoritesOnly;
 
   // Group filtered services by category (preserving custom ordering)
   const servicesByCategory = useMemo(() => {
@@ -130,7 +131,7 @@ export const ServiceCatalog: React.FC = () => {
     setSearch('');
     setCategoryFilter('All');
     setTierFilter('All');
-    setStudyStatusFilter('All');
+    setFavoritesFilter(false);
   };
 
   const isSearching = filter.search.trim().length > 0;
@@ -250,62 +251,80 @@ export const ServiceCatalog: React.FC = () => {
         }}
         className="h-12 px-2.5 border-b flex items-center gap-1.5 shrink-0 select-none"
       >
-          <div className="relative flex-1">
-            <div className="h-8 w-full rounded-[6px] bg-[var(--aws-page-bg)] border border-[var(--aws-input-border)] focus-within:border-[var(--aws-interactive)] flex items-center px-2.5 gap-2 transition-[border-color,box-shadow] duration-150">
-              <Search className="w-3.5 h-3.5 text-[var(--aws-text-muted)] shrink-0" strokeWidth={1.75} />
-              <input
-                type="text"
-                value={filter.search}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder="Filter services..."
-                className="w-full bg-transparent text-[12px] text-[var(--aws-text-primary)] placeholder-[var(--aws-text-muted)] focus:outline-none min-w-0"
-              />
-              {filter.search && (
-                <button
-                  type="button"
-                  onClick={() => handleSearchChange('')}
-                  className="text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] p-0.5 rounded cursor-pointer shrink-0"
-                  title="Clear search"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
+        <div className="relative flex-1">
+          <div className="h-8 w-full rounded-[6px] bg-[var(--aws-page-bg)] border border-[var(--aws-input-border)] focus-within:border-[var(--aws-interactive)] flex items-center px-2.5 gap-2 transition-[border-color,box-shadow] duration-150">
+            <div className="flex items-center justify-center shrink-0 pointer-events-none" aria-hidden="true">
+              <Search className="w-3.5 h-3.5 text-[var(--aws-text-muted)]" strokeWidth={1.75} />
             </div>
+            <input
+              type="text"
+              value={filter.search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Filter services..."
+              className="w-full h-full bg-transparent text-[12px] text-[var(--aws-text-primary)] placeholder:text-[var(--aws-text-muted)] focus:outline-none min-w-0 flex-1 leading-normal self-center p-0 border-none"
+            />
+            {filter.search && (
+              <button
+                type="button"
+                onClick={() => handleSearchChange('')}
+                className="text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] p-0.5 rounded cursor-pointer shrink-0"
+                title="Clear search"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+            {/* 1-click Favorites Filter button */}
+            <button
+              type="button"
+              onClick={() => setFavoritesFilter(!filter.favoritesOnly)}
+              className={`p-1 rounded-[4px] cursor-pointer shrink-0 transition-colors ${filter.favoritesOnly
+                ? 'text-[#FF9900] bg-[#FF9900]/10 hover:bg-[#FF9900]/20'
+                : 'text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-card-bg)]'
+                }`}
+              title={filter.favoritesOnly ? 'Showing favorited services only (Click to show all)' : 'Show favorited services only'}
+              aria-label="Filter favorited services"
+            >
+              <Star
+                className={`w-3.5 h-3.5 transition-transform active:scale-90 ${filter.favoritesOnly ? 'fill-[#FF9900] text-[#FF9900]' : ''
+                  }`}
+              />
+            </button>
           </div>
-
-          {/* Sidebar Collapse Button */}
-          <button
-            type="button"
-            onClick={toggleSidebar}
-            className="h-8 w-8 rounded-[6px] flex items-center justify-center text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border border-[var(--aws-border)]/70 hover:border-[var(--aws-border)] transition-all cursor-pointer shadow-2xs shrink-0 group"
-            title="Collapse sidebar"
-            aria-label="Collapse sidebar"
-          >
-            <ChevronLeft className="w-4 h-4 text-[var(--aws-text-muted)] group-hover:text-[var(--aws-text-primary)] transition-colors" strokeWidth={2} />
-          </button>
         </div>
 
-        {/* Segmented Tier Filter Track */}
-        <div
-          style={{
-            borderBottomColor: 'var(--aws-border)',
-            backgroundColor: 'var(--aws-card-bg)',
-          }}
-          className="p-2 border-b shrink-0"
+        {/* Sidebar Collapse Button */}
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          className="h-8 w-8 rounded-[6px] flex items-center justify-center text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border border-[var(--aws-border)]/70 hover:border-[var(--aws-border)] transition-all cursor-pointer shadow-2xs shrink-0 group"
+          title="Collapse sidebar"
+          aria-label="Collapse sidebar"
         >
-          <div className="h-7 p-0.5 rounded-[6px] bg-[var(--aws-page-bg)] border border-[var(--aws-border)] grid grid-cols-4 gap-0.5">
-            {(['All', 1, 2, 3] as const).map((tierVal) => {
-              const isSelected = filter.tier === tierVal;
-              const label = tierVal === 'All' ? 'All' : `Tier ${tierVal}`;
-              return (
-                <button
-                  key={tierVal}
-                  type="button"
-                  onClick={() => setTierFilter(tierVal)}
+          <ChevronLeft className="w-4 h-4 text-[var(--aws-text-muted)] group-hover:text-[var(--aws-text-primary)] transition-colors" strokeWidth={2} />
+        </button>
+      </div>
+
+      {/* Segmented Tier Filter Track */}
+      <div
+        style={{
+          borderBottomColor: 'var(--aws-border)',
+          backgroundColor: 'var(--aws-card-bg)',
+        }}
+        className="p-2 border-b shrink-0"
+      >
+        <div className="h-7 p-0.5 rounded-[6px] bg-[var(--aws-page-bg)] border border-[var(--aws-border)] grid grid-cols-4 gap-0.5">
+          {(['All', 1, 2, 3] as const).map((tierVal) => {
+            const isSelected = filter.tier === tierVal;
+            const label = tierVal === 'All' ? 'All' : `Tier ${tierVal}`;
+            return (
+              <button
+                key={tierVal}
+                type="button"
+                onClick={() => setTierFilter(tierVal)}
                 className={`rounded-[4px] text-[11px] font-medium flex items-center justify-center transition-all duration-150 cursor-pointer ${isSelected
-                      ? 'bg-[var(--aws-card-bg)] text-[var(--aws-text-primary)] font-semibold shadow-xs'
-                      : 'text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)]'
-                }`}
+                  ? 'bg-[var(--aws-card-bg)] text-[var(--aws-text-primary)] font-semibold shadow-xs'
+                  : 'text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)]'
+                  }`}
               >
                 {label}
               </button>
@@ -323,7 +342,9 @@ export const ServiceCatalog: React.FC = () => {
         className="px-3 py-1.5 border-b flex items-center justify-between text-[11px] text-[var(--aws-text-muted)] shrink-0"
       >
         <span className="tabular-nums font-mono">
-          {filteredServices.length} of {services.length} services
+          {filter.favoritesOnly
+            ? `${filteredServices.length} favorites`
+            : `${filteredServices.length} of ${services.length} services`}
         </span>
 
         {/* Tree Collapse / Expand All Button */}
@@ -407,115 +428,114 @@ export const ServiceCatalog: React.FC = () => {
                       ? 'rgba(255, 153, 0, 0.15)'
                       : 'var(--aws-card-bg)',
                   }}
-                  className={`group w - full ${ isCompact? 'h-6 px-1.5': 'h-7 px-2' } flex items - center justify - between text - left transition - [background - color, box - shadow] duration - 150 relative ${
-              isHeaderTarget && draggedServiceId
-              ? 'ring-2 ring-[#FF9900] border-l-4 border-l-[#FF9900]'
-              : 'hover:bg-[var(--aws-page-bg)]'
-                  }`}
+                  className={`group w - full ${isCompact ? 'h-6 px-1.5' : 'h-7 px-2'} flex items - center justify - between text - left transition - [background - color, box - shadow] duration - 150 relative ${isHeaderTarget && draggedServiceId
+                    ? 'ring-2 ring-[#FF9900] border-l-4 border-l-[#FF9900]'
+                    : 'hover:bg-[var(--aws-page-bg)]'
+                    }`}
                 >
-            {/* Category Header Left: Chevron + Label */}
-            <button
-              type="button"
-              onClick={() => toggleCategory(cat)}
-              className="flex items-center gap-1.5 min-w-0 flex-1 text-left cursor-pointer focus:outline-none"
-            >
-              <ChevronRight
-                className={`w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-150 shrink-0 ${isCollapsed ? '' : 'rotate-90'
-                  }`}
-                strokeWidth={2}
-              />
-              <span className="text-[12px] font-semibold text-[var(--aws-text-primary)] truncate">
-                {cat}
-              </span>
-            </button>
+                  {/* Category Header Left: Chevron + Label */}
+                  <button
+                    type="button"
+                    onClick={() => toggleCategory(cat)}
+                    className="flex items-center gap-1.5 min-w-0 flex-1 text-left cursor-pointer focus:outline-none"
+                  >
+                    <ChevronRight
+                      className={`w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-150 shrink-0 ${isCollapsed ? '' : 'rotate-90'
+                        }`}
+                      strokeWidth={2}
+                    />
+                    <span className="text-[12px] font-semibold text-[var(--aws-text-primary)] truncate">
+                      {cat}
+                    </span>
+                  </button>
 
-            {/* Category Header Right: Active Drop Badge or Count */}
-            {
-              isHeaderTarget && draggedServiceId ? (
-                <span className="text-[10px] font-bold text-[#FF9900] bg-[#FF9900]/20 px-1.5 py-0.5 rounded animate-pulse shrink-0">
-                  + Move to {cat}
-                </span>
-              ) : (
-                <span className="text-[10px] font-mono text-[var(--aws-text-muted)] shrink-0">
-                  {catServices.length}
-                </span>
-              )
-            }
-          </div>
-
-          {/* Category Service Items */}
-          {!isCollapsed && (
-            <div
-              className="pl-2 relative"
-              onDragOver={(e) => {
-                if (draggedServiceId) {
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = 'move';
-                }
-              }}
-              onDrop={async (e) => {
-                if (e.target === e.currentTarget && draggedServiceId) {
-                  e.preventDefault();
-                  await moveServiceToCategory(draggedServiceId, cat, 'end');
-                  handleCardDragEnd();
-                }
-              }}
-            >
-              {catServices.length === 0 ? (
-                <div
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    setTargetCategoryHeader(cat);
-                  }}
-                  onDragLeave={() => setTargetCategoryHeader(null)}
-                  onDrop={async (e) => {
-                    e.preventDefault();
-                    const sourceId =
-                      e.dataTransfer.getData('application/aws-service-id') ||
-                      draggedServiceId;
-                    setTargetCategoryHeader(null);
-                    setDraggedServiceId(null);
-                    if (sourceId) {
-                      await moveServiceToCategory(sourceId, cat, 'start');
-                    }
-                  }}
-                  className="py-2 px-3 text-center border border-dashed border-[var(--aws-border)] rounded mx-2 my-1.5 text-[11px] text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)]/50 hover:border-[#FF9900] transition-colors"
-                >
-                  Drop service here to move to {cat}
+                  {/* Category Header Right: Active Drop Badge or Count */}
+                  {
+                    isHeaderTarget && draggedServiceId ? (
+                      <span className="text-[10px] font-bold text-[#FF9900] bg-[#FF9900]/20 px-1.5 py-0.5 rounded animate-pulse shrink-0">
+                        + Move to {cat}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-mono text-[var(--aws-text-muted)] shrink-0">
+                        {catServices.length}
+                      </span>
+                    )
+                  }
                 </div>
-              ) : (
-                catServices.map((svc, index) => (
-                  <ServiceCard
-                    key={svc.id}
-                    service={svc}
-                    isSelected={svc.id === selectedServiceId}
-                    isDragging={draggedServiceId === svc.id}
-                    dropPosition={targetCardId === svc.id ? targetCardDropPosition : null}
-                    onSelect={() => setSelectedServiceId(svc.id)}
-                    onDragStart={handleCardDragStart}
-                    onDragOver={handleCardDragOver}
-                    onDragLeave={handleCardDragLeave}
-                    onDrop={handleCardDrop}
-                    onDragEnd={handleCardDragEnd}
-                    onMoveUp={() => {
-                      if (index > 0) {
-                        reorderService(svc.id, catServices[index - 1].id, 'before', cat);
+
+                {/* Category Service Items */}
+                {!isCollapsed && (
+                  <div
+                    className="pl-2 relative"
+                    onDragOver={(e) => {
+                      if (draggedServiceId) {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
                       }
                     }}
-                    onMoveDown={() => {
-                      if (index < catServices.length - 1) {
-                        reorderService(svc.id, catServices[index + 1].id, 'after', cat);
+                    onDrop={async (e) => {
+                      if (e.target === e.currentTarget && draggedServiceId) {
+                        e.preventDefault();
+                        await moveServiceToCategory(draggedServiceId, cat, 'end');
+                        handleCardDragEnd();
                       }
                     }}
-                  />
-                ))
-              )}
-            </div>
-          )}
-        </div>
-        );
-})
+                  >
+                    {catServices.length === 0 ? (
+                      <div
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                          setTargetCategoryHeader(cat);
+                        }}
+                        onDragLeave={() => setTargetCategoryHeader(null)}
+                        onDrop={async (e) => {
+                          e.preventDefault();
+                          const sourceId =
+                            e.dataTransfer.getData('application/aws-service-id') ||
+                            draggedServiceId;
+                          setTargetCategoryHeader(null);
+                          setDraggedServiceId(null);
+                          if (sourceId) {
+                            await moveServiceToCategory(sourceId, cat, 'start');
+                          }
+                        }}
+                        className="py-2 px-3 text-center border border-dashed border-[var(--aws-border)] rounded mx-2 my-1.5 text-[11px] text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)]/50 hover:border-[#FF9900] transition-colors"
+                      >
+                        Drop service here to move to {cat}
+                      </div>
+                    ) : (
+                      catServices.map((svc, index) => (
+                        <ServiceCard
+                          key={svc.id}
+                          service={svc}
+                          isSelected={svc.id === selectedServiceId}
+                          isDragging={draggedServiceId === svc.id}
+                          dropPosition={targetCardId === svc.id ? targetCardDropPosition : null}
+                          onSelect={() => setSelectedServiceId(svc.id)}
+                          onDragStart={handleCardDragStart}
+                          onDragOver={handleCardDragOver}
+                          onDragLeave={handleCardDragLeave}
+                          onDrop={handleCardDrop}
+                          onDragEnd={handleCardDragEnd}
+                          onMoveUp={() => {
+                            if (index > 0) {
+                              reorderService(svc.id, catServices[index - 1].id, 'before', cat);
+                            }
+                          }}
+                          onMoveDown={() => {
+                            if (index < catServices.length - 1) {
+                              reorderService(svc.id, catServices[index + 1].id, 'after', cat);
+                            }
+                          }}
+                        />
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
       </div >
     </aside >

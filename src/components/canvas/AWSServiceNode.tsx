@@ -4,7 +4,6 @@ import { X, Check } from 'lucide-react';
 import type { CanvasNodeData } from '../../types/aws';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { AWSServiceIcon } from '../icons/AWSServiceIcon';
-import { CloudscapeStatusIndicator } from '../ui/CloudscapeStatusIndicator';
 
 export const AWSServiceNode = memo((props: NodeProps) => {
   const nodeData = props.data as unknown as CanvasNodeData;
@@ -130,16 +129,7 @@ export const AWSServiceNode = memo((props: NodeProps) => {
           <AWSServiceIcon serviceId={nodeData.serviceId} size={48} variant="service" />
         )}
 
-        {/* 4-Way Directional Connection Handles: Target & Source pairs */}
-        <Handle
-          type="target"
-          position={Position.Top}
-          id="top"
-          isConnectable={true}
-          style={{ backgroundColor: 'var(--aws-interactive)' }}
-          className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Connect (Top)"
-        />
+        {/* 4-Way Directional Connection Handles with Explicit IDs */}
         <Handle
           type="source"
           position={Position.Top}
@@ -148,16 +138,6 @@ export const AWSServiceNode = memo((props: NodeProps) => {
           style={{ backgroundColor: 'var(--aws-interactive)' }}
           className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
           title="Connect (Top)"
-        />
-
-        <Handle
-          type="target"
-          position={Position.Right}
-          id="right"
-          isConnectable={true}
-          style={{ backgroundColor: 'var(--aws-interactive)' }}
-          className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Connect (Right)"
         />
         <Handle
           type="source"
@@ -168,16 +148,6 @@ export const AWSServiceNode = memo((props: NodeProps) => {
           className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
           title="Connect (Right)"
         />
-
-        <Handle
-          type="target"
-          position={Position.Bottom}
-          id="bottom"
-          isConnectable={true}
-          style={{ backgroundColor: 'var(--aws-interactive)' }}
-          className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Connect (Bottom)"
-        />
         <Handle
           type="source"
           position={Position.Bottom}
@@ -186,16 +156,6 @@ export const AWSServiceNode = memo((props: NodeProps) => {
           style={{ backgroundColor: 'var(--aws-interactive)' }}
           className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
           title="Connect (Bottom)"
-        />
-
-        <Handle
-          type="target"
-          position={Position.Left}
-          id="left"
-          isConnectable={true}
-          style={{ backgroundColor: 'var(--aws-interactive)' }}
-          className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Connect (Left)"
         />
         <Handle
           type="source"
@@ -206,13 +166,6 @@ export const AWSServiceNode = memo((props: NodeProps) => {
           className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
           title="Connect (Left)"
         />
-
-        {/* Study status small indicator dot in corner */}
-        {!nodeData.isActor && nodeData.status && nodeData.status !== 'not-started' && (
-          <span className="absolute -bottom-1 -right-1 bg-[var(--aws-card-bg)] rounded-full p-0.5 shadow-xs">
-            <CloudscapeStatusIndicator status={nodeData.status} showLabel={false} />
-          </span>
-        )}
       </div>
 
       {/* Service Title (12px bold sentence case, double-click inline edit) */}

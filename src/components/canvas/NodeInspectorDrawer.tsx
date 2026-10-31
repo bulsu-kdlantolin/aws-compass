@@ -16,6 +16,7 @@ import {
   BoxSelect,
   StickyNote,
   Users,
+  Star,
 } from 'lucide-react';
 import { useReactFlow } from '@xyflow/react';
 import { useCompassStore } from '../../store/useCompassStore';
@@ -24,7 +25,6 @@ import { MermaidViewer } from '../vault/MermaidViewer';
 import { AWSServiceIcon } from '../icons/AWSServiceIcon';
 import { CloudscapeSplitPanel } from '../ui/CloudscapeSplitPanel';
 import { CloudscapeTabs } from '../ui/CloudscapeTabs';
-import { CloudscapeStatusIndicator } from '../ui/CloudscapeStatusIndicator';
 import { CloudscapeCodeBlock } from '../ui/CloudscapeCodeBlock';
 import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
 import { CloudscapeSelect, type CloudscapeSelectOption } from '../ui/CloudscapeSelect';
@@ -38,7 +38,6 @@ import type {
   GroupBoundaryType,
   ExternalActorType,
   NodeEnvironment,
-  StudyStatus,
 } from '../../types/aws';
 
 const PROTOCOLS: EdgeProtocol[] = [
@@ -103,13 +102,6 @@ const COLOR_PRESETS = [
   { label: 'Neutral', color: '#879596' },
 ];
 
-const STUDY_STATUS_OPTIONS: { value: StudyStatus; label: string }[] = [
-  { value: 'not-started', label: 'Not started' },
-  { value: 'in-progress', label: 'In progress' },
-  { value: 'mastered', label: 'Mastered' },
-  { value: 'review', label: 'Review' },
-];
-
 const LINE_STYLE_OPTIONS: { value: EdgeLineStyle; label: string }[] = [
   { value: 'solid', label: 'Solid' },
   { value: 'dashed', label: 'Dashed' },
@@ -144,7 +136,6 @@ export const NodeInspectorDrawer: React.FC = () => {
   const openNodeInspector = useCanvasStore((s) => s.openNodeInspector);
   const updateNodeProperties = useCanvasStore((s) => s.updateNodeProperties);
   const updateNodeParent = useCanvasStore((s) => s.updateNodeParent);
-  const updateNodeStatus = useCanvasStore((s) => s.updateNodeStatus);
   const updateEdgeProperties = useCanvasStore((s) => s.updateEdgeProperties);
   const reverseEdgeDirection = useCanvasStore((s) => s.reverseEdgeDirection);
   const removeNode = useCanvasStore((s) => s.removeNode);
@@ -152,7 +143,7 @@ export const NodeInspectorDrawer: React.FC = () => {
   const duplicateNode = useCanvasStore((s) => s.duplicateNode);
 
   const services = useCompassStore((s) => s.services);
-  const updateServiceStatus = useCompassStore((s) => s.updateServiceStatus);
+  const toggleFavorite = useCompassStore((s) => s.toggleFavorite);
   const setWorkspaceMode = useCompassStore((s) => s.setWorkspaceMode);
   const setSelectedServiceId = useCompassStore((s) => s.setSelectedServiceId);
 
@@ -257,14 +248,35 @@ export const NodeInspectorDrawer: React.FC = () => {
   );
 
   const headerActions = currentNode ? (
-    <button
-      type="button"
-      onClick={handleFocusNode}
-      className="p-1 rounded-[4px] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] hover:bg-[#EAEDED]/60 dark:hover:bg-[#1E2B3D] transition-colors cursor-pointer"
-      title="Center canvas on this node"
-    >
-      <Maximize2 className="w-4 h-4" />
-    </button>
+    <div className="flex items-center gap-1">
+      {service && (
+        <button
+          type="button"
+          onClick={() => toggleFavorite(service.id)}
+          className={`p-1 rounded-[4px] transition-colors cursor-pointer enabled:active:scale-[0.96] ${
+            service.isFavorite
+              ? 'text-[#FF9900] hover:bg-[#FF9900]/10'
+              : 'text-[#545B64] dark:text-[#879596] hover:text-[#FF9900] hover:bg-[#EAEDED]/60 dark:hover:bg-[#1E2B3D]'
+          }`}
+          title={service.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          aria-label="Toggle favorite"
+        >
+          <Star
+            className={`w-4 h-4 transition-transform active:scale-90 ${
+              service.isFavorite ? 'fill-[#FF9900] text-[#FF9900]' : ''
+            }`}
+          />
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={handleFocusNode}
+        className="p-1 rounded-[4px] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] hover:bg-[#EAEDED]/60 dark:hover:bg-[#1E2B3D] transition-colors cursor-pointer"
+        title="Center canvas on this node"
+      >
+        <Maximize2 className="w-4 h-4" />
+      </button>
+    </div>
   ) : null;
 
   return (
@@ -282,7 +294,7 @@ export const NodeInspectorDrawer: React.FC = () => {
           { id: 'properties', label: 'Properties' },
           {
             id: 'dossier',
-            label: service ? '6-Part dossier' : 'Architecture guide',
+            label: service ? 'Documentation' : 'Architecture guide',
             icon: <BookOpen className="w-4 h-4" />,
           },
         ]}
@@ -393,28 +405,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 3. Study Mastery Status */}
-                <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
-                      Study Mastery
-                    </span>
-                    <CloudscapeStatusIndicator status={currentNode.data.status} />
-                  </div>
-
-                  <SegmentedControl<StudyStatus>
-                    size="sm"
-                    options={STUDY_STATUS_OPTIONS}
-                    value={(currentNode.data.status as StudyStatus) || 'not-started'}
-                    onChange={async (st) => {
-                      await updateServiceStatus(currentNode.data.serviceId, st);
-                      updateNodeStatus(currentNode.data.serviceId, st);
-                    }}
-                    className="w-full justify-between"
-                  />
-                </div>
-
-                {/* 4. Active Canvas Connections */}
+                {/* 3. Active Canvas Connections */}
                 <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
@@ -624,11 +615,10 @@ export const NodeInspectorDrawer: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => updateNodeProperties(currentNode.id, { accentColor: undefined })}
-                        className={`text-[11px] h-6 px-2 rounded-[4px] border cursor-pointer font-medium transition-colors ${
-                          !currentNode.data.accentColor
+                        className={`text-[11px] h-6 px-2 rounded-[4px] border cursor-pointer font-medium transition-colors ${!currentNode.data.accentColor
                             ? 'border-[#0972D3] bg-[#0972D3]/10 text-[#0972D3] dark:border-[#539FE5] dark:text-[#539FE5]'
                             : 'border-[#D5DBDB] dark:border-[#2A3647] text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D]'
-                        }`}
+                          }`}
                       >
                         Default
                       </button>
@@ -640,11 +630,10 @@ export const NodeInspectorDrawer: React.FC = () => {
                             type="button"
                             onClick={() => updateNodeProperties(currentNode.id, { accentColor: p.color })}
                             style={{ backgroundColor: p.color }}
-                            className={`size-5 rounded-full transition-transform cursor-pointer ${
-                              isSelected
+                            className={`size-5 rounded-full transition-transform cursor-pointer ${isSelected
                                 ? 'scale-110 ring-2 ring-[#0972D3] dark:ring-[#539FE5] ring-offset-2 ring-offset-white dark:ring-offset-[#141C28]'
                                 : 'hover:scale-105 opacity-80 hover:opacity-100'
-                            }`}
+                              }`}
                             title={p.label}
                           />
                         );
@@ -873,11 +862,10 @@ export const NodeInspectorDrawer: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => updateEdgeProperties(currentEdge.id, { edgeColor: undefined })}
-                        className={`text-[11px] h-6 px-2 rounded-[4px] border cursor-pointer font-medium transition-colors ${
-                          !currentEdge.data?.edgeColor
+                        className={`text-[11px] h-6 px-2 rounded-[4px] border cursor-pointer font-medium transition-colors ${!currentEdge.data?.edgeColor
                             ? 'border-[#0972D3] bg-[#0972D3]/10 text-[#0972D3] dark:border-[#539FE5] dark:text-[#539FE5]'
                             : 'border-[#D5DBDB] dark:border-[#2A3647] text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D]'
-                        }`}
+                          }`}
                       >
                         Default
                       </button>
@@ -889,11 +877,10 @@ export const NodeInspectorDrawer: React.FC = () => {
                             type="button"
                             onClick={() => updateEdgeProperties(currentEdge.id, { edgeColor: p.color })}
                             style={{ backgroundColor: p.color }}
-                            className={`size-5 rounded-full transition-transform cursor-pointer ${
-                              isSelected
+                            className={`size-5 rounded-full transition-transform cursor-pointer ${isSelected
                                 ? 'scale-110 ring-2 ring-[#0972D3] dark:ring-[#539FE5] ring-offset-2 ring-offset-white dark:ring-offset-[#141C28]'
                                 : 'hover:scale-105 opacity-80 hover:opacity-100'
-                            }`}
+                              }`}
                             title={p.label}
                           />
                         );
@@ -988,7 +975,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-[4px] font-bold text-[14px] hover:bg-[#EC7211] transition-colors shadow-xs cursor-pointer"
                   >
                     <BookOpen className="w-4 h-4" />
-                    <span>Open in Concept Vault dossier</span>
+                    <span>Open in Concept Vault documentation</span>
                   </button>
 
                   {(() => {
@@ -1018,12 +1005,12 @@ export const NodeInspectorDrawer: React.FC = () => {
                   {currentNode?.data.isBoundary
                     ? 'Architecture group boundaries delineate network tiers, security scopes, regions, and VPC containment per AWS Well-Architected Framework.'
                     : currentNode?.data.isActor
-                    ? 'External actors represent clients, users, corporate systems, or 3rd-party webhook endpoints initiating requests into the AWS perimeter.'
-                    : currentNode?.data.isAnnotation
-                    ? 'Architecture notes capture ADR decisions, SLA agreements, or compliance constraints directly on the topology diagram.'
-                    : currentEdge
-                    ? 'Connection lines define protocol data flows, auth assumption roles, and asynchronous event triggers between architecture nodes.'
-                    : 'Select any node or connection on the canvas to configure properties.'}
+                      ? 'External actors represent clients, users, corporate systems, or 3rd-party webhook endpoints initiating requests into the AWS perimeter.'
+                      : currentNode?.data.isAnnotation
+                        ? 'Architecture notes capture ADR decisions, SLA agreements, or compliance constraints directly on the topology diagram.'
+                        : currentEdge
+                          ? 'Connection lines define protocol data flows, auth assumption roles, and asynchronous event triggers between architecture nodes.'
+                          : 'Select any node or connection on the canvas to configure properties.'}
                 </p>
               </div>
             )}

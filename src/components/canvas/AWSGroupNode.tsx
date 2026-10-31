@@ -53,22 +53,22 @@ const BOUNDARY_RULES: Record<string, BoundaryStyleRule> = {
     groupId: 'public-subnet',
     dashed: false,
     borderLight: '#1D8102',
-    borderDark: '#1D8102',
-    bgLight: 'rgba(29, 129, 2, 0.05)',
-    bgDark: 'rgba(29, 129, 2, 0.05)',
+    borderDark: '#2EA043',
+    bgLight: 'rgba(46, 160, 67, 0.03)',
+    bgDark: 'rgba(46, 160, 67, 0.03)',
     textLight: '#1D8102',
-    textDark: '#1D8102',
+    textDark: '#2EA043',
   },
   'private-subnet': {
     label: 'Private subnet',
     groupId: 'private-subnet',
     dashed: false,
     borderLight: '#0073BB',
-    borderDark: '#0073BB',
-    bgLight: 'rgba(0, 115, 187, 0.05)',
-    bgDark: 'rgba(0, 115, 187, 0.05)',
+    borderDark: '#539FE5',
+    bgLight: 'rgba(83, 159, 229, 0.03)',
+    bgDark: 'rgba(83, 159, 229, 0.03)',
     textLight: '#0073BB',
-    textDark: '#0073BB',
+    textDark: '#539FE5',
   },
   'security-group': {
     label: 'Security group',
@@ -196,16 +196,19 @@ export const AWSGroupNode = memo((props: NodeProps) => {
         height: `${nodeHeight}px`,
         pointerEvents: 'none',
       }}
-      className={`relative rounded - none select - none transition - shadow ${ selected? 'ring-2 ring-[var(--aws-brand)] shadow-lg': '' }`}
+      className={`relative rounded-none select-none transition-shadow ${selected ? 'ring-2 ring-[var(--aws-brand)] shadow-lg' : ''}`}
     >
-      {/* NodeResizer Controls (minWidth=220, minHeight=160) */}
+      {/* NodeResizer Controls (minWidth=280, minHeight=160) */}
       <div className="pointer-events-auto">
         <NodeResizer
-          minWidth={220}
+          minWidth={280}
           minHeight={160}
           isVisible={selected}
           lineClassName="!border-[var(--aws-brand)]"
           handleClassName="!w-2.5 !h-2.5 !bg-[var(--aws-brand)] !border-none !rounded-none shadow-xs"
+          onResize={(_, { width, height }) => {
+            updateNodeProperties(id, { width, height });
+          }}
         />
       </div>
 
@@ -218,7 +221,7 @@ export const AWSGroupNode = memo((props: NodeProps) => {
           backgroundColor: 'var(--aws-card-bg)',
           color: textColor,
         }}
-        className="absolute top-0 left-0 z-10 h-8 px-2.5 flex items-center gap-2 border-b border-r text-[12px] leading-[16px] font-bold font-sans pointer-events-auto cursor-pointer shadow-xs select-none max-w-[90%]"
+        className="absolute top-0 left-0 z-10 h-7.5 px-2.5 flex items-center gap-2 border-b border-r text-[11px] leading-[15px] font-semibold font-sans pointer-events-auto cursor-pointer shadow-xs select-none max-w-[90%]"
       >
         <AWSServiceIcon groupId={rule.groupId} size={20} variant="group" />
 

@@ -13,8 +13,6 @@ export type AWSCategory =
 
 export type ServiceTier = 1 | 2 | 3;
 
-export type StudyStatus = 'not-started' | 'in-progress' | 'mastered' | 'review';
-
 export type EdgeProtocol =
   | 'HTTPS/REST'
   | 'IAM Role Assumption'
@@ -29,7 +27,7 @@ export interface AWSService {
   name: string;
   category: AWSCategory;
   tier: ServiceTier;
-  studyStatus: StudyStatus;
+  isFavorite: boolean;
   summary: string;
   markdownDoc: string;
   icon?: string;
@@ -56,6 +54,8 @@ export type ExternalActorType =
   | 'user-browser'
   | 'mobile-client'
   | 'corporate-datacenter'
+  | 'branch-office'
+  | 'third-party-api'
   | 'external-webhook';
 
 export type NodeEnvironment = 'None' | 'Prod' | 'Staging' | 'Dev';
@@ -65,7 +65,7 @@ export interface CanvasNodeData {
   label: string;
   category: AWSCategory;
   tier: ServiceTier;
-  status: StudyStatus;
+  isFavorite?: boolean;
   customNotes?: string;
   arnPattern?: string;
 
@@ -90,8 +90,10 @@ export interface CanvasNodeData {
   isActor?: boolean;
   actorType?: ExternalActorType;
 
-  // Annotation / Sticky Note properties
+  // Annotation / Sticky Note & Text Block properties
   isAnnotation?: boolean;
+  isTextOnly?: boolean;
+  fontSize?: number;
   annotationTitle?: string;
   annotationContent?: string;
   annotationColor?: string;
@@ -112,10 +114,13 @@ export interface CanvasNodeItem {
   style?: Record<string, string | number>;
   zIndex?: number;
   parentId?: string;
+  extent?: 'parent' | [[number, number], [number, number]];
+  selected?: boolean;
 }
 
 export type EdgeLineStyle = 'solid' | 'dashed' | 'dotted';
 export type EdgeDirectionality = 'one-way' | 'bi-directional' | 'none';
+export type EdgeRoutingStyle = 'smoothstep' | 'bezier' | 'straight';
 
 export interface CanvasEdgeData {
   protocol?: EdgeProtocol;
@@ -123,7 +128,9 @@ export interface CanvasEdgeData {
   customLabel?: string;
   lineStyle?: EdgeLineStyle;
   directionality?: EdgeDirectionality;
+  routingStyle?: EdgeRoutingStyle;
   edgeColor?: string;
+  strokeWidth?: number;
   animated?: boolean;
   offset?: number;
   [key: string]: unknown;
@@ -148,6 +155,7 @@ export interface Diagram {
   description: string;
   nodes: CanvasNodeItem[];
   edges: CanvasEdgeItem[];
+  thumbnail?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -156,7 +164,7 @@ export interface ServiceFilterState {
   search: string;
   category: AWSCategory | 'All';
   tier: ServiceTier | 'All';
-  studyStatus: StudyStatus | 'All';
+  favoritesOnly: boolean;
 }
 
 export type WorkspaceMode = 'vault' | 'canvas';

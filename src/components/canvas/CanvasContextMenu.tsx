@@ -11,9 +11,10 @@ import {
   StickyNote,
   LayoutGrid,
   Maximize2,
-  Users,
+  Plus,
 } from 'lucide-react';
 import { useCanvasStore } from '../../store/useCanvasStore';
+import { useCompassStore } from '../../store/useCompassStore';
 import { useReactFlow } from '@xyflow/react';
 
 export const CanvasContextMenu: React.FC = () => {
@@ -30,8 +31,8 @@ export const CanvasContextMenu: React.FC = () => {
   const updateEdgeProperties = useCanvasStore((s) => s.updateEdgeProperties);
   const openNodeInspector = useCanvasStore((s) => s.openNodeInspector);
   const openEdgeInspector = useCanvasStore((s) => s.openEdgeInspector);
+  const addServiceNode = useCanvasStore((s) => s.addServiceNode);
   const addAnnotationNode = useCanvasStore((s) => s.addAnnotationNode);
-  const addExternalActor = useCanvasStore((s) => s.addExternalActor);
   const addBoundaryNode = useCanvasStore((s) => s.addBoundaryNode);
   const autoLayout = useCanvasStore((s) => s.autoLayout);
   const edges = useCanvasStore((s) => s.edges);
@@ -98,7 +99,7 @@ export const CanvasContextMenu: React.FC = () => {
             className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] cursor-pointer text-left font-medium"
           >
             <Edit3 className="w-3.5 h-3.5 text-[var(--aws-interactive)]" />
-            <span>Edit properties...</span>
+            <span>Inspect properties...</span>
           </button>
           <button
             type="button"
@@ -115,6 +116,28 @@ export const CanvasContextMenu: React.FC = () => {
             <kbd className="font-mono text-[10px] text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)] px-1 rounded border border-[var(--aws-border)]">
               Ctrl+D
             </kbd>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (contextMenu.targetId) {
+                // Group into VPC boundary
+                const node = useCanvasStore.getState().nodes.find((n) => n.id === contextMenu.targetId);
+                if (node) {
+                  useCanvasStore.getState().setNodes(
+                    useCanvasStore.getState().nodes.map((n) =>
+                      n.id === contextMenu.targetId ? { ...n, selected: true } : n
+                    )
+                  );
+                  useCanvasStore.getState().groupSelectedNodes('vpc');
+                }
+              }
+              closeContextMenu();
+            }}
+            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] cursor-pointer text-left"
+          >
+            <BoxSelect className="w-3.5 h-3.5 text-[#8C4FFF]" />
+            <span>Wrap in VPC Container</span>
           </button>
           <button
             type="button"
@@ -226,35 +249,37 @@ export const CanvasContextMenu: React.FC = () => {
           <button
             type="button"
             onClick={() => {
+              const catalogServices = useCompassStore.getState().services;
+              const svc = catalogServices.find((s) => s.id === 'lambda') || catalogServices[0];
+              if (svc) addServiceNode(svc, flowPosition);
+              closeContextMenu();
+            }}
+            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] cursor-pointer text-left font-medium"
+          >
+            <Plus className="w-3.5 h-3.5 text-[#FF9900]" />
+            <span>Add Service Here...</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              addBoundaryNode('vpc', 'VPC Container (10.0.0.0/16)', flowPosition);
+              closeContextMenu();
+            }}
+            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] cursor-pointer text-left"
+          >
+            <BoxSelect className="w-3.5 h-3.5 text-[#8C4FFF]" />
+            <span>Add Boundary Here...</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
               addAnnotationNode('Architecture Note', '', flowPosition);
               closeContextMenu();
             }}
             className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] cursor-pointer text-left"
           >
             <StickyNote className="w-3.5 h-3.5 text-[#ED7100]" />
-            <span>Add architecture note</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              addExternalActor('user-browser', 'User / Client Browser', flowPosition);
-              closeContextMenu();
-            }}
-            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] cursor-pointer text-left"
-          >
-            <Users className="w-3.5 h-3.5 text-[#0972D3]" />
-            <span>Add client / actor</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              addBoundaryNode('vpc', 'VPC (10.0.0.0/16)', flowPosition);
-              closeContextMenu();
-            }}
-            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] cursor-pointer text-left"
-          >
-            <BoxSelect className="w-3.5 h-3.5 text-[#8C4FFF]" />
-            <span>Add VPC boundary</span>
+            <span>Add Architecture Note</span>
           </button>
           <div className="my-1 border-t border-[var(--aws-border)]" />
           <button
@@ -266,7 +291,7 @@ export const CanvasContextMenu: React.FC = () => {
             className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] cursor-pointer text-left"
           >
             <LayoutGrid className="w-3.5 h-3.5 text-[#0972D3]" />
-            <span>Auto-Layout (LR)</span>
+            <span>Auto-Layout (LR / TB)</span>
           </button>
           <button
             type="button"
@@ -274,10 +299,15 @@ export const CanvasContextMenu: React.FC = () => {
               reactFlow.fitView({ padding: 0.18, duration: 300 });
               closeContextMenu();
             }}
-            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] cursor-pointer text-left"
+            className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] cursor-pointer text-left"
           >
-            <Maximize2 className="w-3.5 h-3.5 text-[var(--aws-text-muted)]" />
-            <span>Fit diagram to screen</span>
+            <div className="flex items-center gap-2">
+              <Maximize2 className="w-3.5 h-3.5 text-[var(--aws-text-muted)]" />
+              <span>Fit View</span>
+            </div>
+            <kbd className="font-mono text-[10px] bg-[var(--aws-card-bg)] px-1 rounded border border-[var(--aws-border)] text-[var(--aws-text-muted)]">
+              F
+            </kbd>
           </button>
         </div>
       )}

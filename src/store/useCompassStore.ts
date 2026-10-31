@@ -14,7 +14,6 @@ import type {
   EdgeProtocol,
   ServiceFilterState,
   ServiceTier,
-  StudyStatus,
   ThemeMode,
   WorkspaceMode,
 } from '../types/aws';
@@ -26,7 +25,8 @@ import {
   resetDatabaseToDefaults,
   saveDiagram,
   updateServiceDoc as dbUpdateServiceDoc,
-  updateServiceStatus as dbUpdateServiceStatus,
+  toggleServiceFavorite as dbToggleServiceFavorite,
+  clearAllFavorites as dbClearAllFavorites,
 } from '../db/compassDb';
 import { ARCHITECTURE_TEMPLATES } from '../components/canvas/canvasTemplates';
 import { SEED_SERVICES } from '../db/seedServices';
@@ -92,10 +92,12 @@ interface CompassState {
   setSearch: (search: string) => void;
   setCategoryFilter: (category: AWSCategory | 'All') => void;
   setTierFilter: (tier: ServiceTier | 'All') => void;
-  setStudyStatusFilter: (status: StudyStatus | 'All') => void;
+  setFavoritesFilter: (favoritesOnly: boolean) => void;
+  toggleFavoritesFilter: () => void;
   setWorkspaceMode: (mode: WorkspaceMode) => void;
   toggleSidebar: () => void;
-  updateServiceStatus: (id: string, status: StudyStatus) => Promise<void>;
+  toggleFavorite: (id: string) => Promise<void>;
+  clearAllFavorites: () => Promise<void>;
   updateServiceDoc: (id: string, markdownDoc: string) => Promise<void>;
   resetToDefaults: () => Promise<void>;
   refreshServices: () => Promise<void>;
@@ -143,7 +145,7 @@ export const useCompassStore = create<CompassState>((set, get) => ({
     search: '',
     category: 'All',
     tier: 'All',
-    studyStatus: 'All',
+    favoritesOnly: false,
   },
   workspaceMode: 'vault',
   isSidebarOpen: true,
@@ -218,7 +220,7 @@ export const useCompassStore = create<CompassState>((set, get) => ({
           map.forEach((svc) => orderedServices.push(svc));
           services = orderedServices;
         }
-      } catch {}
+      } catch { }
     }
 
     let categoryOrder = DEFAULT_CATEGORIES;
@@ -231,7 +233,7 @@ export const useCompassStore = create<CompassState>((set, get) => ({
             categoryOrder = parsed;
           }
         }
-      } catch {}
+      } catch { }
     }
 
     // Check if there is an active saved diagram in Dexie
@@ -273,413 +275,434 @@ export const useCompassStore = create<CompassState>((set, get) => ({
     set((state) => ({ filter: { ...state.filter, tier } }));
   },
 
-  setStudyStatusFilter: (studyStatus: StudyStatus | 'All') => {
-    set((state) => ({ filter: { ...state.filter, studyStatus } }));
-  },
+    setFavoritesFilter: (favoritesOnly: boolean) => {
+      set((state) => ({ filter: { ...state.filter, favoritesOnly } }));
+    },
 
-  setWorkspaceMode: (workspaceMode: WorkspaceMode) => {
-    set({ workspaceMode });
-  },
-
-  toggleSidebar: () => {
-    set((state) => ({ isSidebarOpen: !state.isSidebarOpen }));
-  },
-
-  updateServiceStatus: async (id: string, status: StudyStatus) => {
-    await dbUpdateServiceStatus(id, status);
-    set((state) => {
-      const updatedServices = state.services.map((svc) =>
-        svc.id === id ? { ...svc, studyStatus: status, updatedAt: Date.now() } : svc
-      );
-      // Synchronize any matching canvas nodes
-      const updatedNodes = state.nodes.map((n) =>
-        n.data.serviceId === id ? { ...n, data: { ...n.data, status } } : n
-      );
-      scheduleDebouncedDiagramSave(updatedNodes, state.edges);
-      return {
-        services: updatedServices,
-        nodes: updatedNodes,
-      };
-    });
-  },
-
-  updateServiceDoc: async (id: string, markdownDoc: string) => {
-    await dbUpdateServiceDoc(id, markdownDoc);
-    set((state) => ({
-      services: state.services.map((svc) =>
-        svc.id === id ? { ...svc, markdownDoc, updatedAt: Date.now() } : svc
-      ),
-    }));
-  },
-
-  resetToDefaults: async () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('aws-compass-service-order');
-      localStorage.removeItem('aws-compass-category-order');
-    }
-    await resetDatabaseToDefaults();
-    const services = await getAllServices();
-    const defaultTemplate = ARCHITECTURE_TEMPLATES['serverless-api'];
-    set({
-      services,
-      categoryOrder: DEFAULT_CATEGORIES,
-      selectedServiceId: 's3',
-      nodes: defaultTemplate.nodes,
-      edges: defaultTemplate.edges,
-      isInspectorOpen: false,
-      selectedNodeId: null,
-    });
-    scheduleDebouncedDiagramSave(defaultTemplate.nodes, defaultTemplate.edges);
-  },
-
-  resetServiceOrder: async () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('aws-compass-service-order');
-      localStorage.removeItem('aws-compass-category-order');
-    }
-    const seedCategoryMap = new Map(SEED_SERVICES.map((s) => [s.id, s.category]));
-    const currentServices = await getAllServices();
-
-    const restoredServices = currentServices
-      .map((svc) => ({
-        ...svc,
-        category: seedCategoryMap.get(svc.id) || svc.category,
-        order: undefined,
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-
-    try {
-      await Promise.all(
-        restoredServices.map((s) =>
-          db.services.update(s.id, { category: s.category, order: undefined })
-        )
-      );
-    } catch (err) {
-      console.warn('Failed to reset categories in Dexie:', err);
-    }
-
-    set({
-      services: restoredServices,
-      categoryOrder: DEFAULT_CATEGORIES,
-    });
-  },
-
-  reorderService: async (
-    sourceId: string,
-    targetId: string,
-    position: 'before' | 'after',
-    targetCategory?: AWSCategory
-  ) => {
-    const currentServices = [...get().services];
-    const sourceIndex = currentServices.findIndex((s) => s.id === sourceId);
-    if (sourceIndex === -1) return;
-
-    const sourceService = { ...currentServices[sourceIndex] };
-    const targetIndex = currentServices.findIndex((s) => s.id === targetId);
-    if (targetIndex === -1) return;
-
-    const targetService = currentServices[targetIndex];
-    const effectiveCategory = targetCategory || targetService.category;
-
-    // Remove source service
-    currentServices.splice(sourceIndex, 1);
-
-    // Update category if changed
-    sourceService.category = effectiveCategory;
-    sourceService.updatedAt = Date.now();
-
-    // Re-find target index after removal
-    const newTargetIndex = currentServices.findIndex((s) => s.id === targetId);
-    const insertIndex = position === 'before' ? newTargetIndex : newTargetIndex + 1;
-
-    currentServices.splice(insertIndex, 0, sourceService);
-
-    // Re-assign order indices
-    const updatedServices = currentServices.map((svc, idx) => ({
-      ...svc,
-      order: idx,
-    }));
-
-    set({ services: updatedServices });
-
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(
-          'aws-compass-service-order',
-          JSON.stringify(updatedServices.map((s) => ({ id: s.id, cat: s.category })))
-        );
-      } catch {}
-    }
-
-    try {
-      await db.services.update(sourceService.id, {
-        category: effectiveCategory,
-        order: insertIndex,
-        updatedAt: Date.now(),
-      });
-      await Promise.all(
-        updatedServices.map((s) =>
-          db.services.update(s.id, { order: s.order, category: s.category })
-        )
-      );
-    } catch (err) {
-      console.warn('Failed to persist reordered services to Dexie:', err);
-    }
-  },
-
-  moveServiceToCategory: async (
-    serviceId: string,
-    targetCategory: AWSCategory,
-    insertAt: 'start' | 'end' = 'start'
-  ) => {
-    const currentServices = [...get().services];
-    const sourceIndex = currentServices.findIndex((s) => s.id === serviceId);
-    if (sourceIndex === -1) return;
-
-    const sourceService = { ...currentServices[sourceIndex] };
-    currentServices.splice(sourceIndex, 1);
-
-    sourceService.category = targetCategory;
-    sourceService.updatedAt = Date.now();
-
-    const categoryIndices: number[] = [];
-    currentServices.forEach((s, idx) => {
-      if (s.category === targetCategory) categoryIndices.push(idx);
-    });
-
-    let insertIndex = currentServices.length;
-    if (categoryIndices.length > 0) {
-      if (insertAt === 'start') {
-        insertIndex = categoryIndices[0];
-      } else {
-        insertIndex = categoryIndices[categoryIndices.length - 1] + 1;
-      }
-    }
-
-    currentServices.splice(insertIndex, 0, sourceService);
-
-    const updatedServices = currentServices.map((svc, idx) => ({
-      ...svc,
-      order: idx,
-    }));
-
-    set({ services: updatedServices });
-
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(
-          'aws-compass-service-order',
-          JSON.stringify(updatedServices.map((s) => ({ id: s.id, cat: s.category })))
-        );
-      } catch {}
-    }
-
-    try {
-      await db.services.update(sourceService.id, {
-        category: targetCategory,
-        order: insertIndex,
-        updatedAt: Date.now(),
-      });
-      await Promise.all(
-        updatedServices.map((s) =>
-          db.services.update(s.id, { order: s.order, category: s.category })
-        )
-      );
-    } catch (err) {
-      console.warn('Failed to persist category move to Dexie:', err);
-    }
-  },
-
-  reorderCategories: (
-    sourceCat: AWSCategory,
-    targetCat: AWSCategory,
-    position: 'before' | 'after'
-  ) => {
-    const order = [...get().categoryOrder];
-    const sourceIdx = order.indexOf(sourceCat);
-    const targetIdx = order.indexOf(targetCat);
-    if (sourceIdx === -1 || targetIdx === -1 || sourceIdx === targetIdx) return;
-
-    order.splice(sourceIdx, 1);
-    const newTargetIdx = order.indexOf(targetCat);
-    const insertIdx = position === 'before' ? newTargetIdx : newTargetIdx + 1;
-    order.splice(insertIdx, 0, sourceCat);
-
-    set({ categoryOrder: order });
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('aws-compass-category-order', JSON.stringify(order));
-      } catch {}
-    }
-  },
-
-  refreshServices: async () => {
-    const services = await getAllServices();
-    set({ services });
-  },
-
-  // Canvas Actions
-  setNodes: (nodes: CanvasNodeItem[]) => {
-    set({ nodes });
-    scheduleDebouncedDiagramSave(nodes, get().edges);
-  },
-
-  setEdges: (edges: CanvasEdgeItem[]) => {
-    set({ edges });
-    scheduleDebouncedDiagramSave(get().nodes, edges);
-  },
-
-  onNodesChange: (changes: NodeChange<CanvasNodeItem>[]) => {
-    set((state) => {
-      const updatedNodes = applyNodeChanges(changes, state.nodes);
-      scheduleDebouncedDiagramSave(updatedNodes, state.edges);
-      return { nodes: updatedNodes };
-    });
-  },
-
-  onEdgesChange: (changes: EdgeChange<CanvasEdgeItem>[]) => {
-    set((state) => {
-      const updatedEdges = applyEdgeChanges(changes, state.edges);
-      scheduleDebouncedDiagramSave(state.nodes, updatedEdges);
-      return { edges: updatedEdges };
-    });
-  },
-
-  onConnect: (connection: Connection) => {
-    if (!connection.source || !connection.target) return;
-    const defaultProtocol: EdgeProtocol = 'HTTPS/REST';
-    const newEdge: CanvasEdgeItem = {
-      id: `edge-${connection.source}-${connection.target}-${Date.now()}`,
-      source: connection.source,
-      target: connection.target,
-      sourceHandle: connection.sourceHandle,
-      targetHandle: connection.targetHandle,
-      protocol: defaultProtocol,
-      label: defaultProtocol,
-      animated: true,
-      data: { protocol: defaultProtocol, label: defaultProtocol },
-    };
-
-    set((state) => {
-      const updatedEdges = [...state.edges, newEdge];
-      scheduleDebouncedDiagramSave(state.nodes, updatedEdges);
-      return { edges: updatedEdges };
-    });
-  },
-
-  addServiceNode: (service: AWSService, position: { x: number; y: number }) => {
-    const newNode: CanvasNodeItem = {
-      id: `node-${service.id}-${Date.now()}`,
-      type: 'awsService',
-      position,
-      data: {
-        serviceId: service.id,
-        label: service.name,
-        category: service.category,
-        tier: service.tier,
-        status: service.studyStatus,
-        customNotes: service.summary,
-        arnPattern: service.arnExample,
+      toggleFavoritesFilter: () => {
+        set((state) => ({ filter: { ...state.filter, favoritesOnly: !state.filter.favoritesOnly } }));
       },
-    };
 
-    set((state) => {
-      const updatedNodes = [...state.nodes, newNode];
-      scheduleDebouncedDiagramSave(updatedNodes, state.edges);
-      return {
-        nodes: updatedNodes,
-        selectedNodeId: newNode.id,
-        isInspectorOpen: true,
-        selectedServiceId: service.id,
-      };
-    });
-  },
+        setWorkspaceMode: (workspaceMode: WorkspaceMode) => {
+          set({ workspaceMode });
+        },
 
-  updateNodeNotes: (nodeId: string, customNotes: string) => {
-    set((state) => {
-      const updatedNodes = state.nodes.map((n) =>
-        n.id === nodeId ? { ...n, data: { ...n.data, customNotes } } : n
-      );
-      scheduleDebouncedDiagramSave(updatedNodes, state.edges);
-      return { nodes: updatedNodes };
-    });
-  },
+          toggleSidebar: () => {
+            set((state) => ({ isSidebarOpen: !state.isSidebarOpen }));
+          },
 
-  updateEdgeProtocol: (edgeId: string, protocol: EdgeProtocol) => {
-    set((state) => {
-      const updatedEdges = state.edges.map((e) =>
-        e.id === edgeId
-          ? {
-              ...e,
-              protocol,
-              label: protocol,
-              animated: protocol === 'Event Trigger' || protocol === 'HTTPS/REST',
-              data: { ...e.data, protocol, label: protocol },
-            }
-          : e
-      );
-      scheduleDebouncedDiagramSave(state.nodes, updatedEdges);
-      return { edges: updatedEdges };
-    });
-  },
+              toggleFavorite: async (id: string) => {
+                const updatedFav = await dbToggleServiceFavorite(id);
+                set((state) => {
+                  const updatedServices = state.services.map((svc) =>
+        svc.id === id ? { ...svc, isFavorite: updatedFav, updatedAt: Date.now() } : svc
+                  );
+                  // Synchronize any matching canvas nodes
+                  const updatedNodes = state.nodes.map((n) =>
+        n.data.serviceId === id ? { ...n, data: { ...n.data, isFavorite: updatedFav } } : n
+                  );
+                  scheduleDebouncedDiagramSave(updatedNodes, state.edges);
+                  return {
+                    services: updatedServices,
+                    nodes: updatedNodes,
+                  };
+                });
+              },
 
-  removeNode: (nodeId: string) => {
-    set((state) => {
-      const updatedNodes = state.nodes.filter((n) => n.id !== nodeId);
-      const updatedEdges = state.edges.filter(
-        (e) => e.source !== nodeId && e.target !== nodeId
-      );
-      scheduleDebouncedDiagramSave(updatedNodes, updatedEdges);
-      return {
-        nodes: updatedNodes,
-        edges: updatedEdges,
-        selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
-        isInspectorOpen: state.selectedNodeId === nodeId ? false : state.isInspectorOpen,
-      };
-    });
-  },
+                clearAllFavorites: async () => {
+                  await dbClearAllFavorites();
+                  set((state) => {
+                    const updatedServices = state.services.map((svc) =>
+                      svc.isFavorite ? { ...svc, isFavorite: false, updatedAt: Date.now() } : svc
+                    );
+                    const updatedNodes = state.nodes.map((n) =>
+                      n.data.isFavorite ? { ...n, data: { ...n.data, isFavorite: false } } : n
+                    );
+                    scheduleDebouncedDiagramSave(updatedNodes, state.edges);
+                    return {
+                      services: updatedServices,
+                      nodes: updatedNodes,
+                    };
+                  });
+                },
 
-  removeEdge: (edgeId: string) => {
-    set((state) => {
-      const updatedEdges = state.edges.filter((e) => e.id !== edgeId);
-      scheduleDebouncedDiagramSave(state.nodes, updatedEdges);
-      return { edges: updatedEdges };
-    });
-  },
+                  updateServiceDoc: async (id: string, markdownDoc: string) => {
+                    await dbUpdateServiceDoc(id, markdownDoc);
+                    set((state) => ({
+                      services: state.services.map((svc) =>
+                        svc.id === id ? { ...svc, markdownDoc, updatedAt: Date.now() } : svc
+                      ),
+                    }));
+                  },
 
-  clearCanvas: () => {
-    set({
-      nodes: [],
-      edges: [],
-      selectedNodeId: null,
-      isInspectorOpen: false,
-    });
-    scheduleDebouncedDiagramSave([], []);
-  },
+                    resetToDefaults: async () => {
+                      if (typeof window !== 'undefined') {
+                        localStorage.removeItem('aws-compass-service-order');
+                        localStorage.removeItem('aws-compass-category-order');
+                      }
+                      await resetDatabaseToDefaults();
+                      const services = await getAllServices();
+                      const defaultTemplate = ARCHITECTURE_TEMPLATES['serverless-api'];
+                      set({
+                        services,
+                        categoryOrder: DEFAULT_CATEGORIES,
+                        selectedServiceId: 's3',
+                        nodes: defaultTemplate.nodes,
+                        edges: defaultTemplate.edges,
+                        isInspectorOpen: false,
+                        selectedNodeId: null,
+                      });
+                      scheduleDebouncedDiagramSave(defaultTemplate.nodes, defaultTemplate.edges);
+                    },
 
-  loadTemplate: (templateId: string) => {
-    const template = ARCHITECTURE_TEMPLATES[templateId];
-    if (template) {
-      set({
-        nodes: template.nodes,
-        edges: template.edges,
-        selectedNodeId: null,
-        isInspectorOpen: false,
-      });
-      scheduleDebouncedDiagramSave(template.nodes, template.edges);
-    }
-  },
+                      resetServiceOrder: async () => {
+                        if (typeof window !== 'undefined') {
+                          localStorage.removeItem('aws-compass-service-order');
+                          localStorage.removeItem('aws-compass-category-order');
+                        }
+                        const seedCategoryMap = new Map(SEED_SERVICES.map((s) => [s.id, s.category]));
+                        const currentServices = await getAllServices();
 
-  openInspector: (nodeId: string) => {
-    const node = get().nodes.find((n) => n.id === nodeId);
-    set({
-      selectedNodeId: nodeId,
-      isInspectorOpen: true,
-      selectedServiceId: node?.data.serviceId || get().selectedServiceId,
-    });
-  },
+                        const restoredServices = currentServices
+                          .map((svc) => ({
+                            ...svc,
+                            category: seedCategoryMap.get(svc.id) || svc.category,
+                            order: undefined,
+                          }))
+                          .sort((a, b) => a.name.localeCompare(b.name));
 
-  closeInspector: () => {
-    set({ isInspectorOpen: false });
-  },
+                        try {
+                          await Promise.all(
+                            restoredServices.map((s) =>
+                              db.services.update(s.id, { category: s.category, order: undefined })
+                            )
+                          );
+                        } catch (err) {
+                          console.warn('Failed to reset categories in Dexie:', err);
+                        }
+
+                        set({
+                          services: restoredServices,
+                          categoryOrder: DEFAULT_CATEGORIES,
+                        });
+                      },
+
+                        reorderService: async (
+                          sourceId: string,
+                          targetId: string,
+                          position: 'before' | 'after',
+                          targetCategory?: AWSCategory
+                        ) => {
+                          const currentServices = [...get().services];
+                          const sourceIndex = currentServices.findIndex((s) => s.id === sourceId);
+                          if (sourceIndex === -1) return;
+
+                          const sourceService = { ...currentServices[sourceIndex] };
+                          const targetIndex = currentServices.findIndex((s) => s.id === targetId);
+                          if (targetIndex === -1) return;
+
+                          const targetService = currentServices[targetIndex];
+                          const effectiveCategory = targetCategory || targetService.category;
+
+                          // Remove source service
+                          currentServices.splice(sourceIndex, 1);
+
+                          // Update category if changed
+                          sourceService.category = effectiveCategory;
+                          sourceService.updatedAt = Date.now();
+
+                          // Re-find target index after removal
+                          const newTargetIndex = currentServices.findIndex((s) => s.id === targetId);
+                          const insertIndex = position === 'before' ? newTargetIndex : newTargetIndex + 1;
+
+                          currentServices.splice(insertIndex, 0, sourceService);
+
+                          // Re-assign order indices
+                          const updatedServices = currentServices.map((svc, idx) => ({
+                            ...svc,
+                            order: idx,
+                          }));
+
+                          set({ services: updatedServices });
+
+                          if (typeof window !== 'undefined') {
+                            try {
+                              localStorage.setItem(
+                                'aws-compass-service-order',
+                                JSON.stringify(updatedServices.map((s) => ({ id: s.id, cat: s.category })))
+                              );
+                            } catch { }
+                          }
+
+                          try {
+                            await db.services.update(sourceService.id, {
+                              category: effectiveCategory,
+                              order: insertIndex,
+                              updatedAt: Date.now(),
+                            });
+                            await Promise.all(
+                              updatedServices.map((s) =>
+                                db.services.update(s.id, { order: s.order, category: s.category })
+                              )
+                            );
+                          } catch (err) {
+                            console.warn('Failed to persist reordered services to Dexie:', err);
+                          }
+                        },
+
+                          moveServiceToCategory: async (
+                            serviceId: string,
+                            targetCategory: AWSCategory,
+                            insertAt: 'start' | 'end' = 'start'
+                          ) => {
+                            const currentServices = [...get().services];
+                            const sourceIndex = currentServices.findIndex((s) => s.id === serviceId);
+                            if (sourceIndex === -1) return;
+
+                            const sourceService = { ...currentServices[sourceIndex] };
+                            currentServices.splice(sourceIndex, 1);
+
+                            sourceService.category = targetCategory;
+                            sourceService.updatedAt = Date.now();
+
+                            const categoryIndices: number[] = [];
+                            currentServices.forEach((s, idx) => {
+                              if (s.category === targetCategory) categoryIndices.push(idx);
+                            });
+
+                            let insertIndex = currentServices.length;
+                            if (categoryIndices.length > 0) {
+                              if (insertAt === 'start') {
+                                insertIndex = categoryIndices[0];
+                              } else {
+                                insertIndex = categoryIndices[categoryIndices.length - 1] + 1;
+                              }
+                            }
+
+                            currentServices.splice(insertIndex, 0, sourceService);
+
+                            const updatedServices = currentServices.map((svc, idx) => ({
+                              ...svc,
+                              order: idx,
+                            }));
+
+                            set({ services: updatedServices });
+
+                            if (typeof window !== 'undefined') {
+                              try {
+                                localStorage.setItem(
+                                  'aws-compass-service-order',
+                                  JSON.stringify(updatedServices.map((s) => ({ id: s.id, cat: s.category })))
+                                );
+                              } catch { }
+                            }
+
+                            try {
+                              await db.services.update(sourceService.id, {
+                                category: targetCategory,
+                                order: insertIndex,
+                                updatedAt: Date.now(),
+                              });
+                              await Promise.all(
+                                updatedServices.map((s) =>
+                                  db.services.update(s.id, { order: s.order, category: s.category })
+                                )
+                              );
+                            } catch (err) {
+                              console.warn('Failed to persist category move to Dexie:', err);
+                            }
+                          },
+
+                            reorderCategories: (
+                              sourceCat: AWSCategory,
+                              targetCat: AWSCategory,
+                              position: 'before' | 'after'
+                            ) => {
+                              const order = [...get().categoryOrder];
+                              const sourceIdx = order.indexOf(sourceCat);
+                              const targetIdx = order.indexOf(targetCat);
+                              if (sourceIdx === -1 || targetIdx === -1 || sourceIdx === targetIdx) return;
+
+                              order.splice(sourceIdx, 1);
+                              const newTargetIdx = order.indexOf(targetCat);
+                              const insertIdx = position === 'before' ? newTargetIdx : newTargetIdx + 1;
+                              order.splice(insertIdx, 0, sourceCat);
+
+                              set({ categoryOrder: order });
+                              if (typeof window !== 'undefined') {
+                                try {
+                                  localStorage.setItem('aws-compass-category-order', JSON.stringify(order));
+                                } catch { }
+                              }
+                            },
+
+                              refreshServices: async () => {
+                                const services = await getAllServices();
+                                set({ services });
+                              },
+
+                                // Canvas Actions
+                                setNodes: (nodes: CanvasNodeItem[]) => {
+                                  set({ nodes });
+                                  scheduleDebouncedDiagramSave(nodes, get().edges);
+                                },
+
+                                  setEdges: (edges: CanvasEdgeItem[]) => {
+                                    set({ edges });
+                                    scheduleDebouncedDiagramSave(get().nodes, edges);
+                                  },
+
+                                    onNodesChange: (changes: NodeChange<CanvasNodeItem>[]) => {
+                                      set((state) => {
+                                        const updatedNodes = applyNodeChanges(changes, state.nodes);
+                                        scheduleDebouncedDiagramSave(updatedNodes, state.edges);
+                                        return { nodes: updatedNodes };
+                                      });
+                                    },
+
+                                      onEdgesChange: (changes: EdgeChange<CanvasEdgeItem>[]) => {
+                                        set((state) => {
+                                          const updatedEdges = applyEdgeChanges(changes, state.edges);
+                                          scheduleDebouncedDiagramSave(state.nodes, updatedEdges);
+                                          return { edges: updatedEdges };
+                                        });
+                                      },
+
+                                        onConnect: (connection: Connection) => {
+                                          if (!connection.source || !connection.target) return;
+                                          const defaultProtocol: EdgeProtocol = 'HTTPS/REST';
+                                          const newEdge: CanvasEdgeItem = {
+                                            id: `edge-${connection.source}-${connection.target}-${Date.now()}`,
+                                            source: connection.source,
+                                            target: connection.target,
+                                            sourceHandle: connection.sourceHandle,
+                                            targetHandle: connection.targetHandle,
+                                            protocol: defaultProtocol,
+                                            label: defaultProtocol,
+                                            animated: true,
+                                            data: { protocol: defaultProtocol, label: defaultProtocol },
+                                          };
+
+                                          set((state) => {
+                                            const updatedEdges = [...state.edges, newEdge];
+                                            scheduleDebouncedDiagramSave(state.nodes, updatedEdges);
+                                            return { edges: updatedEdges };
+                                          });
+                                        },
+
+                                          addServiceNode: (service: AWSService, position: { x: number; y: number }) => {
+                                            const newNode: CanvasNodeItem = {
+                                              id: `node-${service.id}-${Date.now()}`,
+                                              type: 'awsService',
+                                              position,
+                                              data: {
+                                                serviceId: service.id,
+                                                label: service.name,
+                                                category: service.category,
+                                                tier: service.tier,
+                                                isFavorite: service.isFavorite,
+                                                customNotes: service.summary,
+                                                arnPattern: service.arnExample,
+                                              },
+                                            };
+
+                                            set((state) => {
+                                              const updatedNodes = [...state.nodes, newNode];
+                                              scheduleDebouncedDiagramSave(updatedNodes, state.edges);
+                                              return {
+                                                nodes: updatedNodes,
+                                                selectedNodeId: newNode.id,
+                                                isInspectorOpen: true,
+                                                selectedServiceId: service.id,
+                                              };
+                                            });
+                                          },
+
+                                            updateNodeNotes: (nodeId: string, customNotes: string) => {
+                                              set((state) => {
+                                                const updatedNodes = state.nodes.map((n) =>
+                                                  n.id === nodeId ? { ...n, data: { ...n.data, customNotes } } : n
+                                                );
+                                                scheduleDebouncedDiagramSave(updatedNodes, state.edges);
+                                                return { nodes: updatedNodes };
+                                              });
+                                            },
+
+                                              updateEdgeProtocol: (edgeId: string, protocol: EdgeProtocol) => {
+                                                set((state) => {
+                                                  const updatedEdges = state.edges.map((e) =>
+                                                    e.id === edgeId
+                                                      ? {
+                                                        ...e,
+                                                        protocol,
+                                                        label: protocol,
+                                                        animated: protocol === 'Event Trigger' || protocol === 'HTTPS/REST',
+                                                        data: { ...e.data, protocol, label: protocol },
+                                                      }
+                                                      : e
+                                                  );
+                                                  scheduleDebouncedDiagramSave(state.nodes, updatedEdges);
+                                                  return { edges: updatedEdges };
+                                                });
+                                              },
+
+                                                removeNode: (nodeId: string) => {
+                                                  set((state) => {
+                                                    const updatedNodes = state.nodes.filter((n) => n.id !== nodeId);
+                                                    const updatedEdges = state.edges.filter(
+                                                      (e) => e.source !== nodeId && e.target !== nodeId
+                                                    );
+                                                    scheduleDebouncedDiagramSave(updatedNodes, updatedEdges);
+                                                    return {
+                                                      nodes: updatedNodes,
+                                                      edges: updatedEdges,
+                                                      selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
+                                                      isInspectorOpen: state.selectedNodeId === nodeId ? false : state.isInspectorOpen,
+                                                    };
+                                                  });
+                                                },
+
+                                                  removeEdge: (edgeId: string) => {
+                                                    set((state) => {
+                                                      const updatedEdges = state.edges.filter((e) => e.id !== edgeId);
+                                                      scheduleDebouncedDiagramSave(state.nodes, updatedEdges);
+                                                      return { edges: updatedEdges };
+                                                    });
+                                                  },
+
+                                                    clearCanvas: () => {
+                                                      set({
+                                                        nodes: [],
+                                                        edges: [],
+                                                        selectedNodeId: null,
+                                                        isInspectorOpen: false,
+                                                      });
+                                                      scheduleDebouncedDiagramSave([], []);
+                                                    },
+
+                                                      loadTemplate: (templateId: string) => {
+                                                        const template = ARCHITECTURE_TEMPLATES[templateId];
+                                                        if (template) {
+                                                          set({
+                                                            nodes: template.nodes,
+                                                            edges: template.edges,
+                                                            selectedNodeId: null,
+                                                            isInspectorOpen: false,
+                                                          });
+                                                          scheduleDebouncedDiagramSave(template.nodes, template.edges);
+                                                        }
+                                                      },
+
+                                                        openInspector: (nodeId: string) => {
+                                                          const node = get().nodes.find((n) => n.id === nodeId);
+                                                          set({
+                                                            selectedNodeId: nodeId,
+                                                            isInspectorOpen: true,
+                                                            selectedServiceId: node?.data.serviceId || get().selectedServiceId,
+                                                          });
+                                                        },
+
+                                                          closeInspector: () => {
+                                                            set({ isInspectorOpen: false });
+                                                          },
 }));

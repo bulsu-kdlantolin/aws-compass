@@ -15,7 +15,6 @@ import type {
   Diagram,
   EdgeProtocol,
   GroupBoundaryType,
-  StudyStatus,
   ExternalActorType,
 } from '../types/aws';
 import {
@@ -27,6 +26,7 @@ import {
 import { ARCHITECTURE_TEMPLATES } from '../components/canvas/canvasTemplates';
 import { SEED_BLUEPRINTS } from '../db/seedBlueprints';
 import { getLayoutedElements, resolveOptimalHandles } from '../utils/canvasAutoLayout';
+import { generateDiagramThumbnail } from '../utils/canvasThumbnail';
 
 let debounceSaveTimer: ReturnType<typeof setTimeout> | null = null;
 let resetSavedStatusTimer: ReturnType<typeof setTimeout> | null = null;
@@ -126,6 +126,11 @@ export interface CanvasState {
   setIsCanvasFullscreen: (fullscreen: boolean) => void;
   toggleCanvasFullscreen: () => void;
 
+  // Canvas Left Sidebar Open/Close State
+  isCanvasSidebarOpen: boolean;
+  setIsCanvasSidebarOpen: (isOpen: boolean) => void;
+  toggleCanvasSidebar: () => void;
+
   // Context Menu State
   contextMenu: CanvasContextMenuState | null;
   openContextMenu: (menu: CanvasContextMenuState) => void;
@@ -142,12 +147,22 @@ export interface CanvasState {
   addServiceNode: (service: AWSService, position: { x: number; y: number }) => void;
   addBoundaryNode: (type: GroupBoundaryType, label?: string, position?: { x: number; y: number }) => void;
   addExternalActor: (type: ExternalActorType, label?: string, position?: { x: number; y: number }) => void;
-  addAnnotationNode: (title?: string, content?: string, position?: { x: number; y: number }) => void;
+  addAnnotationNode: (
+    title?: string,
+    content?: string,
+    position?: { x: number; y: number },
+    extraData?: Partial<CanvasNodeData>
+  ) => void;
 
   updateNodeProperties: (nodeId: string, updates: Partial<CanvasNodeData>) => void;
-  updateNodeParent: (nodeId: string, parentId?: string) => void;
+  updateNodeParent: (nodeId: string, parentId?: string, newPosition?: { x: number; y: number }) => void;
   updateNodeNotes: (nodeId: string, customNotes: string) => void;
-  updateNodeStatus: (serviceId: string, status: StudyStatus) => void;
+
+  // Multi-Selection Alignment & Distribution
+  alignSelectedNodes: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
+  distributeSelectedNodes: (axis: 'horizontal' | 'vertical') => void;
+  groupSelectedNodes: (boundaryType: GroupBoundaryType, label?: string) => void;
+  exportBlueprintJson: (blueprintId?: string) => Promise<void>;
 
   updateEdgeProtocol: (edgeId: string, protocol: EdgeProtocol) => void;
   updateEdgeProperties: (
@@ -199,6 +214,11 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   isCanvasFullscreen: false,
   setIsCanvasFullscreen: (isCanvasFullscreen) => set({ isCanvasFullscreen }),
   toggleCanvasFullscreen: () => set((state) => ({ isCanvasFullscreen: !state.isCanvasFullscreen })),
+
+  // Canvas Left Sidebar State
+  isCanvasSidebarOpen: true,
+  setIsCanvasSidebarOpen: (isCanvasSidebarOpen) => set({ isCanvasSidebarOpen }),
+  toggleCanvasSidebar: () => set((state) => ({ isCanvasSidebarOpen: !state.isCanvasSidebarOpen })),
 
   // History Stacks
   past: [],
@@ -428,7 +448,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         label: service.name,
         category: service.category,
         tier: service.tier,
-        status: service.studyStatus,
+        isFavorite: service.isFavorite,
         customNotes: service.summary,
         arnPattern: service.arnExample,
         customTitle: service.name,
@@ -475,7 +495,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         label: label || defaultLabels[type] || 'Boundary Group',
         category: 'Networking',
         tier: 1,
-        status: 'not-started',
         isBoundary: true,
         boundaryType: type,
         boundaryLabel: label || defaultLabels[type] || 'Boundary Group',
@@ -501,9 +520,11 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   addExternalActor: (type: ExternalActorType, label?: string, position?: { x: number; y: number }) => {
     get().recordSnapshot();
     const actorLabels: Record<ExternalActorType, { label: string; role: string }> = {
-      'user-browser': { label: 'User / Client Browser', role: 'HTTPS / Web Traffic Ingress' },
-      'mobile-client': { label: 'Mobile / IoT Client', role: 'REST / WebSocket Device Client' },
-      'corporate-datacenter': { label: 'Corporate Data Center', role: 'Direct Connect / Site-to-Site VPN' },
+      'user-browser': { label: 'User / Web Client', role: 'HTTPS / Web Traffic Ingress' },
+      'mobile-client': { label: 'Mobile App Client', role: 'REST / WebSocket Device Client' },
+      'corporate-datacenter': { label: 'Corporate On-Premises Data Center', role: 'Direct Connect / Dedicated Link' },
+      'branch-office': { label: 'Branch Office', role: 'Site-to-Site VPN / SD-WAN' },
+      'third-party-api': { label: 'Third-Party SaaS API', role: 'Partner REST / Webhook Ingress' },
       'external-webhook': { label: 'External Webhook / API', role: '3rd-Party Partner Payload Ingress' },
     };
 
@@ -518,7 +539,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         label: label || meta.label,
         category: 'Networking',
         tier: 1,
-        status: 'not-started',
         isActor: true,
         actorType: type,
         customTitle: label || meta.label,
@@ -541,24 +561,32 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     });
   },
 
-  addAnnotationNode: (title?: string, content?: string, position?: { x: number; y: number }) => {
+  addAnnotationNode: (
+    title?: string,
+    content?: string,
+    position?: { x: number; y: number },
+    extraData?: Partial<CanvasNodeData>
+  ) => {
     get().recordSnapshot();
+    const isTextOnly = Boolean(extraData?.isTextOnly);
     const newNoteNode: CanvasNodeItem = {
       id: `note-${Date.now()}`,
       type: 'annotationNode',
       position: position || { x: 160, y: 160 },
       data: {
-        serviceId: 'architecture-note',
-        label: title || 'Architecture Note',
+        serviceId: isTextOnly ? 'architecture-text-block' : 'architecture-note',
+        label: title || (isTextOnly ? 'Architecture Section Header' : 'Architecture Note'),
         category: 'Serverless',
         tier: 1,
-        status: 'not-started',
         isAnnotation: true,
-        annotationTitle: title || 'Architecture Note',
-        annotationContent: content || 'Add infrastructure decisions, security rules, or SLA targets here.',
-        annotationColor: 'amber',
-        width: 220,
-        height: 140,
+        isTextOnly,
+        fontSize: extraData?.fontSize || (isTextOnly ? 18 : undefined),
+        annotationTitle: title || (isTextOnly ? 'Architecture Section Header' : 'Architecture Note'),
+        annotationContent: content || (isTextOnly ? '' : 'Add infrastructure decisions, security rules, or SLA targets here.'),
+        annotationColor: extraData?.annotationColor || 'amber',
+        width: extraData?.width || (isTextOnly ? 280 : 220),
+        height: extraData?.height || (isTextOnly ? 48 : 140),
+        ...extraData,
       },
     };
 
@@ -596,16 +624,24 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     });
   },
 
-  updateNodeParent: (nodeId: string, parentId?: string) => {
+  updateNodeParent: (nodeId: string, parentId?: string, newPosition?: { x: number; y: number }) => {
     get().recordSnapshot();
     set((state) => {
       const updatedNodes = state.nodes.map((n) => {
         if (n.id !== nodeId) return n;
         if (!parentId || parentId === 'none') {
-          const { parentId: _, ...rest } = n;
-          return rest as CanvasNodeItem;
+          const { parentId: _, extent: __, ...rest } = n;
+          return {
+            ...rest,
+            ...(newPosition ? { position: newPosition } : {}),
+          } as CanvasNodeItem;
         }
-        return { ...n, parentId };
+        return {
+          ...n,
+          parentId,
+          extent: 'parent' as const,
+          ...(newPosition ? { position: newPosition } : {}),
+        };
       });
       scheduleDebouncedAutoSave(updatedNodes, state.edges, set);
       return { nodes: updatedNodes };
@@ -617,17 +653,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     set((state) => {
       const updatedNodes = state.nodes.map((n) =>
         n.id === nodeId ? { ...n, data: { ...n.data, customNotes, roleSubtitle: customNotes } } : n
-      );
-      scheduleDebouncedAutoSave(updatedNodes, state.edges, set);
-      return { nodes: updatedNodes };
-    });
-  },
-
-  updateNodeStatus: (serviceId: string, status: StudyStatus) => {
-    get().recordSnapshot();
-    set((state) => {
-      const updatedNodes = state.nodes.map((n) =>
-        n.data.serviceId === serviceId ? { ...n, data: { ...n.data, status } } : n
       );
       scheduleDebouncedAutoSave(updatedNodes, state.edges, set);
       return { nodes: updatedNodes };
@@ -750,6 +775,193 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       scheduleDebouncedAutoSave(updatedNodes, state.edges, set);
       return { nodes: updatedNodes };
     });
+  },
+
+  alignSelectedNodes: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
+    const { nodes } = get();
+    const selected = nodes.filter((n) => n.selected);
+    if (selected.length < 2) return;
+
+    get().recordSnapshot();
+
+    const getNodeWidth = (n: CanvasNodeItem) => (n.data?.width as number) || (n.data?.isBoundary ? 540 : 144);
+    const getNodeHeight = (n: CanvasNodeItem) => (n.data?.height as number) || (n.data?.isBoundary ? 340 : 80);
+
+    let targetVal = 0;
+    if (alignment === 'left') {
+      targetVal = Math.min(...selected.map((n) => n.position.x));
+    } else if (alignment === 'center') {
+      const minX = Math.min(...selected.map((n) => n.position.x));
+      const maxX = Math.max(...selected.map((n) => n.position.x + getNodeWidth(n)));
+      targetVal = (minX + maxX) / 2;
+    } else if (alignment === 'right') {
+      targetVal = Math.max(...selected.map((n) => n.position.x + getNodeWidth(n)));
+    } else if (alignment === 'top') {
+      targetVal = Math.min(...selected.map((n) => n.position.y));
+    } else if (alignment === 'middle') {
+      const minY = Math.min(...selected.map((n) => n.position.y));
+      const maxY = Math.max(...selected.map((n) => n.position.y + getNodeHeight(n)));
+      targetVal = (minY + maxY) / 2;
+    } else if (alignment === 'bottom') {
+      targetVal = Math.max(...selected.map((n) => n.position.y + getNodeHeight(n)));
+    }
+
+    const updatedNodes = nodes.map((node) => {
+      if (!node.selected) return node;
+      const w = getNodeWidth(node);
+      const h = getNodeHeight(node);
+      const newPos = { ...node.position };
+
+      if (alignment === 'left') newPos.x = targetVal;
+      else if (alignment === 'center') newPos.x = Math.round(targetVal - w / 2);
+      else if (alignment === 'right') newPos.x = targetVal - w;
+      else if (alignment === 'top') newPos.y = targetVal;
+      else if (alignment === 'middle') newPos.y = Math.round(targetVal - h / 2);
+      else if (alignment === 'bottom') newPos.y = targetVal - h;
+
+      newPos.x = Math.round(newPos.x / 16) * 16;
+      newPos.y = Math.round(newPos.y / 16) * 16;
+
+      return { ...node, position: newPos };
+    });
+
+    set({ nodes: updatedNodes });
+    scheduleDebouncedAutoSave(updatedNodes, get().edges, set);
+  },
+
+  distributeSelectedNodes: (axis: 'horizontal' | 'vertical') => {
+    const { nodes } = get();
+    const selected = nodes.filter((n) => n.selected);
+    if (selected.length < 3) return;
+
+    get().recordSnapshot();
+
+    const getNodeWidth = (n: CanvasNodeItem) => (n.data?.width as number) || (n.data?.isBoundary ? 540 : 144);
+    const getNodeHeight = (n: CanvasNodeItem) => (n.data?.height as number) || (n.data?.isBoundary ? 340 : 80);
+
+    if (axis === 'horizontal') {
+      const sorted = [...selected].sort((a, b) => a.position.x - b.position.x);
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+      const totalDistance = last.position.x + getNodeWidth(last) - first.position.x;
+      const totalNodesWidth = sorted.reduce((sum, n) => sum + getNodeWidth(n), 0);
+      const gap = Math.max(16, (totalDistance - totalNodesWidth) / (sorted.length - 1));
+
+      let currentX = first.position.x;
+      const posMap = new Map<string, number>();
+      sorted.forEach((n) => {
+        posMap.set(n.id, Math.round(currentX / 16) * 16);
+        currentX += getNodeWidth(n) + gap;
+      });
+
+      const updatedNodes = nodes.map((node) => {
+        if (posMap.has(node.id)) {
+          return { ...node, position: { ...node.position, x: posMap.get(node.id)! } };
+        }
+        return node;
+      });
+
+      set({ nodes: updatedNodes });
+      scheduleDebouncedAutoSave(updatedNodes, get().edges, set);
+    } else {
+      const sorted = [...selected].sort((a, b) => a.position.y - b.position.y);
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+      const totalDistance = last.position.y + getNodeHeight(last) - first.position.y;
+      const totalNodesHeight = sorted.reduce((sum, n) => sum + getNodeHeight(n), 0);
+      const gap = Math.max(16, (totalDistance - totalNodesHeight) / (sorted.length - 1));
+
+      let currentY = first.position.y;
+      const posMap = new Map<string, number>();
+      sorted.forEach((n) => {
+        posMap.set(n.id, Math.round(currentY / 16) * 16);
+        currentY += getNodeHeight(n) + gap;
+      });
+
+      const updatedNodes = nodes.map((node) => {
+        if (posMap.has(node.id)) {
+          return { ...node, position: { ...node.position, y: posMap.get(node.id)! } };
+        }
+        return node;
+      });
+
+      set({ nodes: updatedNodes });
+      scheduleDebouncedAutoSave(updatedNodes, get().edges, set);
+    }
+  },
+
+  groupSelectedNodes: (boundaryType: GroupBoundaryType, label?: string) => {
+    const { nodes } = get();
+    const selected = nodes.filter((n) => n.selected);
+    if (selected.length === 0) return;
+
+    get().recordSnapshot();
+
+    const getNodeWidth = (n: CanvasNodeItem) => (n.data?.width as number) || (n.data?.isBoundary ? 540 : 144);
+    const getNodeHeight = (n: CanvasNodeItem) => (n.data?.height as number) || (n.data?.isBoundary ? 340 : 80);
+
+    const minX = Math.min(...selected.map((n) => n.position.x));
+    const minY = Math.min(...selected.map((n) => n.position.y));
+    const maxX = Math.max(...selected.map((n) => n.position.x + getNodeWidth(n)));
+    const maxY = Math.max(...selected.map((n) => n.position.y + getNodeHeight(n)));
+
+    const padX = 48;
+    const padTop = 64;
+    const padBottom = 48;
+
+    const boundX = Math.max(0, Math.round((minX - padX) / 16) * 16);
+    const boundY = Math.max(0, Math.round((minY - padTop) / 16) * 16);
+    const boundW = Math.max(240, Math.round((maxX - minX + padX * 2) / 16) * 16);
+    const boundH = Math.max(160, Math.round((maxY - minY + padTop + padBottom) / 16) * 16);
+
+    const boundaryId = `group-${boundaryType}-${Date.now()}`;
+    const boundaryLabel =
+      label ||
+      (boundaryType === 'vpc'
+        ? 'VPC (10.0.0.0/16)'
+        : boundaryType === 'public-subnet'
+        ? 'Public Subnet (10.0.1.0/24)'
+        : boundaryType === 'private-subnet'
+        ? 'Private Subnet (10.0.2.0/24)'
+        : boundaryType.replace(/-/g, ' ').toUpperCase());
+
+    const boundaryNode: CanvasNodeItem = {
+      id: boundaryId,
+      type: 'awsGroup',
+      position: { x: boundX, y: boundY },
+      zIndex: -1,
+      data: {
+        serviceId: `bound-${boundaryType}`,
+        label: boundaryLabel,
+        category: 'Networking',
+        tier: 1,
+        isBoundary: true,
+        boundaryType,
+        boundaryLabel,
+        width: boundW,
+        height: boundH,
+        cidr: boundaryType === 'vpc' ? '10.0.0.0/16' : boundaryType.includes('subnet') ? '10.0.1.0/24' : undefined,
+      },
+    };
+
+    const updatedNodes = nodes.map((node) => {
+      if (node.selected) {
+        return {
+          ...node,
+          parentId: boundaryId,
+          extent: 'parent' as const,
+          position: {
+            x: Math.round((node.position.x - boundX) / 16) * 16,
+            y: Math.round((node.position.y - boundY) / 16) * 16,
+          },
+        };
+      }
+      return node;
+    });
+
+    const finalNodes = [boundaryNode, ...updatedNodes];
+    set({ nodes: finalNodes });
+    scheduleDebouncedAutoSave(finalNodes, get().edges, set);
   },
 
   removeNode: (nodeId: string) => {
@@ -879,6 +1091,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const timestamp = Date.now();
     const duplicatedId = `custom-blueprint-${timestamp}`;
     const duplicatedName = `${sourceDiagram.name} (Copy)`;
+    const thumbnail = sourceDiagram.thumbnail || generateDiagramThumbnail(sourceDiagram.nodes, sourceDiagram.edges);
 
     const newDiagram: Diagram = {
       id: duplicatedId,
@@ -886,6 +1099,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       description: sourceDiagram.description,
       nodes: JSON.parse(JSON.stringify(sourceDiagram.nodes)),
       edges: JSON.parse(JSON.stringify(sourceDiagram.edges)),
+      thumbnail,
       createdAt: timestamp,
       updatedAt: timestamp,
     };
@@ -939,12 +1153,15 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       ? get().activeDiagramId
       : `custom-blueprint-${timestamp}`;
 
+    const thumbnail = generateDiagramThumbnail(currentNodes, currentEdges);
+
     const newDiagram: Diagram = {
       id,
       name: name.trim() || 'Untitled Blueprint',
       description: `Custom architecture blueprint with ${currentNodes.length} nodes and ${currentEdges.length} connections.`,
       nodes: currentNodes,
       edges: currentEdges,
+      thumbnail,
       createdAt: timestamp,
       updatedAt: timestamp,
     };
@@ -958,6 +1175,60 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       activeDiagramId: id,
       activeDiagramName: newDiagram.name,
     });
+  },
+
+  exportBlueprintJson: async (blueprintId?: string) => {
+    const id = blueprintId || get().activeDiagramId;
+    let target = await dbGetDiagramById(id);
+    if (!target) {
+      const seed = Object.values(SEED_BLUEPRINTS).find((b) => b.id === id);
+      if (seed) {
+        target = {
+          id: seed.id,
+          name: seed.name,
+          description: seed.description,
+          nodes: seed.nodes,
+          edges: seed.edges,
+          thumbnail: (seed as any).thumbnail || generateDiagramThumbnail(seed.nodes, seed.edges),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+      } else {
+        target = {
+          id: get().activeDiagramId,
+          name: get().activeDiagramName,
+          description: 'Active workspace canvas architecture manifest',
+          nodes: get().nodes,
+          edges: get().edges,
+          thumbnail: generateDiagramThumbnail(get().nodes, get().edges),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+      }
+    }
+
+    const jsonStr =
+      'data:text/json;charset=utf-8,' +
+      encodeURIComponent(
+        JSON.stringify(
+          {
+            version: '1.0',
+            schema: 'aws-compass-blueprint',
+            blueprint: target,
+            exportedAt: new Date().toISOString(),
+          },
+          null,
+          2
+        )
+      );
+
+    const a = document.createElement('a');
+    a.href = jsonStr;
+    const safeName = target.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    a.download = `aws-blueprint-${safeName}-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   },
 
   loadTemplate: (templateId: string) => {

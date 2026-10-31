@@ -1,9 +1,14 @@
 import React from 'react';
-import type { StudyStatus } from '../../types/aws';
 import { useCompassStore } from '../../store/useCompassStore';
 
+export type StatusIndicatorType =
+  | 'in-progress'
+  | 'not-started'
+  | 'mastered'
+  | 'review';
+
 export interface CloudscapeStatusIndicatorProps {
-  status: StudyStatus;
+  status: StatusIndicatorType;
   showLabel?: boolean;
   className?: string;
 }

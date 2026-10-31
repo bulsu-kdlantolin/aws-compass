@@ -50,47 +50,49 @@ export function getNodeAbsolutePosition(
  * Calculates center coordinates of a node.
  * For AWS service nodes, center is aligned around the 48px icon (center at x + 70, y + 24).
  */
-  export function getNodeCenter(
-    node: CanvasNodeItem,
-    allNodes?: CanvasNodeItem[]
-  ): { x: number; y: number } {
-    const abs = getNodeAbsolutePosition(node, allNodes);
-    if (node.data?.isBoundary) {
-      const width = node.data.width || (node.style?.width as number) || 400;
-      const height = node.data.height || (node.style?.height as number) || 280;
-      return {
-        x: abs.x + width / 2,
-        y: abs.y + height / 2,
-      };
-    }
-
-    // AWSServiceNode standard icon center (w-140)
+export function getNodeCenter(
+  node: CanvasNodeItem,
+  allNodes?: CanvasNodeItem[]
+): { x: number; y: number } {
+  const abs = getNodeAbsolutePosition(node, allNodes);
+  if (node.data?.isBoundary) {
+    const width = node.data.width || (node.style?.width as number) || 400;
+    const height = node.data.height || (node.style?.height as number) || 280;
     return {
-      x: abs.x + 70,
-      y: abs.y + 24,
+      x: abs.x + width / 2,
+      y: abs.y + height / 2,
     };
   }
 
-  /**
-   * Determines the optimal source and target handles between two nodes
-   * based on their relative spatial vector:
-   * - If |dx| >= |dy|: connect right -> left (dx >= 0) or left -> right (dx < 0)
-   * - If |dy| > |dx|: connect bottom -> top (dy >= 0) or top -> bottom (dy < 0)
-   *
-   * This prevents connection lines from looping backward over node icons.
-   */
-  export function resolveOptimalHandles(
-    sourceNode: CanvasNodeItem,
+  // AWSServiceNode standard icon center (w-140)
+  return {
+    x: abs.x + 70,
+    y: abs.y + 24,
+  };
+}
+
+/**
+ * Determines the optimal source and target handles between two nodes
+ * based on their relative spatial vector:
+ * - If |dx| >= |dy|: connect right -> left (dx >= 0) or left -> right (dx < 0)
+ * - If |dy| > |dx|: connect bottom -> top (dy >= 0) or top -> bottom (dy < 0)
+ *
+ * This prevents connection lines from looping backward over node icons.
+ */
+export function resolveOptimalHandles(
+  sourceNode: CanvasNodeItem,
   targetNode: CanvasNodeItem,
-    allNodes?: CanvasNodeItem[]
-  ): { sourceHandle: 'top' | 'right' | 'bottom' | 'left'; targetHandle: 'top' | 'right' | 'bottom' | 'left' } {
-    const sourceCenter = getNodeCenter(sourceNode, allNodes);
-    const targetCenter = getNodeCenter(targetNode, allNodes);
+  allNodes?: CanvasNodeItem[]
+): { sourceHandle: 'top' | 'right' | 'bottom' | 'left'; targetHandle: 'top' | 'right' | 'bottom' | 'left' } {
+  const sourceCenter = getNodeCenter(sourceNode, allNodes);
+  const targetCenter = getNodeCenter(targetNode, allNodes);
 
-    const dx = targetCenter.x - sourceCenter.x;
-    const dy = targetCenter.y - sourceCenter.y;
+  const dx = targetCenter.x - sourceCenter.x;
+  const dy = targetCenter.y - sourceCenter.y;
 
-    if (Math.abs(dx) >= Math.abs(dy)) {
+    // Hard-lock horizontal handles when flow is primarily horizontal
+    // or when vertical delta is within reasonable horizontal band (< 80px)
+    if (Math.abs(dy) < 80 || Math.abs(dx) >= Math.abs(dy)) {
       if (dx >= 0) {
         return { sourceHandle: 'right', targetHandle: 'left' };
       }
@@ -354,25 +356,25 @@ export function getNodeAbsolutePosition(
       if (srcAbs && tgtAbs) {
         const dx = tgtAbs.x - srcAbs.x;
         const dy = tgtAbs.y - srcAbs.y;
-        let sourceHandle: 'top' | 'right' | 'bottom' | 'left' = 'right';
-        let targetHandle: 'top' | 'right' | 'bottom' | 'left' = 'left';
+        let optimalSource: 'top' | 'right' | 'bottom' | 'left' = 'right';
+        let optimalTarget: 'top' | 'right' | 'bottom' | 'left' = 'left';
 
-        if (Math.abs(dx) >= Math.abs(dy)) {
-          sourceHandle = dx >= 0 ? 'right' : 'left';
-          targetHandle = dx >= 0 ? 'left' : 'right';
-        } else {
-          sourceHandle = dy >= 0 ? 'bottom' : 'top';
-          targetHandle = dy >= 0 ? 'top' : 'bottom';
+          if (Math.abs(dy) < 80 || Math.abs(dx) >= Math.abs(dy)) {
+            optimalSource = dx >= 0 ? 'right' : 'left';
+            optimalTarget = dx >= 0 ? 'left' : 'right';
+          } else {
+            optimalSource = dy >= 0 ? 'bottom' : 'top';
+            optimalTarget = dy >= 0 ? 'top' : 'bottom';
+          }
+
+          return {
+            ...edge,
+            sourceHandle: optimalSource,
+            targetHandle: optimalTarget,
+          };
         }
-
-        return {
-          ...edge,
-          sourceHandle: edge.sourceHandle || sourceHandle,
-          targetHandle: edge.targetHandle || targetHandle,
-        };
-      }
-      return edge;
-    });
+        return edge;
+      });
 
     return {
       nodes: finalNodes,

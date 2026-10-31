@@ -38,22 +38,24 @@ export const CloudscapeSearchInput: React.FC<CloudscapeSearchInputProps> = ({
   };
 
   const hasValue = value.trim().length > 0;
-  const heightClass = size === 'sm' ? 'h-7 text-[12px]' : 'h-8 text-[13px]';
+  const heightClass = size === 'sm' ? 'h-7' : 'h-8';
+  const fontSizeClass = size === 'sm' ? 'text-[12px]' : 'text-[13px]';
+  const iconSize = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4';
 
   return (
     <div
-      className={`relative flex items - center rounded - [6px] border border - [#D5DBDB] dark: border - [#2A3647] bg - [#F8F9FA] dark: bg - [#0F141A] px - 2.5 transition - [border - color, box - shadow] duration - 150 ease - out focus - within: border - [#0972D3] dark: focus - within: border - [#539FE5] focus - within: ring - 1 focus - within: ring - [#0972D3] dark: focus - within: ring - [#539FE5] ${ heightClass } ${
-  disabled ? 'opacity-50 pointer-events-none' : ''
-} ${ className } `}
+      className={`relative flex items-center rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] px-2.5 transition-[border-color,box-shadow] duration-150 ease-out focus-within:border-[#0972D3] dark:focus-within:border-[#539FE5] focus-within:ring-1 focus-within:ring-[#0972D3] dark:focus-within:ring-[#539FE5] ${heightClass} ${disabled ? 'opacity-50 pointer-events-none' : ''
+        } ${className}`}
     >
-      {/* 14px Leading Search Icon */}
-      <Search
-        className="size-3.5 text-[#545B64] dark:text-[#879596] shrink-0 mr-2 pointer-events-none"
-        strokeWidth={1.75}
-        aria-hidden="true"
-      />
+      {/* Leading Search Icon - perfectly centered */}
+      <div className="flex items-center justify-center shrink-0 mr-2 pointer-events-none" aria-hidden="true">
+        <Search
+          className={`${iconSize} text-[#545B64] dark:text-[#879596] shrink-0`}
+          strokeWidth={1.75}
+        />
+      </div>
 
-      {/* Actual Input */}
+      {/* Actual Input - full height and leading-normal for exact vertical baseline centering */}
       <input
         ref={inputRef}
         type="text"
@@ -69,7 +71,7 @@ export const CloudscapeSearchInput: React.FC<CloudscapeSearchInputProps> = ({
         style={{
           caretColor: 'var(--aws-interactive, #0972D3)',
         }}
-        className="w-full bg-transparent leading-[20px] text-[#16191F] dark:text-[#EAEDED] placeholder:text-[#545B64] dark:placeholder:text-[#879596] outline-none border-none p-0 focus:ring-0 text-[13px]"
+        className={`w-full h-full bg-transparent flex-1 text-[#16191F] dark:text-[#EAEDED] placeholder:text-[#545B64] dark:placeholder:text-[#879596] outline-none border-none p-0 focus:ring-0 leading-normal ${fontSizeClass}`}
       />
 
       {/* Right Side Controls: Shortcut Badge, Filter Spinner, & Animated Clear (X) Button */}
@@ -99,11 +101,10 @@ export const CloudscapeSearchInput: React.FC<CloudscapeSearchInputProps> = ({
           aria-hidden={!hasValue}
           onClick={handleClear}
           aria-label="Clear search input"
-          className={`relative p - 0.5 rounded - [4px] text - [#545B64] dark: text - [#879596] hover: text - [#16191F] dark: hover: text - [#EAEDED] hover: bg - [#EAEDED] / 70 dark: hover: bg - [#1E2B3D] cursor - pointer enabled: active: scale - [0.96] transition - [opacity, transform] duration - 150 ease - [cubic - bezier(0.2, 0, 0, 1)] ${
-  hasValue
-    ? 'scale-100 opacity-100 pointer-events-auto'
-    : 'scale-[0.5] opacity-0 pointer-events-none'
-} `}
+          className={`relative p-0.5 rounded-[4px] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] hover:bg-[#EAEDED]/70 dark:hover:bg-[#1E2B3D] cursor-pointer enabled:active:scale-[0.96] transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)] flex items-center justify-center ${hasValue
+              ? 'scale-100 opacity-100 pointer-events-auto'
+              : 'scale-[0.5] opacity-0 pointer-events-none'
+            }`}
         >
           <X className="size-3.5" strokeWidth={2} />
         </button>

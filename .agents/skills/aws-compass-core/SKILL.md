@@ -1,6 +1,6 @@
 ---
 name: aws-compass-core
-description: Master architectural rules, data schemas, and workflow orchestration for the AWS Compass study vault and diagramming sandbox.
+description: Master architectural rules, data schemas, and workflow orchestration for the AWS Compass architecture documentation vault and diagramming studio.
 ---
 
 # AWS Compass Core Specification
@@ -8,7 +8,14 @@ description: Master architectural rules, data schemas, and workflow orchestratio
 ## 1. Tech Stack & State Rules
 - **Stack**: React, Vite, TypeScript, Tailwind CSS, `@xyflow/react` (React Flow), `zustand`, `dexie` (IndexedDB), `react-markdown`, and `mermaid`.
 - **State Separation**: Never write directly to Dexie.js on every React Flow `onNodesChange` drag frame. Maintain active canvas nodes/edges in a `zustand` store and debounce/persist snapshots to Dexie.js via repository functions in `src/db/`.
-- **Strict Typing**: Follow `typescript-expert` rules. No `any` types. All AWS service nodes, edge protocols, and study statuses must use strict union types in `src/types/aws.ts`.
+- **Strict Typing**: Follow `typescript-expert` rules. No `any` types. All AWS service nodes, edge protocols, and favorite states must use strict types in `src/types/aws.ts`.
+- **Favorites System**: AWS Compass is a pure cloud architecture reference, documentation, and sandbox platform. All services utilize a clean `isFavorite: boolean` bookmarking system.
+
+### 1.1. Service Tier Classification (Popularity & Complexity)
+Services are strictly classified into 3 architectural tiers:
+- **Tier 1 (`T1 · Core`)**: Foundational, high-popularity AWS services used in almost every architecture (EC2, S3, VPC, IAM, Lambda, RDS, CloudFront, Route 53).
+- **Tier 2 (`T2 · Enterprise`)**: Production-grade scaling, container, messaging, and security services (ECS, EKS, SQS, SNS, KMS, WAF, Aurora, DynamoDB).
+- **Tier 3 (`T3 · Specialized`)**: Workload-specific, niche, or advanced services (Lightsail, Storage Gateway, Redshift, etc.).
 
 ## 2. UI & File Organization
 - Adhere to `frontend-dev-guidelines` for modular directory layout (`src/components/canvas/`, `src/components/vault/`, `src/store/`, `src/db/`, `src/types/`).
@@ -98,7 +105,7 @@ Containers follow official AWS Architecture Deck specifications:
 ### 7.4. Elimination of 12 AI-Generated UI Anti-Patterns ("AI Slop")
 1. **NO UI Icons in Tinted Rounded Boxes**: Banned `<div className="p-2 rounded-lg bg-blue-500/10"><Icon/></div>`. Chrome icons are bare 16px (`w-4 h-4`) aligned inline with text. Only `<AWSServiceIcon />` renders in solid category tiles.
 2. **NO Nested "Boxes-Inside-Boxes"**: Use single-bordered Cloudscape Containers (`rounded-[8px]`) with top header bands. Internal division uses Key-Value grids or hairlines.
-3. **NO Puffy Pill Badges**: Use Cloudscape Status Indicators (bare 14px icon + plain text: `#1D8102` check for Mastered, `#0972D3` clock for In Progress, `#879596` circle for Unstudied).
+3. **NO Puffy Pill Badges**: Use Cloudscape subtle badges (`T1 · Core`, `T2 · Enterprise`, `T3 · Specialized`) and bare interactive favorite stars (`#FF9900`).
 4. **NO Uppercase Eyebrow Labels**: Strictly Sentence case on all headers, tabs, and buttons.
 5. **Strict Border Radius Hierarchy**:
    - `0px` (`rounded-none`): App Shell, Top Header, Left Catalog Tree, Docked Split Panel, and AWS Architecture Group boxes.
@@ -163,8 +170,8 @@ Docked resizable Cloudscape Split Panel providing two distinct operational modes
   - **Connection Edges (`ProtocolEdge`)**: Live customization of protocol preset, freeform custom label override, line style, directionality (`one-way`, `bi-directional`, `none`), and traffic animation toggle.
   - **External Actors**: Client/Caller identity (`user-browser`, `mobile-client`, `corporate-datacenter`, `external-webhook`).
   - **Annotations**: Resizable sticky note (`AnnotationNode.tsx`) with title, markdown body, and color theme.
-- **Tab 2: Service Dossier**:
-  - Full 6-part study dossier, CLI commands, and interactive Mermaid enterprise flowchart from the Concept Vault preserved alongside the sandbox customizer.
+- **Tab 2: Documentation**:
+  - Full 6-part documentation, CLI commands, and interactive Mermaid enterprise flowchart from the Concept Vault preserved alongside the sandbox customizer.
 
 ### 10.3. Canvas Editing & Interaction Physics
 - **Double-Click In-Place Editing**: Double-clicking any service node title/role, group boundary header, or annotation node on the canvas switches into an inline input (`Enter` commits, `Escape` cancels).
@@ -187,13 +194,37 @@ Docked resizable Cloudscape Split Panel providing two distinct operational modes
   - Five Enterprise Preference Panels:
     1. **Appearance & density**: Theme selection (`dark` | `light` | `system`), UI density (`comfortable` | `compact`), code font size (`12px` | `13px` | `14px`).
     2. **Architecture canvas**: Grid pattern (`dots` | `lines` | `cross` | `none`), snap to grid toggle + step (`16px` | `24px` | `32px`), default edge routing (`smoothstep` | `bezier` | `straight`), edge traffic animation toggle, minimap toggle, inspector dock position (`right` | `bottom`).
-    3. **Study & region defaults**: Default AWS region (`us-east-1`, `us-west-2`, `eu-west-1`, `ap-southeast-1`), default tier filter, auto-expand Mermaid diagrams.
-    4. **Data, backup & reset**: Live IndexedDB statistics (services count, custom blueprints count, review queue, storage estimate), portable JSON backup export and import, with strict 2-step confirmations for "Reset study progress" and "Factory reset database".
+    3. **Documentation & region**: Default AWS region (`us-east-1`, `us-west-2`, `eu-west-1`, `ap-southeast-1`), default tier filter, auto-expand Mermaid diagrams.
+    4. **Data, backup & reset**: Live IndexedDB statistics (services count, custom blueprints count, favorited bookmarks, storage estimate), portable JSON backup export and import, with strict 2-step confirmations for "Clear all favorites" and "Factory reset database".
     5. **Keyboard shortcuts**: Comprehensive reference table (`Ctrl+K`, `Ctrl+,`, `Ctrl+Z/Y`, `Ctrl+D`, `Del/Backspace`, `Esc`).
 - **Decluttered 4 Workspace Zones**:
-  - **Zone 1: Top Navbar (`TopNavbar.tsx`)**: Removed redundant Export, Import, and Reset buttons. Right zone holds strictly: Study Telemetry Readout (`X Mastered · Y In Progress` + mini 2-color bar), `1px` vertical divider, Quick theme toggle, and Settings gear button.
-  - **Zone 2: Service Catalog Sidebar (`ServiceCatalog.tsx`)**: Added `Collapse all` / `Expand all` category tree toggle button; row padding and card heights dynamically adapt to `uiDensity`.
+  - **Zone 1: Top Navbar (`TopNavbar.tsx`)**: Removed redundant Export, Import, and Reset buttons. Right zone holds strictly: Favorites quick-filter pill (`★ Favorites (count)`), `1px` vertical divider, Quick theme toggle, and Settings gear button.
+  - **Zone 2: Service Catalog Sidebar (`ServiceCatalog.tsx`)**: Added `Collapse all` / `Expand all` category tree toggle button; 1-click favorites filter toggle; row padding and card heights dynamically adapt to `uiDensity`.
   - **Zone 3: Concept Vault (`ConceptVault.tsx`)**: Density segmented toggles removed from table header; table row padding binds directly to `uiDensity`; streamlined single-row toolbar with `"Filter by name, ID, or CLI prefix..."`, conditional count (`Showing X of Y services`), and `"Clear filters"` ghost button when active.
   - **Zone 4: Architecture Canvas Toolbar (`ArchitectureCanvas.tsx`)**: Removed legacy Dots and Snapshots buttons; clustered toolbar into 3 clean groups separated by `1px` dividers (Left: Blueprints & Save As, Center: Add Primitives & Auto-Layout, Right: History, View controls, Export & Clear). React Flow background, grid snapping, and minimap dynamically respond to `useSettingsStore`.
+
+---
+
+## 12. Studio Workflow Bridges: Concept Vault <-> Architecture Canvas
+
+### 12.1. Bi-Directional Concept Vault <-> Canvas Integration
+- **`+ Add to Canvas` Button**: Available directly in the Concept Vault Service Header action bar. Automatically computes non-overlapping canvas position near existing nodes, appends the service node, switches the workspace mode to `canvas`, and opens the node properties inspector.
+- **`Open Flow in Sandbox ↗`**: Mounted in the top toolbar and fullscreen lightbox header of Section 3 Mermaid diagrams (`MermaidViewer.tsx`). Translates Mermaid `flowchart LR` nodes, subgraphs, and connections into native `CanvasNodeItem` and `CanvasEdgeItem` primitives via `parseMermaidToCanvas` (`src/utils/mermaidToDiagram.ts`), applies deterministic Dagre auto-layout, saves as a custom blueprint, and opens on the canvas.
+- **`Referenced in Blueprints` Footer Strip**: Displayed at the base of every service dossier. Inspects all reference and user blueprints for occurrences of the service, rendering blueprint cards with 1-click loading and canvas node focusing.
+
+### 12.2. Live ARN / CLI Parameter Interpolation & Numbered Code Frames
+- **Interactive Context Parameters Bar**: Embedded in the service header card above the ARN pattern. Provides real-time selector for `Region` and inputs for `Account ID` and `Resource Name`.
+- **Live Interpolation Engine**: Automatically interpolates selected region, account ID, and resource names into the ARN pattern and Section 6 CLI command blocks.
+- **`<CodeFrame />` Component**: Features a dedicated line-numbering gutter, tokenized AWS CLI syntax highlighting (commands, subcommands, flags, strings, ARNs), responsive font-size binding, and a spring-animated copy checkmark.
+
+### 12.3. Smart "Drop Wire on Empty Canvas" Spawner (`QuickConnectPopover.tsx`)
+- Triggered when releasing a connection wire on empty canvas space (`onConnectEnd` in `@xyflow/react`).
+- Detects source node metadata and projects Top 5 logical downstream architectural targets (e.g. S3 -> Lambda, CloudFront, SNS, SQS, KMS; API Gateway -> Lambda, ECS, DynamoDB, Cognito, WAF) with recommended edge protocols.
+- Includes instant catalog search with keyboard autofocus and automatic edge wiring upon target selection.
+
+### 12.4. Bill of Materials (BOM) & Sticky Table of Contents
+- **Architecture BOM Popover (`CanvasBomPopover.tsx`)**: Summarizes active canvas services by AWS category and infrastructure boundaries with total counts and a 1-click **`Copy as Markdown Table`** button for team architectural reviews.
+- **Sticky Table of Contents (`DocToc.tsx`)**: Rendered on `xl` viewports tracking all 6 dossier sections and referenced blueprints with a spring-animated active indicator and smooth scroll navigation.
+
 
 

@@ -90,12 +90,15 @@ export const AnnotationNode = memo((props: NodeProps) => {
   const textColor = theme === 'dark' ? colorDef.textDark : colorDef.textLight;
   const titleColor = theme === 'dark' ? colorDef.titleDark : colorDef.titleLight;
 
-  const width = (props.width as number) || nodeData.width || 220;
-  const height = (props.height as number) || nodeData.height || 140;
+  const isTextOnly = Boolean(nodeData.isTextOnly);
+  const fontSize = nodeData.fontSize || 18;
+
+  const width = (props.width as number) || nodeData.width || (isTextOnly ? 280 : 220);
+  const height = (props.height as number) || nodeData.height || (isTextOnly ? 48 : 140);
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setEditTitle(nodeData.annotationTitle || nodeData.label || 'Architecture Note');
+    setEditTitle(nodeData.annotationTitle || nodeData.label || (isTextOnly ? 'Architecture Section Header' : 'Architecture Note'));
     setEditContent(nodeData.annotationContent || '');
     setIsEditing(true);
   };
@@ -127,6 +130,76 @@ export const AnnotationNode = memo((props: NodeProps) => {
     }
   };
 
+  if (isTextOnly) {
+    return (
+      <div
+        onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
+        style={{
+          width: `${width}px`,
+          height: `${height}px`,
+        }}
+        className={`relative flex items-center px-2 py-1 rounded-[4px] group select-none cursor-pointer transition-all ${selected
+            ? 'ring-1 ring-[var(--aws-brand)] bg-[var(--aws-brand)]/5'
+            : 'hover:bg-[var(--aws-card-bg)]/60'
+          }`}
+      >
+        <NodeResizer
+          minWidth={120}
+          minHeight={32}
+          isVisible={selected}
+          lineClassName="!border-[var(--aws-brand)]"
+          handleClassName="!w-2 !h-2 !bg-[var(--aws-brand)] !border-none !rounded-none"
+        />
+
+        {!isEditing && (
+          <button
+            type="button"
+            onClick={handleDelete}
+            style={{ color: 'var(--aws-text-muted)' }}
+            className="absolute -top-2 -right-2 p-0.5 rounded-full bg-[var(--aws-card-bg)] border border-[var(--aws-border)] hover:text-[#DD344C] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+            title="Delete text block"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        )}
+
+        {isEditing ? (
+          <div className="flex items-center gap-1.5 w-full">
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSaveEdit();
+                if (e.key === 'Escape') setIsEditing(false);
+              }}
+              onBlur={() => handleSaveEdit()}
+              style={{ fontSize: `${fontSize}px` }}
+              className="w-full font-bold tracking-tight text-[var(--aws-text-primary)] bg-transparent border-b border-[var(--aws-interactive)] outline-none"
+              autoFocus
+            />
+            <button
+              type="button"
+              onClick={handleSaveEdit}
+              className="text-[#1D8102] hover:opacity-80 p-0.5 shrink-0"
+            >
+              <Check className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <div
+            style={{ fontSize: `${fontSize}px` }}
+            className="font-bold tracking-tight text-[var(--aws-text-primary)] truncate w-full select-none"
+            title={nodeData.annotationTitle || nodeData.label}
+          >
+            {nodeData.annotationTitle || nodeData.label || 'Architecture Section Header'}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       onClick={handleClick}
@@ -137,9 +210,8 @@ export const AnnotationNode = memo((props: NodeProps) => {
         borderColor,
         backgroundColor: bgColor,
       }}
-      className={`relative rounded-[8px] border shadow-xs transition-shadow group flex flex-col overflow-hidden select-none cursor-pointer ${
-        selected ? 'ring-2 ring-[var(--aws-brand)] shadow-md' : 'hover:shadow-sm'
-      }`}
+      className={`relative rounded-[8px] border shadow-xs transition-shadow group flex flex-col overflow-hidden select-none cursor-pointer ${selected ? 'ring-2 ring-[var(--aws-brand)] shadow-md' : 'hover:shadow-sm'
+        }`}
     >
       {/* Node Resizer */}
       <NodeResizer

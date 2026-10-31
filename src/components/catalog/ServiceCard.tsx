@@ -1,8 +1,8 @@
 import React from 'react';
 import type { AWSService } from '../../types/aws';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, Star } from 'lucide-react';
 import { AWSServiceIcon } from '../icons/AWSServiceIcon';
-import { CloudscapeStatusIndicator } from '../ui/CloudscapeStatusIndicator';
+import { useCompassStore } from '../../store/useCompassStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 
 interface ServiceCardProps {
@@ -36,6 +36,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
 }) => {
   const uiDensity = useSettingsStore((s) => s.uiDensity);
   const isCompact = uiDensity === 'compact';
+  const toggleFavorite = useCompassStore((s) => s.toggleFavorite);
 
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('application/aws-service-id', service.id);
@@ -78,15 +79,13 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
         backgroundColor: isSelected ? 'var(--aws-page-bg)' : 'transparent',
         borderLeftColor: isSelected ? 'var(--aws-brand)' : 'transparent',
       }}
-      className={`group relative flex items-center cursor-pointer border-l-2 text-left select-none transition-[opacity,background-color,border-color,transform] duration-100 ${
-        isCompact ? 'h-6.5 px-1.5 gap-1.5 text-[12px]' : 'h-7.5 px-2 gap-2 text-[13px]'
-      } ${
-        isDragging
+      className={`group relative flex items-center cursor-pointer border-l-2 text-left select-none transition-[opacity,background-color,border-color,transform] duration-100 ${isCompact ? 'h-6.5 px-1.5 gap-1.5 text-[12px]' : 'h-7.5 px-2 gap-2 text-[13px]'
+        } ${isDragging
           ? 'opacity-35 scale-[0.98] ring-1 ring-[var(--aws-interactive)]/40 bg-[var(--aws-page-bg)]'
           : isSelected
-          ? 'text-[var(--aws-text-primary)] font-semibold'
-          : 'text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] hover:text-[var(--aws-text-primary)]'
-      }`}
+            ? 'text-[var(--aws-text-primary)] font-semibold'
+            : 'text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] hover:text-[var(--aws-text-primary)]'
+        }`}
       title={`${service.name} (Drag to rearrange or add to canvas, Alt+Up/Down to reorder)`}
     >
       {/* Drop Indicator - Top (Drop Before) */}
@@ -124,10 +123,25 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
         T{service.tier}
       </span>
 
-      {/* Bare status indicator (14px icon) */}
-      <div className="shrink-0">
-        <CloudscapeStatusIndicator status={service.studyStatus} showLabel={false} />
-      </div>
+      {/* 14px Star Favorite Action Button */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleFavorite(service.id);
+        }}
+        className={`shrink-0 p-0.5 rounded transition-all cursor-pointer ${service.isFavorite
+            ? 'opacity-100 text-[#FF9900]'
+            : 'opacity-0 group-hover:opacity-100 text-[var(--aws-text-muted)] hover:text-[#FF9900]'
+          }`}
+        title={service.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        aria-label={service.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+      >
+        <Star
+          className={`w-3.5 h-3.5 transition-transform active:scale-90 ${service.isFavorite ? 'fill-[#FF9900] text-[#FF9900]' : ''
+            }`}
+        />
+      </button>
     </div>
   );
 };
