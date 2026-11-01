@@ -428,13 +428,12 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
                                   <span>{item.metadata.split(' · ')[0]}</span>
                                   <span>·</span>
                                   <span
-                                    className={`font-mono text-[11px] font-medium ${
-                                      item.tier === 1
-                                        ? 'text-[#FF9900]/90'
-                                        : item.tier === 2
-                                          ? 'text-[#539FE5]/90'
-                                          : 'text-[#879596]'
-                                    }`}
+                                    className={`font-mono text-[11px] font-medium ${item.tier === 1
+                                      ? 'text-[#FF9900]/90'
+                                      : item.tier === 2
+                                        ? 'text-[#539FE5]/90'
+                                        : 'text-[#879596]'
+                                      }`}
                                   >
                                     T{item.tier}
                                   </span>

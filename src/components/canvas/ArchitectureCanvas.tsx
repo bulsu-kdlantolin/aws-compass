@@ -883,159 +883,159 @@ const ArchitectureCanvasInner: React.FC = () => {
           <div
             className={`w-full h-full transition-opacity duration-200 ${isArranging ? 'opacity-75' : 'opacity-100'
               } ${isCanvasPanning ? 'is-canvas-panning' : ''}`}
-          onMouseDown={handleCanvasMouseDown}
-          onMouseMove={handleCanvasMouseMove}
+            onMouseDown={handleCanvasMouseDown}
+            onMouseMove={handleCanvasMouseMove}
           >
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            colorMode={theme}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onConnectEnd={handleConnectEnd}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-            selectionOnDrag={true}
-            panOnDrag={[1, 2]}
-            selectionMode={SelectionMode.Partial}
-            multiSelectionKeyCode={['Shift', 'Meta', 'Control']}
-            onNodeDragStop={handleNodeDragStop}
-              onMoveStart = {(event) => {
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              colorMode={theme}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onConnectEnd={handleConnectEnd}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+              selectionOnDrag={true}
+              panOnDrag={[1, 2]}
+              selectionMode={SelectionMode.Partial}
+              multiSelectionKeyCode={['Shift', 'Meta', 'Control']}
+              onNodeDragStop={handleNodeDragStop}
+              onMoveStart={(event) => {
                 if (event && ('button' in event || 'buttons' in event)) {
                   const me = event as MouseEvent;
-          if (me.button === 2 || me.button === 1 || (me.buttons && ((me.buttons & 2) !== 0 || (me.buttons & 4) !== 0))) {
-            setIsCanvasPanning(true);
+                  if (me.button === 2 || me.button === 1 || (me.buttons && ((me.buttons & 2) !== 0 || (me.buttons & 4) !== 0))) {
+                    setIsCanvasPanning(true);
                   }
                 }
               }}
-          onMove={(event, vp) => {
-            setZoomPercent(Math.round(vp.zoom * 100));
-            if (event && 'buttons' in event) {
-              const me = event as MouseEvent;
-              if ((me.buttons & 2) !== 0 || (me.buttons & 4) !== 0) {
-                setIsCanvasPanning(true);
-              }
-            }
-          }}
-          onMoveEnd={() => {
-            panStartRef.current = null;
-            setIsCanvasPanning(false);
-          }}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          defaultEdgeOptions={flowEdgeOptions}
-          connectionMode={ConnectionMode.Loose}
-          snapToGrid={snapToGrid}
-          snapGrid={[snapGridSize, snapGridSize]}
-          onNodeClick={(_, node) => {
-            openNodeInspector(node.id);
-          }}
-          onEdgeClick={(_, edge) => {
-            openEdgeInspector(edge.id);
-          }}
-          onPaneClick={() => {
-            closeInspector();
-            closeContextMenu();
-          }}
-          onNodeContextMenu={(e, node) => {
-            e.preventDefault();
-            panStartRef.current = null;
-            setIsCanvasPanning(false);
-            openContextMenu({
-              x: e.clientX,
-              y: e.clientY,
-              type: 'node',
-              targetId: node.id,
-            });
-          }}
-          onEdgeContextMenu={(e, edge) => {
-            e.preventDefault();
-            panStartRef.current = null;
-            setIsCanvasPanning(false);
-            openContextMenu({
-              x: e.clientX,
-              y: e.clientY,
-              type: 'edge',
-              targetId: edge.id,
-            });
-          }}
-          onPaneContextMenu={(e) => {
-            e.preventDefault();
-            panStartRef.current = null;
-            setIsCanvasPanning(false);
-            openContextMenu({
-              x: e.clientX,
-              y: e.clientY,
-              type: 'canvas',
-            });
-          }}
-          fitView
-          fitViewOptions={{ padding: 0.18 }}
-          minZoom={0.15}
-          maxZoom={2.5}
-          proOptions={{ hideAttribution: true }}
-            >
-          {canvasGridVariant !== 'none' && (
-            <Background
-              variant={
-                canvasGridVariant === 'dots'
-                  ? BackgroundVariant.Dots
-                  : canvasGridVariant === 'lines'
-                    ? BackgroundVariant.Lines
-                    : BackgroundVariant.Cross
-              }
-              gap={snapGridSize * 1.5}
-              size={canvasGridVariant === 'dots' ? 1.2 : 1}
-              color={theme === 'dark' ? '#354150' : '#D5DBDB'}
-            />
-          )}
-          {showMiniMap && (
-            <MiniMap
-              style={{
-                backgroundColor: 'var(--aws-card-bg)',
-                borderColor: 'var(--aws-border)',
+              onMove={(event, vp) => {
+                setZoomPercent(Math.round(vp.zoom * 100));
+                if (event && 'buttons' in event) {
+                  const me = event as MouseEvent;
+                  if ((me.buttons & 2) !== 0 || (me.buttons & 4) !== 0) {
+                    setIsCanvasPanning(true);
+                  }
+                }
               }}
-              className="!border !rounded-[4px] !shadow-md !overflow-hidden"
-              nodeColor={miniMapNodeColor}
-              maskColor={theme === 'dark' ? 'rgba(15, 27, 42, 0.75)' : 'rgba(242, 243, 243, 0.75)'}
-              zoomable
-              pannable
-            />
-          )}
-        </ReactFlow>
-      </div>
+              onMoveEnd={() => {
+                panStartRef.current = null;
+                setIsCanvasPanning(false);
+              }}
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              defaultEdgeOptions={flowEdgeOptions}
+              connectionMode={ConnectionMode.Loose}
+              snapToGrid={snapToGrid}
+              snapGrid={[snapGridSize, snapGridSize]}
+              onNodeClick={(_, node) => {
+                openNodeInspector(node.id);
+              }}
+              onEdgeClick={(_, edge) => {
+                openEdgeInspector(edge.id);
+              }}
+              onPaneClick={() => {
+                closeInspector();
+                closeContextMenu();
+              }}
+              onNodeContextMenu={(e, node) => {
+                e.preventDefault();
+                panStartRef.current = null;
+                setIsCanvasPanning(false);
+                openContextMenu({
+                  x: e.clientX,
+                  y: e.clientY,
+                  type: 'node',
+                  targetId: node.id,
+                });
+              }}
+              onEdgeContextMenu={(e, edge) => {
+                e.preventDefault();
+                panStartRef.current = null;
+                setIsCanvasPanning(false);
+                openContextMenu({
+                  x: e.clientX,
+                  y: e.clientY,
+                  type: 'edge',
+                  targetId: edge.id,
+                });
+              }}
+              onPaneContextMenu={(e) => {
+                e.preventDefault();
+                panStartRef.current = null;
+                setIsCanvasPanning(false);
+                openContextMenu({
+                  x: e.clientX,
+                  y: e.clientY,
+                  type: 'canvas',
+                });
+              }}
+              fitView
+              fitViewOptions={{ padding: 0.18 }}
+              minZoom={0.15}
+              maxZoom={2.5}
+              proOptions={{ hideAttribution: true }}
+            >
+              {canvasGridVariant !== 'none' && (
+                <Background
+                  variant={
+                    canvasGridVariant === 'dots'
+                      ? BackgroundVariant.Dots
+                      : canvasGridVariant === 'lines'
+                        ? BackgroundVariant.Lines
+                        : BackgroundVariant.Cross
+                  }
+                  gap={snapGridSize * 1.5}
+                  size={canvasGridVariant === 'dots' ? 1.2 : 1}
+                  color={theme === 'dark' ? '#354150' : '#D5DBDB'}
+                />
+              )}
+              {showMiniMap && (
+                <MiniMap
+                  style={{
+                    backgroundColor: 'var(--aws-card-bg)',
+                    borderColor: 'var(--aws-border)',
+                  }}
+                  className="!border !rounded-[4px] !shadow-md !overflow-hidden"
+                  nodeColor={miniMapNodeColor}
+                  maskColor={theme === 'dark' ? 'rgba(15, 27, 42, 0.75)' : 'rgba(242, 243, 243, 0.75)'}
+                  zoomable
+                  pannable
+                />
+              )}
+            </ReactFlow>
+          </div>
 
-      {/* Unified Floating Studio Dock (Context-Sensitive & Responsive) */}
-      <CanvasFormatBar
-        onFitView={() => reactFlowInstance.fitView({ padding: 0.18, duration: 250 })}
-        onAutoLayout={(dir) => handleTriggerAutoLayout(dir)}
-        layoutDirection={layoutDirection}
-        onChangeLayoutDirection={setLayoutDirection}
-        isArranging={isArranging}
-      />
-    </div>
+          {/* Unified Floating Studio Dock (Context-Sensitive & Responsive) */}
+          <CanvasFormatBar
+            onFitView={() => reactFlowInstance.fitView({ padding: 0.18, duration: 250 })}
+            onAutoLayout={(dir) => handleTriggerAutoLayout(dir)}
+            layoutDirection={layoutDirection}
+            onChangeLayoutDirection={setLayoutDirection}
+            isArranging={isArranging}
+          />
+        </div>
       </div >
 
-  {/* Right Context Menu Floating Popover */ }
-  < CanvasContextMenu />
+      {/* Right Context Menu Floating Popover */}
+      < CanvasContextMenu />
 
-  {/* Docked Resizable Dual-Tab Split Panel */ }
-  < NodeInspectorDrawer />
+      {/* Docked Resizable Dual-Tab Split Panel */}
+      < NodeInspectorDrawer />
 
-  {/* Drop Wire on Empty Canvas - Quick Connect Node Spawner */ }
-  < QuickConnectPopover
-isOpen = { quickConnectState.isOpen }
-onClose = {() => setQuickConnectState((s) => ({ ...s, isOpen: false }))}
-sourceNodeId = { quickConnectState.sourceNodeId }
-sourceNodeLabel = { quickConnectState.sourceNodeLabel }
-sourceServiceId = { quickConnectState.sourceServiceId }
-sourceCategory = { quickConnectState.sourceCategory }
-sourceHandleId = { quickConnectState.sourceHandleId }
-screenPosition = { quickConnectState.screenPosition }
-flowPosition = { quickConnectState.flowPosition }
-onSelectTarget = { handleQuickConnectSelectTarget }
-  />
+      {/* Drop Wire on Empty Canvas - Quick Connect Node Spawner */}
+      < QuickConnectPopover
+        isOpen={quickConnectState.isOpen}
+        onClose={() => setQuickConnectState((s) => ({ ...s, isOpen: false }))}
+        sourceNodeId={quickConnectState.sourceNodeId}
+        sourceNodeLabel={quickConnectState.sourceNodeLabel}
+        sourceServiceId={quickConnectState.sourceServiceId}
+        sourceCategory={quickConnectState.sourceCategory}
+        sourceHandleId={quickConnectState.sourceHandleId}
+        screenPosition={quickConnectState.screenPosition}
+        flowPosition={quickConnectState.flowPosition}
+        onSelectTarget={handleQuickConnectSelectTarget}
+      />
     </div >
   );
 };

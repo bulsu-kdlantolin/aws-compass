@@ -164,8 +164,8 @@ export const CanvasBomPopover: React.FC<CanvasBomPopoverProps> = ({
               type="button"
               onClick={handleCopyMarkdown}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border text-[11px] font-semibold transition-all cursor-pointer ${copied
-                  ? 'bg-[#1D8102]/15 text-[#38D9A9] border-[#1D8102]/40'
-                  : 'bg-[var(--aws-card-bg)] text-[var(--aws-text-primary)] border-[var(--aws-border)] hover:border-[#FF9900] hover:text-[#FF9900]'
+                ? 'bg-[#1D8102]/15 text-[#38D9A9] border-[#1D8102]/40'
+                : 'bg-[var(--aws-card-bg)] text-[var(--aws-text-primary)] border-[var(--aws-border)] hover:border-[#FF9900] hover:text-[#FF9900]'
                 }`}
               title="Copy Bill of Materials as Markdown table"
             >
@@ -294,10 +294,10 @@ export const CanvasBomPopover: React.FC<CanvasBomPopoverProps> = ({
                             <div className="flex items-center gap-1.5 shrink-0">
                               <span
                                 className={`text-[10px] font-mono font-medium tabular-nums ${n.data?.tier === 1
-                                    ? 'text-[#FF9900]/90'
-                                    : n.data?.tier === 2
-                                      ? 'text-[#539FE5]/90'
-                                      : 'text-[#879596]'
+                                  ? 'text-[#FF9900]/90'
+                                  : n.data?.tier === 2
+                                    ? 'text-[#539FE5]/90'
+                                    : 'text-[#879596]'
                                   }`}
                               >
                                 T{n.data?.tier || 1}
