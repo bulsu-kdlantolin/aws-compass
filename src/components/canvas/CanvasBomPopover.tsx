@@ -293,9 +293,11 @@ export const CanvasBomPopover: React.FC<CanvasBomPopoverProps> = ({
                             </span>
                             <div className="flex items-center gap-1.5 shrink-0">
                               <span
-                                className={`text-[9px] font-mono px-1 py-0.2 rounded border ${n.data?.tier === 1
-                                    ? 'bg-[#FF9900]/10 text-[#FF9900] border-[#FF9900]/25'
-                                    : 'bg-[#545B64]/10 text-[var(--aws-text-muted)] border-[var(--aws-border)]'
+                                className={`text-[10px] font-mono font-medium tabular-nums ${n.data?.tier === 1
+                                    ? 'text-[#FF9900]/90'
+                                    : n.data?.tier === 2
+                                      ? 'text-[#539FE5]/90'
+                                      : 'text-[#879596]'
                                   }`}
                               >
                                 T{n.data?.tier || 1}

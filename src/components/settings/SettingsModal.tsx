@@ -237,7 +237,7 @@ const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
         onChange={handleImportFile}
       />
 
-      <div className="max-w-[760px] w-[calc(100vw-2rem)] h-[560px] rounded-[16px] overflow-hidden flex border border-[#D5DBDB] dark:border-[#2A3647] bg-white dark:bg-[#161E2D] shadow-[0_20px_50px_rgba(0,0,0,0.45)] animate-in zoom-in-95 duration-150 select-none text-[#16191F] dark:text-[#EAEDED]">
+      <div className="max-w-[760px] w-[calc(100vw-2rem)] h-[560px] rounded-[14px] overflow-hidden flex border border-[#D5DBDB] dark:border-[#2A3647] bg-white dark:bg-[#161E2D] shadow-[0_20px_50px_rgba(0,0,0,0.45)] animate-in zoom-in-95 duration-150 select-none text-[#16191F] dark:text-[#EAEDED]">
         {/* Left Navigation Rail (w-52) */}
         <aside className="w-52 border-r border-[#EAEDED] dark:border-[#222D3C] bg-[#F8F9FA] dark:bg-[#0F141A] p-2 flex flex-col justify-between shrink-0">
           <div className="space-y-0.5">

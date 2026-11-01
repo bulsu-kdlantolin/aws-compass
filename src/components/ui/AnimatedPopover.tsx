@@ -179,7 +179,7 @@ export const AnimatedPopover: React.FC<AnimatedPopoverProps> = ({
           }
       }
       className={`${usePortal ? '' : `absolute ${alignClass} z-50`
-        } rounded-[12px] p-1.5 border bg-[var(--aws-popover-bg)] border-[var(--aws-border)] text-[var(--aws-text-primary)] shadow-[0px_4px_16px_rgba(0,0,0,0.18),0px_16px_36px_rgba(0,0,0,0.22)] dark:shadow-[0_12px_36px_-5px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.08)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] ${isOpen
+        } rounded-[14px] p-1.5 border bg-[var(--aws-popover-bg)] border-[var(--aws-border)] text-[var(--aws-text-primary)] shadow-[0px_4px_16px_rgba(0,0,0,0.18),0px_16px_36px_rgba(0,0,0,0.22)] dark:shadow-[0_12px_36px_-5px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.08)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] ${isOpen
           ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
           : `opacity-0 scale-[0.96] ${usePortal && isFlippedUp ? 'translate-y-1.5' : '-translate-y-1.5'
           } pointer-events-none`

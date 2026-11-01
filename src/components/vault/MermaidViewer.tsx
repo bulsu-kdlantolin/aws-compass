@@ -228,17 +228,12 @@ interface MermaidViewerProps {
             Architecture flow
           </span>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-0.5">
             <button
               type="button"
               onClick={handleZoomOut}
               disabled={zoom <= 0.4}
-              style={{
-                backgroundColor: 'var(--aws-card-bg)',
-                borderColor: 'var(--aws-border)',
-                color: 'var(--aws-text-muted)',
-              }}
-              className="p-1 rounded-[4px] border hover:text-[var(--aws-text-primary)] hover:border-[var(--aws-brand)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              className="p-1.5 rounded-[6px] text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent cursor-pointer transition-colors"
               title="Zoom out"
               aria-label="Zoom out"
             >
@@ -248,12 +243,7 @@ interface MermaidViewerProps {
               type="button"
               onClick={handleZoomIn}
               disabled={zoom >= 3.0}
-              style={{
-                backgroundColor: 'var(--aws-card-bg)',
-                borderColor: 'var(--aws-border)',
-                color: 'var(--aws-text-muted)',
-              }}
-              className="p-1 rounded-[4px] border hover:text-[var(--aws-text-primary)] hover:border-[var(--aws-brand)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              className="p-1.5 rounded-[6px] text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent cursor-pointer transition-colors"
               title="Zoom in"
               aria-label="Zoom in"
             >
@@ -263,12 +253,7 @@ interface MermaidViewerProps {
               type="button"
               onClick={handleZoomReset}
               disabled={zoom === 1}
-              style={{
-                backgroundColor: 'var(--aws-card-bg)',
-                borderColor: 'var(--aws-border)',
-                color: 'var(--aws-text-muted)',
-              }}
-              className="p-1 rounded-[4px] border hover:text-[var(--aws-text-primary)] hover:border-[var(--aws-brand)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              className="p-1.5 rounded-[6px] text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent cursor-pointer transition-colors"
               title="Reset zoom (100%)"
               aria-label="Reset zoom"
             >
@@ -277,22 +262,14 @@ interface MermaidViewerProps {
             <button
               type="button"
               onClick={() => setIsFullscreen(true)}
-              style={{
-                backgroundColor: 'var(--aws-card-bg)',
-                borderColor: 'var(--aws-border)',
-                color: 'var(--aws-text-primary)',
-              }}
-              className="p-1 rounded-[4px] border hover:border-[var(--aws-interactive)] hover:text-[var(--aws-interactive)] cursor-pointer transition-colors"
+              className="p-1.5 rounded-[6px] text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] cursor-pointer transition-colors"
               title="View full screen / Fit screen"
               aria-label="View full screen"
             >
               <Maximize2 className="w-3.5 h-3.5" />
             </button>
 
-            <div
-              style={{ backgroundColor: 'var(--aws-border)' }}
-              className="h-3.5 w-px mx-0.5"
-            />
+            <div className="h-4 w-px bg-[#D5DBDB] dark:bg-[#2A3647] mx-1" aria-hidden="true" />
 
             {/* Open Flow in Sandbox Button */}
             <button
@@ -390,39 +367,32 @@ interface MermaidViewerProps {
                 >
                   Architecture flow
                 </span>
-                <span
-                  style={{
-                    backgroundColor: 'var(--aws-page-bg)',
-                    borderColor: 'var(--aws-border)',
-                    color: 'var(--aws-text-muted)',
-                  }}
-                  className="font-mono text-[11px] px-2 py-0.5 rounded-[4px] border hidden sm:inline"
-                >
+                <span className="font-mono text-[11px] text-[var(--aws-text-muted)] hidden sm:inline">
                   Fullscreen view
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 {/* Zoom Controls */}
-                <div className="flex items-center border border-[var(--aws-border)] rounded-[4px] overflow-hidden bg-[var(--aws-card-bg)]">
+                <div className="flex items-center gap-0.5">
                   <button
                     type="button"
                     onClick={handleZoomOut}
                     disabled={zoom <= 0.4}
-                    className="p-1.5 hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] text-[var(--aws-text-muted)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    className="p-1.5 rounded-[6px] hover:text-[var(--aws-text-primary)] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] text-[var(--aws-text-muted)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                     title="Zoom out"
                     aria-label="Zoom out"
                   >
                     <ZoomOut className="w-4 h-4" />
                   </button>
-                  <span className="px-2 text-[12px] font-mono text-[var(--aws-text-muted)] select-none">
+                  <span className="px-1.5 text-[11px] font-mono text-[var(--aws-text-muted)] tabular-nums select-none">
                     {Math.round(zoom * 100)}%
                   </span>
                   <button
                     type="button"
                     onClick={handleZoomIn}
                     disabled={zoom >= 3.0}
-                    className="p-1.5 hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] text-[var(--aws-text-muted)] border-l border-[var(--aws-border)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    className="p-1.5 rounded-[6px] hover:text-[var(--aws-text-primary)] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] text-[var(--aws-text-muted)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                     title="Zoom in"
                     aria-label="Zoom in"
                   >
@@ -431,7 +401,7 @@ interface MermaidViewerProps {
                   <button
                     type="button"
                     onClick={handleZoomReset}
-                    className="px-2.5 py-1.5 text-[12px] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] text-[var(--aws-text-muted)] border-l border-[var(--aws-border)] cursor-pointer transition-colors flex items-center gap-1 font-medium"
+                    className="px-2 py-1.5 rounded-[6px] text-[12px] hover:text-[var(--aws-text-primary)] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] text-[var(--aws-text-muted)] cursor-pointer transition-colors flex items-center gap-1 font-medium"
                     title="Reset zoom to 100%"
                     aria-label="Reset zoom to 100%"
                   >
@@ -482,24 +452,14 @@ interface MermaidViewerProps {
                 <button
                   type="button"
                   onClick={() => setIsFullscreen(false)}
-                  style={{
-                    backgroundColor: 'var(--aws-card-bg)',
-                    borderColor: 'var(--aws-border)',
-                    color: 'var(--aws-text-primary)',
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] border text-[12px] font-medium hover:border-[var(--aws-interactive)] hover:text-[var(--aws-interactive)] cursor-pointer transition-colors shadow-2xs"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] text-[12px] font-medium text-[var(--aws-text-primary)] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] cursor-pointer transition-colors"
                   title="Exit full screen (Esc)"
                   aria-label="Exit full screen"
                 >
                   <Minimize2 className="w-3.5 h-3.5" />
                   <span>Exit full screen</span>
                   <kbd
-                    style={{
-                      backgroundColor: 'var(--aws-page-bg)',
-                      borderColor: 'var(--aws-border)',
-                      color: 'var(--aws-text-muted)',
-                    }}
-                    className="text-[10px] font-mono px-1.5 py-0.2 rounded border ml-1 hidden sm:inline"
+                    className="text-[10px] font-mono px-1.5 py-0.5 rounded-[4px] bg-[#0F141A]/5 dark:bg-white/10 text-[var(--aws-text-muted)] ml-1 hidden sm:inline"
                   >
                     ESC
                   </kbd>

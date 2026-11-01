@@ -181,7 +181,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
 
   // Common floating dock container styles
   const dockContainerClass =
-    'bottom-5 left-1/2 -translate-x-1/2 absolute z-30 pointer-events-auto h-10 px-2 rounded-[10px] bg-white/95 dark:bg-[#192534]/95 backdrop-blur-md border border-[#D5DBDB] dark:border-[#354150] shadow-[0_12px_32px_-4px_rgba(0,0,0,0.45)] flex items-center gap-1.5 select-none animate-in fade-in zoom-in-95 duration-100 text-[12px] text-[#16191F] dark:text-[#EAEDED]';
+    'bottom-5 left-1/2 -translate-x-1/2 absolute z-30 pointer-events-auto h-10 px-2 rounded-[8px] bg-white/95 dark:bg-[#192534]/95 backdrop-blur-md border border-[#D5DBDB] dark:border-[#354150] shadow-[0_12px_32px_-4px_rgba(0,0,0,0.45)] flex items-center gap-1.5 select-none animate-in fade-in zoom-in-95 duration-100 text-[12px] text-[#16191F] dark:text-[#EAEDED]';
 
   // =========================================================================
   // VIEW 1: Multi-Nodes Selected

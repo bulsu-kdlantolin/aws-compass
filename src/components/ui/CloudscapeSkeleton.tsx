@@ -1,4 +1,5 @@
 import React from 'react';
+import { useCompassStore } from '../../store/useCompassStore';
 
 export interface CloudscapeSkeletonProps {
   className?: string;
@@ -41,6 +42,8 @@ export const CloudscapeSkeleton: React.FC<CloudscapeSkeletonProps> = ({
 };
 
 export const CloudscapeAppSkeleton: React.FC = () => {
+  const sidebarWidth = useCompassStore((s) => s.sidebarWidth);
+
   return (
     <div
       role="status"
@@ -79,8 +82,9 @@ export const CloudscapeAppSkeleton: React.FC = () => {
           style={{
             backgroundColor: 'var(--aws-sidebar-bg)',
             borderRightColor: 'var(--aws-border)',
+            width: `${sidebarWidth}px`,
           }}
-          className="w-72 border-r p-3 space-y-3 shrink-0 hidden md:block"
+          className="border-r p-3 space-y-3 shrink-0 hidden md:block"
         >
           <CloudscapeSkeleton width="100%" height={32} borderRadius={4} />
           <div className="space-y-2 pt-2">

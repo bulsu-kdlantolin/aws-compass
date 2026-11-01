@@ -11,6 +11,7 @@ import { useCompassStore, DEFAULT_CATEGORIES } from '../../store/useCompassStore
 import { useSettingsStore } from '../../store/useSettingsStore';
 import type { AWSCategory, AWSService } from '../../types/aws';
 import { ServiceCard } from './ServiceCard';
+import { SidebarResizeHandle } from '../ui/SidebarResizeHandle';
 
 export const ServiceCatalog: React.FC = () => {
   const {
@@ -19,6 +20,8 @@ export const ServiceCatalog: React.FC = () => {
     filter,
     categoryOrder,
     toggleSidebar,
+    sidebarWidth,
+    setSidebarWidth,
     setSelectedServiceId,
     setSearch,
     setCategoryFilter,
@@ -240,9 +243,15 @@ export const ServiceCatalog: React.FC = () => {
       style={{
         backgroundColor: 'var(--aws-sidebar-bg)',
         borderRightColor: 'var(--aws-border)',
+        width: `${sidebarWidth}px`,
       }}
-      className="w-72 md:w-80 flex flex-col h-full border-r shrink-0 select-none rounded-none"
+      className="relative flex flex-col h-full border-r shrink-0 select-none rounded-none"
     >
+      {/* Draggable Resize Handle */}
+      <SidebarResizeHandle
+        sidebarWidth={sidebarWidth}
+        onWidthChange={setSidebarWidth}
+      />
       {/* Top Header: Full-Width Search Input + Sleek Sidebar Collapse Icon Button */}
       <div
         style={{

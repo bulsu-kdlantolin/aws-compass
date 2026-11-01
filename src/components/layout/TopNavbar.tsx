@@ -106,7 +106,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenCommandPalette }) =>
         <button
           type="button"
           onClick={onOpenCommandPalette}
-          className="h-8 w-full max-w-[380px] rounded-[6px] bg-[#090D12]/80 border border-[#354150] hover:border-[#545B64] px-3 flex items-center justify-between text-[13px] text-[#879596] hover:text-[#EAEDED] transition-colors cursor-pointer group shadow-2xs"
+          className="h-8 w-full max-w-[380px] rounded-[6px] bg-[#090D12]/80 border border-[#354150] hover:border-[#545B64] px-3 flex items-center text-[13px] text-[#879596] hover:text-[#EAEDED] transition-colors cursor-pointer group shadow-2xs"
           title="Open search (Ctrl+K)"
         >
           <div className="flex items-center gap-2 min-w-0">
@@ -115,9 +115,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenCommandPalette }) =>
             </span>
             <span className="truncate leading-none">Search services, CLI, blueprints...</span>
           </div>
-          <kbd className="hidden lg:inline-flex items-center text-[10px] font-mono text-[#879596] bg-white/5 border border-[#354150] px-1.5 py-0.5 rounded-[4px] ml-2 shrink-0 group-hover:border-[#545B64] group-hover:text-[#EAEDED]">
-            Ctrl+K
-          </kbd>
         </button>
       </div>
 

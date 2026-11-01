@@ -118,8 +118,16 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
         {service.name}
       </span>
 
-      {/* Tier (11px monospace) */}
-      <span className="text-[11px] font-mono text-[var(--aws-text-muted)] shrink-0 opacity-75">
+      {/* Tier Monospace Label */}
+      <span
+        className={`text-[11px] font-mono font-medium tabular-nums shrink-0 ${
+          service.tier === 1
+            ? 'text-[#FF9900]/90'
+            : service.tier === 2
+              ? 'text-[#539FE5]/90'
+              : 'text-[#879596]'
+        }`}
+      >
         T{service.tier}
       </span>
 

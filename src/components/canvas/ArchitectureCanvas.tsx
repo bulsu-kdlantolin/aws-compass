@@ -705,14 +705,14 @@ const ArchitectureCanvasInner: React.FC = () => {
           </div>
 
           {/* Right Cluster: Undo/Redo, Zoom/Fit View, Export Menu, Fullscreen */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Undo / Redo Actions */}
-            <div className="flex items-center border border-[var(--aws-input-border)] rounded-[6px] overflow-hidden h-8 bg-[var(--aws-card-bg)] shadow-2xs">
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Undo / Redo Actions (Rule 2: Borderless Ghost Buttons) */}
+            <div className="flex items-center gap-0.5">
               <button
                 type="button"
                 onClick={undo}
                 disabled={!canUndo}
-                className="size-8 flex items-center justify-center text-[var(--aws-text-primary)] disabled:text-[var(--aws-text-muted)]/35 hover:bg-[var(--aws-page-bg)] disabled:hover:bg-transparent cursor-pointer disabled:cursor-not-allowed transition-colors"
+                className="size-8 rounded-[6px] flex items-center justify-center text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent cursor-pointer transition-colors"
                 title="Undo (Ctrl+Z)"
                 aria-label="Undo"
               >
@@ -722,7 +722,7 @@ const ArchitectureCanvasInner: React.FC = () => {
                 type="button"
                 onClick={redo}
                 disabled={!canRedo}
-                className="size-8 flex items-center justify-center text-[var(--aws-text-primary)] disabled:text-[var(--aws-text-muted)]/35 hover:bg-[var(--aws-page-bg)] disabled:hover:bg-transparent border-l border-[var(--aws-border)] cursor-pointer disabled:cursor-not-allowed transition-colors"
+                className="size-8 rounded-[6px] flex items-center justify-center text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent cursor-pointer transition-colors"
                 title="Redo (Ctrl+Y)"
                 aria-label="Redo"
               >
@@ -730,12 +730,15 @@ const ArchitectureCanvasInner: React.FC = () => {
               </button>
             </div>
 
-            {/* Canvas Zoom & View Controls */}
-            <div className="flex items-center border border-[var(--aws-input-border)] rounded-[6px] overflow-hidden h-8 bg-[var(--aws-card-bg)] shadow-2xs">
+            {/* Hairline Divider */}
+            <div className="h-4 w-px bg-[#D5DBDB] dark:bg-[#2A3647] mx-1" aria-hidden="true" />
+
+            {/* Canvas Zoom & View Controls (Rule 2: Grouped Ghost Buttons) */}
+            <div className="flex items-center gap-0.5">
               <button
                 type="button"
                 onClick={() => reactFlowInstance.zoomOut({ duration: 250 })}
-                className="size-8 flex items-center justify-center text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] cursor-pointer transition-colors"
+                className="size-8 rounded-[6px] flex items-center justify-center text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] cursor-pointer transition-colors"
                 title="Zoom out"
                 aria-label="Zoom out"
               >
@@ -744,7 +747,7 @@ const ArchitectureCanvasInner: React.FC = () => {
               <button
                 type="button"
                 onClick={() => reactFlowInstance.zoomTo(1, { duration: 250 })}
-                className="px-2 h-full text-[11px] font-mono tabular-nums text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border-x border-[var(--aws-border)] cursor-pointer transition-colors"
+                className="px-2 h-8 rounded-[6px] flex items-center justify-center text-[11px] font-mono tabular-nums text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] cursor-pointer transition-colors"
                 title="Click to reset zoom to 100%"
               >
                 {zoomPercent}%
@@ -752,7 +755,7 @@ const ArchitectureCanvasInner: React.FC = () => {
               <button
                 type="button"
                 onClick={() => reactFlowInstance.zoomIn({ duration: 250 })}
-                className="size-8 flex items-center justify-center text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] cursor-pointer transition-colors"
+                className="size-8 rounded-[6px] flex items-center justify-center text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] cursor-pointer transition-colors"
                 title="Zoom in"
                 aria-label="Zoom in"
               >
@@ -761,7 +764,7 @@ const ArchitectureCanvasInner: React.FC = () => {
               <button
                 type="button"
                 onClick={() => reactFlowInstance.fitView({ padding: 0.18, duration: 250 })}
-                className="size-8 flex items-center justify-center text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border-l border-[var(--aws-border)] cursor-pointer transition-colors"
+                className="size-8 rounded-[6px] flex items-center justify-center text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] cursor-pointer transition-colors"
                 title="Fit diagram to view"
                 aria-label="Fit diagram to view"
               >
@@ -769,23 +772,26 @@ const ArchitectureCanvasInner: React.FC = () => {
               </button>
             </div>
 
-            {/* Architecture Bill of Materials (BOM) Popover */}
+            {/* Hairline Divider */}
+            <div className="h-4 w-px bg-[#D5DBDB] dark:bg-[#2A3647] mx-1" aria-hidden="true" />
+
+            {/* Architecture Bill of Materials (BOM) Popover (Rule 1 & 2: Middle Dot & Ghost Button) */}
             <div className="relative">
               <button
                 ref={bomTriggerRef}
                 type="button"
                 onClick={() => togglePopover('canvas-bom')}
                 data-open={isBomOpen ? 'true' : 'false'}
-                className={`h-8 px-2.5 rounded-[6px] border text-[12px] font-medium text-[var(--aws-text-primary)] bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${isBomOpen
-                  ? 'border-[var(--aws-interactive)] ring-1 ring-[var(--aws-interactive)]/20'
-                  : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)]'
+                className={`h-8 px-2.5 rounded-[6px] text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer select-none ${isBomOpen
+                  ? 'bg-[#EAEDED] dark:bg-white/[0.1] text-[#16191F] dark:text-[#EAEDED]'
+                  : 'text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
                   }`}
                 title="Open Architecture Bill of Materials (BOM)"
                 aria-label="Open Bill of Materials"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-[#FF9900]" />
-                <span className="hidden sm:inline">BOM</span>
-                <span className="font-mono text-[10px] px-1 py-0.2 rounded bg-[var(--aws-page-bg)] border border-[var(--aws-border)] text-[var(--aws-text-muted)]">
+                <span className="hidden sm:inline">BOM ·</span>
+                <span className="font-mono text-[11px] tabular-nums text-[#545B64] dark:text-[#879596]">
                   {nodes.length}
                 </span>
               </button>
@@ -797,23 +803,23 @@ const ArchitectureCanvasInner: React.FC = () => {
               />
             </div>
 
-            {/* Export Menu */}
+            {/* Export Menu (Rule 2: Ghost Button) */}
             <div className="relative">
               <button
                 ref={exportTriggerRef}
                 type="button"
                 onClick={() => togglePopover('canvas-export')}
                 data-open={isExportOpen ? 'true' : 'false'}
-                className={`h-8 px-2.5 rounded-[6px] border text-[12px] font-medium text-[var(--aws-text-primary)] bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${isExportOpen
-                  ? 'border-[var(--aws-interactive)] ring-1 ring-[var(--aws-interactive)]/20'
-                  : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)]'
+                className={`h-8 px-2.5 rounded-[6px] text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer select-none ${isExportOpen
+                  ? 'bg-[#EAEDED] dark:bg-white/[0.1] text-[#16191F] dark:text-[#EAEDED]'
+                  : 'text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
                   }`}
                 title="Export diagram (PNG, SVG, JSON)"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Export</span>
                 <ChevronDown
-                  className="w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-200"
+                  className="w-3.5 h-3.5 text-[#545B64] dark:text-[#879596] transition-transform duration-200"
                   style={{ transform: isExportOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
                 />
               </button>
@@ -833,22 +839,22 @@ const ArchitectureCanvasInner: React.FC = () => {
               </AnimatedPopover>
             </div>
 
-            {/* Fullscreen / Zen Mode Toggle */}
+            {/* Fullscreen / Zen Mode Toggle (Rule 2: Ghost Button) */}
             {isCanvasFullscreen ? (
               <button
                 type="button"
                 onClick={toggleCanvasFullscreen}
-                className="h-8 px-2.5 rounded-[6px] bg-[#FF9900]/15 border border-[#FF9900]/40 text-[#FF9900] hover:bg-[#FF9900]/25 flex items-center gap-1.5 text-[11px] font-semibold cursor-pointer shadow-xs transition-colors shrink-0"
+                className="h-8 px-2.5 rounded-[6px] bg-[#FF9900]/15 text-[#FF9900] hover:bg-[#FF9900]/25 flex items-center gap-1.5 text-[11px] font-semibold cursor-pointer transition-colors shrink-0"
                 title="Exit Zen / Fullscreen Mode (Shift+F)"
               >
                 <Minimize2 className="w-3.5 h-3.5" />
-                <span>Exit Zen (Shift+F)</span>
+                <span>Exit Zen</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={toggleCanvasFullscreen}
-                className="size-8 rounded-[6px] border border-[var(--aws-input-border)] bg-[var(--aws-card-bg)] text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] flex items-center justify-center cursor-pointer shadow-2xs transition-colors shrink-0"
+                className="size-8 rounded-[6px] flex items-center justify-center text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] cursor-pointer transition-colors shrink-0"
                 title="Zen Mode / Fullscreen (Shift+F)"
                 aria-label="Toggle fullscreen"
               >

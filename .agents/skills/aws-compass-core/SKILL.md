@@ -226,5 +226,33 @@ Docked resizable Cloudscape Split Panel providing two distinct operational modes
 - **Architecture BOM Popover (`CanvasBomPopover.tsx`)**: Summarizes active canvas services by AWS category and infrastructure boundaries with total counts and a 1-click **`Copy as Markdown Table`** button for team architectural reviews.
 - **Sticky Table of Contents (`DocToc.tsx`)**: Rendered on `xl` viewports tracking all 6 dossier sections and referenced blueprints with a spring-animated active indicator and smooth scroll navigation.
 
+---
+
+## 13. Border Budget & Anti-Encapsulation Rules
+
+To prevent "LLM Border-itis" and UI box-in-box bloat:
+- **Border Budget on Static Elements**: Never put a border or background box around static badges, tier labels (`T1`, `T2`, `T3`), metadata counters (`BOM · 9`), or resting toolbar icon buttons. Reserve visible `1px` borders strictly for structural containers, text inputs, and active popover surfaces.
+- **Ghost Toolbars**: Toolbar secondary actions and icon buttons must rest borderless and transparent (`hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] rounded-[6px]`). Related buttons group with `gap-0.5`, separated by a single `1px` vertical hairline (`h-4 w-px bg-[#D5DBDB] dark:bg-[#2A3647] mx-1.5`). Only 1 primary CTA per toolbar at rest.
+- **Schematic Canvas Edge Labels (`ProtocolEdge.tsx`)**: Render edge protocol labels on a borderless canvas mask (`bg-[#F2F3F3] dark:bg-[#0F1B2A] border border-transparent rounded-[4px]`) with hidden chevron at rest. Reveal subtle pill border and chevron only on hover or when selected/open.
+- **Flush Service Card Bands**: Secondary metadata (ARN pattern, context variables) inside cards must form flush bottom bands (`-mx-5 -mb-5 mt-5 px-5 py-3 border-t rounded-b-[8px]`), never nested bordered boxes inside an existing container.
+- **Strict 4-Tier Border Radius Hierarchy**:
+  - **Tier 1 (Floating Modals, Command Palette & Popovers)**: `rounded-[14px]` outer with `p-1.5` padding, wrapping `rounded-[8px]` inner rows.
+  - **Tier 2 (Primary Content Sheets, Floating Bottom Dock)**: `rounded-[8px]`.
+  - **Tier 3 (Interactive Controls, Inputs, Select Triggers, Ghost Buttons)**: `rounded-[6px]`.
+  - **Tier 4 (Icon Tiles, Keycaps)**: `rounded-[4px]`.
+
+---
+
+## 14. Unified Adjustable Sidebar (Concept Vault & Architecture Canvas)
+
+To maintain absolute visual consistency and flexible desktop screen real estate:
+- **Shared Width State**: Both `ServiceCatalog.tsx` (Concept Vault) and `CanvasSidebar.tsx` (Architecture Canvas) subscribe to the identical `sidebarWidth` in `useCompassStore` and persist to `localStorage` (`aws-compass-sidebar-width`). Switching between Concept Vault and Architecture Canvas NEVER jumps or changes the sidebar size.
+- **Adjustable Resize Handle (`SidebarResizeHandle.tsx`)**: Mounted on the right border of both sidebars.
+  - An 8px comfortable hitbox (`w-2 -mr-1`) with an accent line that glows `#FF9900` on hover and active dragging.
+  - Clamped between `minWidth` (`260px`) and `maxWidth` (`560px` or viewport-based).
+  - Double-clicking or pressing `Enter`/`Space` resets the width to the default `320px`.
+  - Mounts a fixed fullscreen pointer shield during drag to prevent cursor flickering over React Flow canvas elements or accidental text selections.
+  - Fully accessible with `role="separator"`, `aria-orientation="vertical"`, and arrow-key adjustments.
+
 
 

@@ -29,6 +29,7 @@ interface PaletteItem {
   title: string;
   cliPrefix?: string;
   metadata: string;
+  tier?: number;
   isFavorite?: boolean;
   actionLabel: string;
   icon: React.ReactNode;
@@ -78,6 +79,7 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
           title: svc.name,
           cliPrefix: `aws ${svc.id}`,
           metadata: `${svc.category} · T${svc.tier}`,
+          tier: svc.tier,
           isFavorite: true,
           actionLabel: 'Open documentation',
           serviceId: svc.id,
@@ -187,6 +189,7 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
         title: svc.name,
         cliPrefix: `aws ${svc.id}`,
         metadata: `${svc.category} · T${svc.tier}`,
+        tier: svc.tier,
         isFavorite: svc.isFavorite,
         actionLabel: 'Open documentation',
         serviceId: svc.id,
@@ -403,7 +406,7 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
                           </span>
 
                           {item.cliPrefix && (
-                            <span className="text-[11px] font-mono text-[#545B64] dark:text-[#879596] bg-[#F2F3F3] dark:bg-[#0F1B2A] px-2 py-0.5 rounded-[4px] shrink-0 border border-black/5 dark:border-white/5">
+                            <span className="text-[11px] font-mono text-[#0972D3] dark:text-[#539FE5] shrink-0">
                               {item.cliPrefix}
                             </span>
                           )}
@@ -414,13 +417,31 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
                           {isSelected ? (
                             <span className="flex items-center gap-1.5 text-[12px] font-semibold text-[#0972D3] dark:text-[#539FE5] animate-in fade-in duration-100">
                               <span>{item.actionLabel}</span>
-                              <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-[#0972D3]/10 dark:bg-[#539FE5]/15 border border-[#0972D3]/20 dark:border-[#539FE5]/30 leading-none">
+                              <span className="text-[11px] font-mono px-1.5 py-0.5 rounded-[4px] bg-[#0972D3]/10 dark:bg-[#539FE5]/15 border border-[#0972D3]/20 dark:border-[#539FE5]/30 leading-none">
                                 ↵
                               </span>
                             </span>
                           ) : (
                             <div className="flex items-center gap-2 text-[12px] text-[#545B64] dark:text-[#879596] tabular-nums">
-                              <span>{item.metadata}</span>
+                              {item.tier ? (
+                                <span className="flex items-center gap-1.5">
+                                  <span>{item.metadata.split(' · ')[0]}</span>
+                                  <span>·</span>
+                                  <span
+                                    className={`font-mono text-[11px] font-medium ${
+                                      item.tier === 1
+                                        ? 'text-[#FF9900]/90'
+                                        : item.tier === 2
+                                          ? 'text-[#539FE5]/90'
+                                          : 'text-[#879596]'
+                                    }`}
+                                  >
+                                    T{item.tier}
+                                  </span>
+                                </span>
+                              ) : (
+                                <span>{item.metadata}</span>
+                              )}
                               {item.isFavorite && (
                                 <Star className="w-3.5 h-3.5 text-[#FF9900] fill-[#FF9900] shrink-0" />
                               )}

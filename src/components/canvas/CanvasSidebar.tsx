@@ -19,6 +19,7 @@ import { useCompassStore } from '../../store/useCompassStore';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { AWSServiceIcon } from '../icons/AWSServiceIcon';
 import { CloudscapeSearchInput } from '../ui/CloudscapeSearchInput';
+import { SidebarResizeHandle } from '../ui/SidebarResizeHandle';
 import { getAWSCategoryColor } from '../../utils/awsCategoryColors';
 import type {
   AWSCategory,
@@ -191,6 +192,8 @@ export const CanvasSidebar: React.FC = () => {
 
   const services = useCompassStore((s) => s.services);
   const theme = useCompassStore((s) => s.theme);
+  const sidebarWidth = useCompassStore((s) => s.sidebarWidth);
+  const setSidebarWidth = useCompassStore((s) => s.setSidebarWidth);
   const addServiceNode = useCanvasStore((s) => s.addServiceNode);
   const addBoundaryNode = useCanvasStore((s) => s.addBoundaryNode);
   const addExternalActor = useCanvasStore((s) => s.addExternalActor);
@@ -267,11 +270,19 @@ export const CanvasSidebar: React.FC = () => {
           );
   }
 
-          return (
-          <aside
-            aria-label="AWS Canvas Stencils and Service Catalog"
-            className="w-72 h-full flex flex-col border-r border-[#D5DBDB] dark:border-[#354150] bg-white dark:bg-[#161E2D] shrink-0 z-30 select-none animate-in fade-in duration-150"
-          >
+  return (
+    <aside
+      aria-label="AWS Canvas Stencils and Service Catalog"
+      style={{
+        width: `${sidebarWidth}px`,
+      }}
+      className="relative h-full flex flex-col border-r border-[#D5DBDB] dark:border-[#354150] bg-white dark:bg-[#161E2D] shrink-0 z-30 select-none animate-in fade-in duration-150"
+    >
+      {/* Draggable Resize Handle */}
+      <SidebarResizeHandle
+        sidebarWidth={sidebarWidth}
+        onWidthChange={setSidebarWidth}
+      />
             {/* Top Header & Segmented Tab Switcher */}
             <div className="p-3 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5 shrink-0 bg-[#F8F9FA]/60 dark:bg-[#0F141A]/40">
               <div className="flex items-center justify-between">
@@ -392,7 +403,15 @@ export const CanvasSidebar: React.FC = () => {
                           </div>
                         </div>
 
-                        <span className="px-1.5 py-0.5 rounded-[3px] bg-[#EAEDED] dark:bg-[#0F141A] text-[9px] font-mono font-semibold text-[#545B64] dark:text-[#879596] shrink-0">
+                        <span
+                          className={`text-[11px] font-mono font-medium tabular-nums shrink-0 ${
+                            svc.tier === 1
+                              ? 'text-[#FF9900]/90'
+                              : svc.tier === 2
+                                ? 'text-[#539FE5]/90'
+                                : 'text-[#879596]'
+                          }`}
+                        >
                           T{svc.tier}
                         </span>
                       </div>

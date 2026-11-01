@@ -320,13 +320,11 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
                 openEdgeInspector(id);
               }}
               onContextMenu={handleContextMenu}
-              style={{
-                backgroundColor: 'var(--aws-card-bg)',
-              }}
-              className={`h-6 px-2 rounded-full border text-[11px] font-mono flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${isDropdownOpen || selected || isEdgeSelected
-                ? 'border-[var(--aws-interactive)] text-[var(--aws-text-primary)] ring-1 ring-[var(--aws-interactive)]/20'
-                : 'border-[var(--aws-border)] hover:border-[var(--aws-interactive)] text-[var(--aws-text-primary)]'
-                }`}
+              className={`h-6 px-1.5 py-0.5 rounded-[4px] border text-[11px] font-mono flex items-center gap-1.5 transition-all duration-150 cursor-pointer ${
+                isDropdownOpen || selected || isEdgeSelected
+                  ? 'bg-white dark:bg-[#192534] border-[var(--aws-interactive)] text-[#16191F] dark:text-[#EAEDED] ring-1 ring-[var(--aws-interactive)]/20 shadow-xs'
+                  : 'bg-[#F2F3F3] dark:bg-[#0F1B2A] border-transparent text-[#545B64] dark:text-[#879596] hover:bg-white dark:hover:bg-[#192534] hover:border-[#D5DBDB] dark:hover:border-[#354150] hover:text-[#16191F] dark:hover:text-[#EAEDED] hover:shadow-xs group-hover:bg-white dark:group-hover:bg-[#192534] group-hover:border-[#D5DBDB] dark:group-hover:border-[#354150] group-hover:text-[#16191F] dark:group-hover:text-[#EAEDED] group-hover:shadow-xs'
+              }`}
               title={`Protocol: ${displayLabel}. Click to switch protocol, double-click to customize line properties.`}
             >
               <span
@@ -334,10 +332,14 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
                 style={{ backgroundColor: customColor || protocolStyle.stroke }}
               />
               {(!isShortSegment || isHovered || Boolean(edgeData?.customLabel)) && (
-                <span className="font-semibold whitespace-nowrap">{displayLabel}</span>
+                <span className="font-medium whitespace-nowrap">{displayLabel}</span>
               )}
               <ChevronDown
-                className="w-3 h-3 text-[var(--aws-text-muted)] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                className={`transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  isDropdownOpen || selected || isEdgeSelected
+                    ? 'w-3 h-3 text-[var(--aws-text-muted)] opacity-100'
+                    : 'w-0 opacity-0 group-hover:w-3 group-hover:opacity-100 overflow-hidden text-[var(--aws-text-muted)]'
+                }`}
                 style={{
                   transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                 }}
@@ -348,12 +350,7 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
             <button
               type="button"
               onClick={handleDelete}
-              style={{
-                backgroundColor: 'var(--aws-card-bg)',
-                borderColor: 'var(--aws-border)',
-                color: 'var(--aws-text-muted)',
-              }}
-              className="p-0.5 rounded-full border hover:text-[#DD344C] hover:border-[#DD344C] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-xs"
+              className="p-1 rounded-[4px] border border-transparent hover:border-[#DD344C] hover:bg-[#DD344C]/10 hover:text-[#DD344C] text-[var(--aws-text-muted)] opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
               title="Delete connection"
             >
               <X className="w-3 h-3" />
@@ -375,7 +372,7 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
             zIndex: 9999,
             overscrollBehavior: 'contain',
           }}
-          className={`min-w-[240px] rounded-[12px] p-1.5 border bg-[var(--aws-popover-bg)] border-[var(--aws-border)] text-[var(--aws-text-primary)] shadow-[0px_4px_16px_rgba(0,0,0,0.2),0px_16px_36px_rgba(0,0,0,0.25)] dark:shadow-[0_12px_36px_-5px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.08)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] origin-top ${isDropdownOpen
+          className={`min-w-[240px] rounded-[14px] p-1.5 border bg-[var(--aws-popover-bg)] border-[var(--aws-border)] text-[var(--aws-text-primary)] shadow-[0px_4px_16px_rgba(0,0,0,0.2),0px_16px_36px_rgba(0,0,0,0.25)] dark:shadow-[0_12px_36px_-5px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.08)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] origin-top ${isDropdownOpen
             ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 scale-[0.96] -translate-y-1.5 pointer-events-none'
             }`}

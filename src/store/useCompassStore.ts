@@ -75,9 +75,12 @@ interface CompassState {
   // Workspace Mode & Theme State
   workspaceMode: WorkspaceMode;
   isSidebarOpen: boolean;
+  sidebarWidth: number;
   theme: ThemeMode;
   setTheme: (theme: ThemeMode) => void;
   toggleTheme: () => void;
+  setSidebarWidth: (width: number) => void;
+  resetSidebarWidth: () => void;
 
   // Canvas State (@xyflow/react)
   nodes: CanvasNodeItem[];
@@ -149,10 +152,34 @@ export const useCompassStore = create<CompassState>((set, get) => ({
   },
   workspaceMode: 'vault',
   isSidebarOpen: true,
+  sidebarWidth:
+    (typeof window !== 'undefined'
+      ? Number(localStorage.getItem('aws-compass-sidebar-width')) || 320
+      : 320),
   theme:
     (typeof window !== 'undefined'
       ? (localStorage.getItem('aws-compass-theme') as ThemeMode)
       : null) || 'dark',
+
+  setSidebarWidth: (width: number) => {
+    const maxAllowed =
+      typeof window !== 'undefined'
+        ? Math.min(600, Math.max(260, window.innerWidth - 160))
+        : 600;
+    const clamped = Math.min(Math.max(width, 260), maxAllowed);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('aws-compass-sidebar-width', String(clamped));
+      } catch {
+        // ignore quota errors
+      }
+    }
+    set({ sidebarWidth: clamped });
+  },
+
+  resetSidebarWidth: () => {
+    get().setSidebarWidth(320);
+  },
 
   setTheme: (theme: ThemeMode) => {
     if (typeof window !== 'undefined') {
