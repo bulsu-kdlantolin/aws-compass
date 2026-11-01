@@ -78,94 +78,94 @@ export const SettingsModal: React.FC = () => {
     totalServices: number;
     favorited: number;
     customBlueprints: number;
-}> ({ totalServices: 0, favorited: 0, customBlueprints: 0 });
+  }>({ totalServices: 0, favorited: 0, customBlueprints: 0 });
 
-// Two-step destructive confirmation states
-const [clearFavoritesConfirm, setClearFavoritesConfirm] = useState(false);
-const [factoryResetConfirm, setFactoryResetConfirm] = useState(false);
-const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
+  // Two-step destructive confirmation states
+  const [clearFavoritesConfirm, setClearFavoritesConfirm] = useState(false);
+  const [factoryResetConfirm, setFactoryResetConfirm] = useState(false);
+  const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
 
-// Load live DB stats when opening the modal or switching to data tab
-useEffect(() => {
-  if (!isSettingsOpen) {
-    setClearFavoritesConfirm(false);
-    setFactoryResetConfirm(false);
-    setActionSuccessMsg(null);
-    return;
-  }
+  // Load live DB stats when opening the modal or switching to data tab
+  useEffect(() => {
+    if (!isSettingsOpen) {
+      setClearFavoritesConfirm(false);
+      setFactoryResetConfirm(false);
+      setActionSuccessMsg(null);
+      return;
+    }
 
-  const loadStats = async () => {
+    const loadStats = async () => {
+      try {
+        const services = await db.services.toArray();
+        const diagrams = await db.diagrams.toArray();
+        const customBlueprints = diagrams.filter((d) => d.id !== 'active-canvas-diagram').length;
+        const favorited = services.filter((s) => s.isFavorite).length;
+
+        setStats({
+          totalServices: services.length,
+          favorited,
+          customBlueprints,
+        });
+      } catch {
+        // Ignore stats fetch error
+      }
+    };
+
+    loadStats();
+  }, [isSettingsOpen, activeSettingsTab]);
+
+  // Global ESC listener to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isSettingsOpen) {
+        closeSettings();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSettingsOpen, closeSettings]);
+
+  if (!isSettingsOpen) return null;
+
+  const showSuccess = (msg: string) => {
+    setActionSuccessMsg(msg);
+    setTimeout(() => setActionSuccessMsg(null), 3000);
+  };
+
+  const handleExportBackup = async () => {
     try {
-      const services = await db.services.toArray();
-      const diagrams = await db.diagrams.toArray();
-      const customBlueprints = diagrams.filter((d) => d.id !== 'active-canvas-diagram').length;
-      const favorited = services.filter((s) => s.isFavorite).length;
-
-      setStats({
-        totalServices: services.length,
-        favorited,
-        customBlueprints,
-      });
-    } catch {
-      // Ignore stats fetch error
+      const jsonStr = await exportFullDatabase();
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `aws-compass-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showSuccess('Workspace exported successfully (.json)');
+    } catch (err) {
+      alert('Failed to export workspace: ' + (err as Error).message);
     }
   };
 
-  loadStats();
-}, [isSettingsOpen, activeSettingsTab]);
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-// Global ESC listener to close modal
-useEffect(() => {
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape' && isSettingsOpen) {
-      closeSettings();
+    try {
+      const text = await file.text();
+      const result = await importFullDatabase(text);
+      await refreshServices();
+      await refreshSavedDiagrams();
+      showSuccess(`Imported ${result.servicesCount} services & ${result.diagramsCount} blueprints!`);
+    } catch (err) {
+      alert('Failed to import backup: ' + (err as Error).message);
+    } finally {
+      e.target.value = '';
     }
   };
-  window.addEventListener('keydown', handleKeyDown);
-  return () => window.removeEventListener('keydown', handleKeyDown);
-}, [isSettingsOpen, closeSettings]);
-
-if (!isSettingsOpen) return null;
-
-const showSuccess = (msg: string) => {
-  setActionSuccessMsg(msg);
-  setTimeout(() => setActionSuccessMsg(null), 3000);
-};
-
-const handleExportBackup = async () => {
-  try {
-    const jsonStr = await exportFullDatabase();
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `aws-compass-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    showSuccess('Workspace exported successfully (.json)');
-  } catch (err) {
-    alert('Failed to export workspace: ' + (err as Error).message);
-  }
-};
-
-const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-
-  try {
-    const text = await file.text();
-    const result = await importFullDatabase(text);
-    await refreshServices();
-    await refreshSavedDiagrams();
-    showSuccess(`Imported ${result.servicesCount} services & ${result.diagramsCount} blueprints!`);
-  } catch (err) {
-    alert('Failed to import backup: ' + (err as Error).message);
-  } finally {
-    e.target.value = '';
-  }
-};
 
   const handleClearAllFavorites = async () => {
     try {
@@ -565,33 +565,33 @@ const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
                     title="Clear all favorites"
                     description="Removes all services from your favorites bookmarks. Custom blueprints and notes are preserved."
                     control={
-                        clearFavoritesConfirm ? (
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => setClearFavoritesConfirm(false)}
-                              className="h-7 px-2.5 text-[11px] rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] text-[#545B64] dark:text-[#879596] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2B3E] cursor-pointer"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleClearAllFavorites}
-                              className="h-7 px-2.5 text-[11px] font-medium rounded-[6px] bg-[#D13212] text-white hover:bg-[#B0280D] cursor-pointer"
-                            >
-                              Confirm clear
-                            </button>
-                          </div>
-                        ) : (
+                      clearFavoritesConfirm ? (
+                        <div className="flex items-center gap-1.5">
                           <button
                             type="button"
-                            onClick={() => setClearFavoritesConfirm(true)}
-                            className="h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-white dark:bg-[#161E2D] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2B3E] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] transition-colors cursor-pointer shadow-2xs"
+                            onClick={() => setClearFavoritesConfirm(false)}
+                            className="h-7 px-2.5 text-[11px] rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] text-[#545B64] dark:text-[#879596] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2B3E] cursor-pointer"
                           >
-                            Clear favorites...
+                            Cancel
                           </button>
-                        )
-                                                                }
+                          <button
+                            type="button"
+                            onClick={handleClearAllFavorites}
+                            className="h-7 px-2.5 text-[11px] font-medium rounded-[6px] bg-[#D13212] text-white hover:bg-[#B0280D] cursor-pointer"
+                          >
+                            Confirm clear
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setClearFavoritesConfirm(true)}
+                          className="h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-white dark:bg-[#161E2D] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2B3E] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] transition-colors cursor-pointer shadow-2xs"
+                        >
+                          Clear favorites...
+                        </button>
+                      )
+                    }
                   />
 
                   <SettingsRow
