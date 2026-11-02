@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Terminal, Copy, Check } from 'lucide-react';
+import { AnimatedIcon } from './AnimatedIcon';
 import { useSettingsStore } from '../../store/useSettingsStore';
 
 export interface CodeFrameProps {
@@ -145,57 +146,55 @@ export const CodeFrame: React.FC<CodeFrameProps> = ({
           onClick={handleCopy}
           aria-label={copied ? 'Copied code' : 'Copy code to clipboard'}
           title={copied ? 'Copied to clipboard' : 'Copy code'}
-          className={`relative inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-sans font-medium rounded-[4px] border transition-all duration-150 cursor-pointer enabled:active:scale-[0.96] ${
-            copied
+          className={`relative inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-sans font-medium rounded-[4px] border transition-all duration-150 cursor-pointer enabled:active:scale-[0.96] ${copied
               ? 'border-[#1D8102]/60 bg-[#1D8102]/15 text-[#38D9A9]'
               : 'border-transparent hover:border-[#354150] hover:bg-[#1E2B3D] text-[#879596] hover:text-[#EAEDED]'
-          }`}
+            }`}
         >
-          <span className="grid place-items-center size-3.5" aria-hidden="true">
-            {copied ? (
-              <Check className="size-3.5 text-[#38D9A9] animate-in zoom-in-75 duration-150" strokeWidth={2.5} />
-            ) : (
-              <Copy className="size-3.5 transition-transform group-hover:scale-105" strokeWidth={1.75} />
-            )}
-          </span>
-          <span>{copied ? 'Copied' : 'Copy'}</span>
-        </button>
-      </div>
-
-      {/* Numbered Code Body */}
-      <pre
-        style={{ fontSize: codeFontSize }}
-        className="p-3 m-0 overflow-x-auto custom-scrollbar bg-transparent text-[#EAEDED] leading-[20px]"
-      >
-        <code className="block min-w-full">
-          {lines.map((line, idx) => {
-            const lineNum = idx + 1;
-            const isHighlighted = highlightLines.includes(lineNum);
-
-            return (
-              <div
-                key={idx}
-                className={`flex items-start group/line ${
-                  isHighlighted ? 'bg-[#539FE5]/10 -mx-3 px-3' : ''
-                }`}
-              >
-                {showLineNumbers && (
-                  <span
-                    aria-hidden="true"
-                    className="w-7 shrink-0 text-right pr-3 select-none text-[11px] text-[#545B64] group-hover/line:text-[#879596] tabular-nums font-mono opacity-60"
-                  >
-                    {lineNum}
-                  </span>
-                )}
-                <span className="flex-1 whitespace-pre">
-                  {isShell ? highlightAwsCliLine(line) : line}
-                </span>
-              </div>
-            );
-          })}
-        </code>
-      </pre>
+            <AnimatedIcon iconKey={copied ? 'copied' : 'idle'} size={14} className="size-3.5">
+              {copied ? (
+              <Check className="size-3.5 text-[#38D9A9]" strokeWidth={2.5} />
+              ) : (
+              <Copy className="size-3.5" strokeWidth={1.75} />
+              )}
+        </AnimatedIcon>
+        <span>{copied ? 'Copied' : 'Copy'}</span>
+      </button>
     </div>
+
+      {/* Numbered Code Body */ }
+  <pre
+    style={{ fontSize: codeFontSize }}
+    className="p-3 m-0 overflow-x-auto custom-scrollbar bg-transparent text-[#EAEDED] leading-[20px]"
+  >
+    <code className="block min-w-full">
+      {lines.map((line, idx) => {
+        const lineNum = idx + 1;
+        const isHighlighted = highlightLines.includes(lineNum);
+
+        return (
+          <div
+            key={idx}
+            className={`flex items-start group/line ${isHighlighted ? 'bg-[#539FE5]/10 -mx-3 px-3' : ''
+              }`}
+          >
+            {showLineNumbers && (
+              <span
+                aria-hidden="true"
+                className="w-7 shrink-0 text-right pr-3 select-none text-[11px] text-[#545B64] group-hover/line:text-[#879596] tabular-nums font-mono opacity-60"
+              >
+                {lineNum}
+              </span>
+            )}
+            <span className="flex-1 whitespace-pre">
+              {isShell ? highlightAwsCliLine(line) : line}
+            </span>
+          </div>
+        );
+      })}
+    </code>
+  </pre>
+    </div >
   );
 };
 

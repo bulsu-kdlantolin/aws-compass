@@ -4,6 +4,8 @@ import { X, Check } from 'lucide-react';
 import type { CanvasNodeData } from '../../types/aws';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { AWSServiceIcon } from '../icons/AWSServiceIcon';
+import { m } from 'motion/react';
+import { SPRING_SNAPPY } from '../../utils/motionTokens';
 
 export const AWSServiceNode = memo((props: NodeProps) => {
   const nodeData = props.data as unknown as CanvasNodeData;
@@ -77,6 +79,12 @@ export const AWSServiceNode = memo((props: NodeProps) => {
       style={{ width: '144px' }}
       title={`${nodeData.customTitle || nodeData.label} - Click to inspect, double-click text to edit`}
     >
+      <m.div
+        initial={{ opacity: 0, scale: 0.88 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={SPRING_SNAPPY}
+        className="flex flex-col items-center w-full"
+      >
       {/* Delete button (hover only) */}
       <button
         type="button"
@@ -109,16 +117,16 @@ export const AWSServiceNode = memo((props: NodeProps) => {
         )}
       </div>
 
-      {/* Centered 48x48px Official AWS Service or Actor Icon Tile */}
-      <div
-        style={{
+          {/* Centered 48x48px Official AWS Service or Actor Icon Tile */ }
+          < div
+          style={{
           boxShadow: isCurrentSelected
             ? '0 0 0 2px #FF9900, 0 4px 12px rgba(255, 153, 0, 0.3)'
             : '0 2px 8px rgba(0, 0, 0, 0.15)',
         }}
         className={`relative w-12 h-12 rounded-[4px] flex items-center justify-center motion-safe:transition-[box-shadow,transform] duration-150 ease-out ${isCurrentSelected ? 'motion-safe:scale-105' : 'motion-safe:hover:scale-105'
           }`}
-      >
+        >
         {nodeData.isActor ? (
           <AWSServiceIcon
             variant="actor"
@@ -126,137 +134,146 @@ export const AWSServiceNode = memo((props: NodeProps) => {
             size={48}
           />
         ) : (
-          <AWSServiceIcon serviceId={nodeData.serviceId} size={48} variant="service" />
-        )}
-
-        {/* 4-Way Directional Connection Handles with Explicit IDs */}
-        <Handle
-          type="source"
-          position={Position.Top}
-          id="top"
-          isConnectable={true}
-          style={{ backgroundColor: 'var(--aws-interactive)' }}
-          className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Connect (Top)"
+          <AWSServiceIcon
+          serviceId={nodeData.serviceId}
+          category={nodeData.category}
+          size={48}
+          variant="service"
         />
-        <Handle
-          type="source"
-          position={Position.Right}
-          id="right"
-          isConnectable={true}
-          style={{ backgroundColor: 'var(--aws-interactive)' }}
-          className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Connect (Right)"
-        />
-        <Handle
-          type="source"
-          position={Position.Bottom}
-          id="bottom"
-          isConnectable={true}
-          style={{ backgroundColor: 'var(--aws-interactive)' }}
-          className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Connect (Bottom)"
-        />
-        <Handle
-          type="source"
-          position={Position.Left}
-          id="left"
-          isConnectable={true}
-          style={{ backgroundColor: 'var(--aws-interactive)' }}
-          className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Connect (Left)"
-        />
-      </div>
+          )}
 
-      {/* Service Title (12px bold sentence case, double-click inline edit) */}
-      <div className="mt-2 w-full flex justify-center">
-        {isEditingTitle ? (
-          <div className="flex items-center gap-1 w-full px-1">
-            <input
-              type="text"
-              value={titleDraft}
-              onChange={(e) => setTitleDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCommitTitle();
-                if (e.key === 'Escape') setIsEditingTitle(false);
-              }}
-              onBlur={() => handleCommitTitle()}
-              autoFocus
-              className="w-full text-center text-[12px] font-bold bg-[var(--aws-card-bg)] text-[var(--aws-text-primary)] border border-[var(--aws-interactive)] rounded px-1 py-0.5 outline-none shadow-xs"
-            />
-            <button
-              type="button"
-              onClick={handleCommitTitle}
-              className="text-[#1D8102] hover:opacity-80 p-0.5"
-            >
-              <Check className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ) : (
-          <div
-            onDoubleClick={(e) => {
-              e.stopPropagation();
-              setTitleDraft(nodeData.customTitle || nodeData.label);
-              setIsEditingTitle(true);
-            }}
-            style={{ color: 'var(--aws-text-primary)' }}
-            className="font-bold text-[12px] leading-[1.3] text-center w-[140px] break-words line-clamp-2 hover:underline decoration-dotted cursor-text"
-            title="Double-click to edit title"
-          >
-            {nodeData.customTitle || nodeData.label}
-          </div>
-        )}
-      </div>
-
-      {/* Resource Identifier / Subtitle (11px monospace, line-clamp-2, double-click inline edit) */}
-      <div className="mt-0.5 w-full flex justify-center">
-        {isEditingSubtitle ? (
-          <div className="flex items-center gap-1 w-full px-1">
-            <input
-              type="text"
-              value={subtitleDraft}
-              onChange={(e) => setSubtitleDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCommitSubtitle();
-                if (e.key === 'Escape') setIsEditingSubtitle(false);
-              }}
-              onBlur={() => handleCommitSubtitle()}
-              autoFocus
-              className="w-full text-center text-[11px] font-mono bg-[var(--aws-card-bg)] text-[var(--aws-text-muted)] border border-[var(--aws-interactive)] rounded px-1 py-0.5 outline-none shadow-xs"
-            />
-            <button
-              type="button"
-              onClick={handleCommitSubtitle}
-              className="text-[#1D8102] hover:opacity-80 p-0.5"
-            >
-              <Check className="w-3 h-3" />
-            </button>
-          </div>
-        ) : (
-          <div
-            onDoubleClick={(e) => {
-              e.stopPropagation();
-              setSubtitleDraft(nodeData.roleSubtitle || nodeData.customNotes || '');
-              setIsEditingSubtitle(true);
-            }}
-            style={{ color: 'var(--aws-text-muted)' }}
-            className="font-mono text-[11px] leading-[1.3] text-center w-[140px] break-words line-clamp-2 opacity-85 hover:underline decoration-dotted cursor-text"
-            title="Double-click to edit role / subtitle"
-          >
-            {nodeData.roleSubtitle || nodeData.customNotes || (nodeData.isActor ? 'Actor' : nodeData.serviceId)}
-          </div>
-        )}
-      </div>
-
-      {/* Custom Metadata Pill (e.g. 10.0.1.24 or kms:Encrypted) */}
-      {nodeData.metadataPill && (
-        <div className="mt-1">
-          <span className="text-[10px] font-mono text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)] px-1.5 py-0.5 rounded-[4px] border border-[var(--aws-border)] shadow-xs max-w-[130px] truncate block text-center">
-            {nodeData.metadataPill}
-          </span>
-        </div>
-      )}
+      {/* 4-Way Directional Connection Handles with Explicit IDs */}
+      <Handle
+        type="source"
+        position={Position.Top}
+        id="top"
+        isConnectable={true}
+        style={{ backgroundColor: 'var(--aws-interactive)' }}
+        className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+        title="Connect (Top)"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right"
+        isConnectable={true}
+        style={{ backgroundColor: 'var(--aws-interactive)' }}
+        className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+        title="Connect (Right)"
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="bottom"
+        isConnectable={true}
+        style={{ backgroundColor: 'var(--aws-interactive)' }}
+        className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+        title="Connect (Bottom)"
+      />
+      <Handle
+        type="source"
+        position={Position.Left}
+        id="left"
+        isConnectable={true}
+        style={{ backgroundColor: 'var(--aws-interactive)' }}
+        className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+        title="Connect (Left)"
+      />
     </div>
+
+            {/* Service Title (12px bold sentence case, double-click inline edit) */ }
+            <div className="mt-2 w-full flex justify-center">
+              {isEditingTitle ? (
+                <div className="flex items-center gap-1 w-full px-1">
+                  <input
+                    type="text"
+                    value={titleDraft}
+                    onChange={(e) => setTitleDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleCommitTitle();
+                      if (e.key === 'Escape') setIsEditingTitle(false);
+                    }}
+                    onBlur={() => handleCommitTitle()}
+                    autoFocus
+                    className="w-full text-center text-[12px] font-bold bg-[var(--aws-card-bg)] text-[var(--aws-text-primary)] border border-[var(--aws-interactive)] rounded px-1 py-0.5 outline-none shadow-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCommitTitle}
+                    className="text-[#1D8102] hover:opacity-80 p-0.5"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+            <div
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                setTitleDraft(nodeData.customTitle || nodeData.label);
+                setIsEditingTitle(true);
+              }}
+              style={{ color: 'var(--aws-text-primary)' }}
+              className="font-bold text-[12px] leading-[1.3] text-center w-[140px] break-words line-clamp-2 hover:underline decoration-dotted cursor-text"
+              title="Double-click to edit title"
+            >
+              {nodeData.customTitle || nodeData.label}
+  </div>
+          )}
+        </div >
+
+            {/* Resource Identifier / Subtitle (11px monospace, line-clamp-2, double-click inline edit) */ }
+            <div className="mt-0.5 w-full flex justify-center">
+              {isEditingSubtitle ? (
+                <div className="flex items-center gap-1 w-full px-1">
+                  <input
+                    type="text"
+                    value={subtitleDraft}
+                    onChange={(e) => setSubtitleDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleCommitSubtitle();
+                      if (e.key === 'Escape') setIsEditingSubtitle(false);
+                    }}
+                    onBlur={() => handleCommitSubtitle()}
+                    autoFocus
+                    className="w-full text-center text-[11px] font-mono bg-[var(--aws-card-bg)] text-[var(--aws-text-muted)] border border-[var(--aws-interactive)] rounded px-1 py-0.5 outline-none shadow-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCommitSubtitle}
+                    className="text-[#1D8102] hover:opacity-80 p-0.5"
+                  >
+                    <Check className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+            <div
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                setSubtitleDraft(nodeData.roleSubtitle || nodeData.customNotes || '');
+                setIsEditingSubtitle(true);
+              }}
+              style={{ color: 'var(--aws-text-muted)' }}
+              className="font-mono text-[11px] leading-[1.3] text-center w-[140px] break-words line-clamp-2 opacity-85 hover:underline decoration-dotted cursor-text"
+              title="Double-click to edit role / subtitle"
+            >
+              {nodeData.roleSubtitle || nodeData.customNotes || (nodeData.isActor ? 'Actor' : nodeData.serviceId)}
+            </div>
+          )
+  }
+        </div >
+
+  {/* Custom Metadata Pill (e.g. 10.0.1.24 or kms:Encrypted) */ }
+{
+  nodeData.metadataPill && (
+    <div className="mt-1">
+      <span className="text-[10px] font-mono text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)] px-1.5 py-0.5 rounded-[4px] border border-[var(--aws-border)] shadow-xs max-w-[130px] truncate block text-center">
+        {nodeData.metadataPill}
+      </span>
+    </div>
+  )
+}
+      </m.div >
+    </div >
   );
 });
 

@@ -4,6 +4,9 @@ import { X, Search, ArrowRight, Zap } from 'lucide-react';
 import { useCompassStore } from '../../store/useCompassStore';
 import type { AWSService, EdgeProtocol } from '../../types/aws';
 import { AWSServiceIcon } from '../icons/AWSServiceIcon';
+import { AWS_CATALOG_DATA } from '../../db/awsCatalogData';
+
+const CATALOG_MAP = new Map(AWS_CATALOG_DATA.map((item) => [item.id, item]));
 
 export interface QuickConnectPopoverProps {
   isOpen: boolean;
@@ -153,13 +156,30 @@ export const QuickConnectPopover: React.FC<QuickConnectPopoverProps> = ({
     };
   }, [isOpen, onClose]);
 
-  // Recommended downstream services
+  // Recommended downstream services dynamically resolved from 230+ AWS Catalog flows
   const recommendedTargets = useMemo(() => {
-    const rawList = sourceServiceId && TARGET_RECOMMENDATIONS[sourceServiceId.toLowerCase()]
-      ? TARGET_RECOMMENDATIONS[sourceServiceId.toLowerCase()]
-      : DEFAULT_RECOMMENDATIONS;
+    let rawList: { targetServiceId: string; defaultProtocol: EdgeProtocol }[] = [];
 
-    return rawList
+    if (sourceServiceId) {
+      const sid = sourceServiceId.toLowerCase();
+      if (TARGET_RECOMMENDATIONS[sid]) {
+        rawList = TARGET_RECOMMENDATIONS[sid];
+      } else {
+        const catalogEntry = CATALOG_MAP.get(sid);
+        if (catalogEntry && catalogEntry.flow && catalogEntry.flow.downstream.length > 0) {
+          rawList = catalogEntry.flow.downstream.map((dsId) => ({
+            targetServiceId: dsId,
+            defaultProtocol: catalogEntry.flow.edgeProtocol || 'HTTPS/REST',
+          }));
+        }
+      }
+    }
+
+    if (rawList.length === 0) {
+      rawList = DEFAULT_RECOMMENDATIONS;
+    }
+
+    const resolved = rawList
       .map((item) => {
         const found = services.find((s) => s.id === item.targetServiceId);
         if (!found) return null;
@@ -168,191 +188,205 @@ export const QuickConnectPopover: React.FC<QuickConnectPopoverProps> = ({
           protocol: item.defaultProtocol,
         };
       })
-      .filter(Boolean) as { service: AWSService; protocol: EdgeProtocol }[];
-  }, [sourceServiceId, services]);
+      .filter((x): x is { service: AWSService; protocol: EdgeProtocol } => Boolean(x));
 
-  // Filtered search results
-  const filteredServices = useMemo(() => {
-    if (!search.trim()) return [];
-    const q = search.toLowerCase().trim();
-    return services
-      .filter((s) => s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q) || s.category.toLowerCase().includes(q))
-      .slice(0, 10);
-  }, [services, search]);
-
-  if (!isOpen || typeof document === 'undefined') return null;
-
-  // Viewport-aware positioning
-  const popoverWidth = 320;
-  const popoverHeight = 360;
-  const padding = 16;
-
-  let left = screenPosition.x;
-  let top = screenPosition.y;
-
-  if (left + popoverWidth > window.innerWidth - padding) {
-    left = window.innerWidth - popoverWidth - padding;
-  }
-  if (left < padding) {
-    left = padding;
+  if (resolved.length < 3) {
+    // Backfill with top foundational services if specialized service has few known downstreams
+    for (const def of DEFAULT_RECOMMENDATIONS) {
+      if (!resolved.some((r) => r.service.id === def.targetServiceId) && def.targetServiceId !== sourceServiceId) {
+        const found = services.find((s) => s.id === def.targetServiceId);
+        if (found) {
+          resolved.push({ service: found, protocol: def.defaultProtocol });
+        }
+      }
+    }
   }
 
-  if (top + popoverHeight > window.innerHeight - padding) {
-    top = window.innerHeight - popoverHeight - padding;
-  }
-  if (top < padding) {
-    top = padding;
-  }
+  return resolved;
+}, [sourceServiceId, services]);
 
-  return createPortal(
+// Filtered search results
+const filteredServices = useMemo(() => {
+  if (!search.trim()) return [];
+  const q = search.toLowerCase().trim();
+  return services
+    .filter((s) => s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q) || s.category.toLowerCase().includes(q))
+    .slice(0, 10);
+}, [services, search]);
+
+if (!isOpen || typeof document === 'undefined') return null;
+
+// Viewport-aware positioning
+const popoverWidth = 320;
+const popoverHeight = 360;
+const padding = 16;
+
+let left = screenPosition.x;
+let top = screenPosition.y;
+
+if (left + popoverWidth > window.innerWidth - padding) {
+  left = window.innerWidth - popoverWidth - padding;
+}
+if (left < padding) {
+  left = padding;
+}
+
+if (top + popoverHeight > window.innerHeight - padding) {
+  top = window.innerHeight - popoverHeight - padding;
+}
+if (top < padding) {
+  top = padding;
+}
+
+return createPortal(
+  <div
+    ref={popoverRef}
+    style={{
+      left: `${left}px`,
+      top: `${top}px`,
+      backgroundColor: 'var(--aws-popover-bg)',
+      borderColor: 'var(--aws-border)',
+    }}
+    className="fixed z-[99999] w-[320px] rounded-[8px] border shadow-2xl p-0 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 select-none"
+  >
+    {/* Header Bar */}
     <div
-      ref={popoverRef}
       style={{
-        left: `${left}px`,
-        top: `${top}px`,
-        backgroundColor: 'var(--aws-popover-bg)',
-        borderColor: 'var(--aws-border)',
+        backgroundColor: 'var(--aws-card-bg)',
+        borderBottomColor: 'var(--aws-border)',
       }}
-      className="fixed z-[99999] w-[320px] rounded-[8px] border shadow-2xl p-0 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 select-none"
+      className="px-3 py-2 border-b flex items-center justify-between"
     >
-      {/* Header Bar */}
-      <div
-        style={{
-          backgroundColor: 'var(--aws-card-bg)',
-          borderBottomColor: 'var(--aws-border)',
-        }}
-        className="px-3 py-2 border-b flex items-center justify-between"
-      >
-        <div className="flex items-center gap-1.5 min-w-0">
-          <Zap className="w-3.5 h-3.5 text-[#FF9900] shrink-0" />
-          <span
-            style={{ color: 'var(--aws-text-primary)' }}
-            className="text-[12px] font-bold truncate"
-          >
-            Connect from {sourceNodeLabel}
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-1 rounded-[4px] text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] transition-colors cursor-pointer"
-          title="Close (Esc)"
-          aria-label="Close"
+      <div className="flex items-center gap-1.5 min-w-0">
+        <Zap className="w-3.5 h-3.5 text-[#FF9900] shrink-0" />
+        <span
+          style={{ color: 'var(--aws-text-primary)' }}
+          className="text-[12px] font-bold truncate"
         >
-          <X className="w-3.5 h-3.5" />
-        </button>
+          Connect from {sourceNodeLabel}
+        </span>
       </div>
-
-      {/* Quick Search Input */}
-      <div
-        style={{ borderBottomColor: 'var(--aws-border)' }}
-        className="p-2 border-b bg-[var(--aws-page-bg)]"
+      <button
+        type="button"
+        onClick={onClose}
+        className="p-1 rounded-[4px] text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] transition-colors cursor-pointer"
+        title="Close (Esc)"
+        aria-label="Close"
       >
-          <div className="h-7 px-2.5 rounded-[4px] border border-[var(--aws-border)] bg-[var(--aws-card-bg)] focus-within:border-[var(--aws-interactive)] flex items-center gap-2">
-            <div className="flex items-center justify-center shrink-0 pointer-events-none" aria-hidden="true">
-              <Search className="w-3.5 h-3.5 text-[var(--aws-text-muted)]" strokeWidth={1.75} />
-            </div>
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search downstream service target..."
-              className="w-full h-full bg-transparent flex-1 text-[12px] text-[var(--aws-text-primary)] placeholder:text-[var(--aws-text-muted)] focus:outline-none font-sans leading-normal self-center p-0 border-none"
-            />
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </div>
+
+    {/* Quick Search Input */}
+    <div
+      style={{ borderBottomColor: 'var(--aws-border)' }}
+      className="p-2 border-b bg-[var(--aws-page-bg)]"
+    >
+      <div className="h-7 px-2.5 rounded-[4px] border border-[var(--aws-border)] bg-[var(--aws-card-bg)] focus-within:border-[var(--aws-interactive)] flex items-center gap-2">
+        <div className="flex items-center justify-center shrink-0 pointer-events-none" aria-hidden="true">
+          <Search className="w-3.5 h-3.5 text-[var(--aws-text-muted)]" strokeWidth={1.75} />
+        </div>
+        <input
+          ref={searchInputRef}
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search downstream service target..."
+          className="w-full h-full bg-transparent flex-1 text-[12px] text-[var(--aws-text-primary)] placeholder:text-[var(--aws-text-muted)] focus:outline-none font-sans leading-normal self-center p-0 border-none"
+        />
+      </div>
+    </div>
+
+    {/* Scrollable Target List */}
+    <div className="flex-1 max-h-[260px] overflow-y-auto p-1.5 space-y-1 custom-scrollbar">
+      {search.trim() ? (
+        // Search Results
+        filteredServices.length > 0 ? (
+          filteredServices.map((svc) => (
+            <button
+              key={svc.id}
+              type="button"
+              onClick={() => {
+                onSelectTarget(svc, flowPosition, 'HTTPS/REST');
+                onClose();
+              }}
+              className="w-full px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] flex items-center justify-between group transition-colors text-left cursor-pointer"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <AWSServiceIcon serviceId={svc.id} size={22} className="shrink-0" />
+                <div className="min-w-0">
+                  <span
+                    style={{ color: 'var(--aws-text-primary)' }}
+                    className="text-[12px] font-medium block truncate group-hover:text-[var(--aws-interactive)]"
+                  >
+                    {svc.name}
+                  </span>
+                  <span className="text-[10px] text-[var(--aws-text-muted)] font-mono">
+                    {svc.category} · aws {svc.id}
+                  </span>
+                </div>
+              </div>
+              <ArrowRight className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[var(--aws-interactive)] group-hover:translate-x-0.5 transition-transform shrink-0" />
+            </button>
+          ))
+        ) : (
+          <div className="p-4 text-center text-[12px] text-[var(--aws-text-muted)]">
+            No matching AWS services found
           </div>
-        </div>
-
-        {/* Scrollable Target List */}
-        <div className="flex-1 max-h-[260px] overflow-y-auto p-1.5 space-y-1 custom-scrollbar">
-          {search.trim() ? (
-            // Search Results
-            filteredServices.length > 0 ? (
-              filteredServices.map((svc) => (
-                <button
-                  key={svc.id}
-                  type="button"
-                  onClick={() => {
-                    onSelectTarget(svc, flowPosition, 'HTTPS/REST');
-                    onClose();
-                  }}
-                  className="w-full px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] flex items-center justify-between group transition-colors text-left cursor-pointer"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <AWSServiceIcon serviceId={svc.id} size={22} className="shrink-0" />
-                    <div className="min-w-0">
-                      <span
-                        style={{ color: 'var(--aws-text-primary)' }}
-                        className="text-[12px] font-medium block truncate group-hover:text-[var(--aws-interactive)]"
-                      >
-                        {svc.name}
-                      </span>
-                      <span className="text-[10px] text-[var(--aws-text-muted)] font-mono">
-                        {svc.category} · aws {svc.id}
-                      </span>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[var(--aws-interactive)] group-hover:translate-x-0.5 transition-transform shrink-0" />
-                </button>
-              ))
-            ) : (
-              <div className="p-4 text-center text-[12px] text-[var(--aws-text-muted)]">
-                No matching AWS services found
+        )
+      ) : (
+        // Recommended Targets
+        <>
+          <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--aws-text-muted)]">
+            Recommended Targets
+          </div>
+          {recommendedTargets.map(({ service: svc, protocol }) => (
+            <button
+              key={svc.id}
+              type="button"
+              onClick={() => {
+                onSelectTarget(svc, flowPosition, protocol);
+                onClose();
+              }}
+              className="w-full px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] flex items-center justify-between group transition-colors text-left cursor-pointer"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <AWSServiceIcon serviceId={svc.id} size={22} className="shrink-0" />
+                <div className="min-w-0">
+                  <span
+                    style={{ color: 'var(--aws-text-primary)' }}
+                    className="text-[12px] font-medium block truncate group-hover:text-[var(--aws-interactive)]"
+                  >
+                    {svc.name}
+                  </span>
+                  <span className="text-[10px] text-[#FF9900] font-mono">
+                    {protocol}
+                  </span>
+                </div>
               </div>
-            )
-          ) : (
-            // Recommended Targets
-            <>
-              <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--aws-text-muted)]">
-                Recommended Targets
-              </div>
-              {recommendedTargets.map(({ service: svc, protocol }) => (
-                <button
-                  key={svc.id}
-                  type="button"
-                  onClick={() => {
-                    onSelectTarget(svc, flowPosition, protocol);
-                    onClose();
-                  }}
-                  className="w-full px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] flex items-center justify-between group transition-colors text-left cursor-pointer"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <AWSServiceIcon serviceId={svc.id} size={22} className="shrink-0" />
-                    <div className="min-w-0">
-                      <span
-                        style={{ color: 'var(--aws-text-primary)' }}
-                        className="text-[12px] font-medium block truncate group-hover:text-[var(--aws-interactive)]"
-                      >
-                        {svc.name}
-                      </span>
-                      <span className="text-[10px] text-[#FF9900] font-mono">
-                        {protocol}
-                      </span>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[var(--aws-interactive)] group-hover:translate-x-0.5 transition-transform shrink-0" />
-                </button>
-              ))}
-            </>
-          )}
-        </div>
+              <ArrowRight className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[var(--aws-interactive)] group-hover:translate-x-0.5 transition-transform shrink-0" />
+            </button>
+          ))}
+        </>
+      )}
+    </div>
 
-        {/* Footer Hint */}
-        <div
-          style={{
-            borderTopColor: 'var(--aws-border)',
-            backgroundColor: 'var(--aws-page-bg)',
-          }}
-          className="px-3 py-1.5 border-t text-[10px] text-[var(--aws-text-muted)] flex items-center justify-between"
-        >
-          <span>Spawns node & wires edge</span>
-          <kbd className="px-1 py-0.5 rounded border border-[var(--aws-border)] font-mono text-[9px]">
-            ESC
-          </kbd>
-        </div>
-      </div>,
-      document.body
-      );
+    {/* Footer Hint */}
+    <div
+      style={{
+        borderTopColor: 'var(--aws-border)',
+        backgroundColor: 'var(--aws-page-bg)',
+      }}
+      className="px-3 py-1.5 border-t text-[10px] text-[var(--aws-text-muted)] flex items-center justify-between"
+    >
+      <span>Spawns node & wires edge</span>
+      <kbd className="px-1 py-0.5 rounded border border-[var(--aws-border)] font-mono text-[9px]">
+        ESC
+      </kbd>
+    </div>
+  </div>,
+  document.body
+);
 };
 
-      export default QuickConnectPopover;
+export default QuickConnectPopover;

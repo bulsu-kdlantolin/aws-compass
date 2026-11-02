@@ -12,6 +12,9 @@ import { useSettingsStore } from '../../store/useSettingsStore';
 import type { AWSCategory, AWSService } from '../../types/aws';
 import { ServiceCard } from './ServiceCard';
 import { SidebarResizeHandle } from '../ui/SidebarResizeHandle';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
+import { m } from 'motion/react';
+import { SPRING_SMOOTH } from '../../utils/motionTokens';
 
 export const ServiceCatalog: React.FC = () => {
   const {
@@ -330,12 +333,19 @@ export const ServiceCatalog: React.FC = () => {
                 key={tierVal}
                 type="button"
                 onClick={() => setTierFilter(tierVal)}
-                className={`rounded-[4px] text-[11px] font-medium flex items-center justify-center transition-all duration-150 cursor-pointer ${isSelected
-                  ? 'bg-[var(--aws-card-bg)] text-[var(--aws-text-primary)] font-semibold shadow-xs'
+                className={`relative rounded-[4px] text-[11px] font-medium flex items-center justify-center transition-colors cursor-pointer select-none ${isSelected
+                  ? 'text-[var(--aws-text-primary)] font-semibold'
                   : 'text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)]'
                   }`}
               >
-                {label}
+                {isSelected && (
+                  <m.span
+                    layoutId="tier-filter-pill"
+                    className="pointer-events-none absolute inset-0 rounded-[4px] bg-[var(--aws-card-bg)] shadow-xs border border-[var(--aws-border)]/50"
+                    transition={SPRING_SMOOTH}
+                  />
+                )}
+                <span className="relative z-10">{label}</span>
               </button>
             );
           })}
@@ -448,11 +458,13 @@ export const ServiceCatalog: React.FC = () => {
                     onClick={() => toggleCategory(cat)}
                     className="flex items-center gap-1.5 min-w-0 flex-1 text-left cursor-pointer focus:outline-none"
                   >
-                    <ChevronRight
-                      className={`w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-150 shrink-0 ${isCollapsed ? '' : 'rotate-90'
-                        }`}
-                      strokeWidth={2}
-                    />
+                    <AnimatedIcon iconKey={isCollapsed ? 'collapsed' : 'expanded'} size={14}>
+                      <ChevronRight
+                        className={`w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-150 shrink-0 ${isCollapsed ? '' : 'rotate-90'
+                          }`}
+                        strokeWidth={2}
+                      />
+                    </AnimatedIcon>
                     <span className="text-[12px] font-semibold text-[var(--aws-text-primary)] truncate">
                       {cat}
                     </span>
@@ -472,48 +484,52 @@ export const ServiceCatalog: React.FC = () => {
                   }
                 </div>
 
-                {/* Category Service Items */}
-                {!isCollapsed && (
-                  <div
-                    className="pl-2 relative"
-                    onDragOver={(e) => {
-                      if (draggedServiceId) {
-                        e.preventDefault();
-                        e.dataTransfer.dropEffect = 'move';
-                      }
-                    }}
-                    onDrop={async (e) => {
-                      if (e.target === e.currentTarget && draggedServiceId) {
-                        e.preventDefault();
-                        await moveServiceToCategory(draggedServiceId, cat, 'end');
-                        handleCardDragEnd();
-                      }
-                    }}
-                  >
-                    {catServices.length === 0 ? (
-                      <div
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = 'move';
-                          setTargetCategoryHeader(cat);
-                        }}
-                        onDragLeave={() => setTargetCategoryHeader(null)}
-                        onDrop={async (e) => {
-                          e.preventDefault();
-                          const sourceId =
-                            e.dataTransfer.getData('application/aws-service-id') ||
-                            draggedServiceId;
-                          setTargetCategoryHeader(null);
-                          setDraggedServiceId(null);
-                          if (sourceId) {
-                            await moveServiceToCategory(sourceId, cat, 'start');
-                          }
-                        }}
-                        className="py-2 px-3 text-center border border-dashed border-[var(--aws-border)] rounded mx-2 my-1.5 text-[11px] text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)]/50 hover:border-[#FF9900] transition-colors"
-                      >
-                        Drop service here to move to {cat}
-                      </div>
-                    ) : (
+                          {/* Category Service Items (Animated CSS Grid Height) */ }
+                          <div
+                            className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${!isCollapsed ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+                              }`}
+                          >
+                            <div className="overflow-hidden">
+                              <div
+                                className="pl-2 relative"
+                                onDragOver={(e) => {
+                                  if (draggedServiceId) {
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = 'move';
+                                }
+                                }}
+                              onDrop={async (e) => {
+                                if (e.target === e.currentTarget && draggedServiceId) {
+                                  e.preventDefault();
+                                await moveServiceToCategory(draggedServiceId, cat, 'end');
+                                handleCardDragEnd();
+                              }
+                              }}
+                    >
+                            {catServices.length === 0 ? (
+                              <div
+                                onDragOver={(e) => {
+                                  e.preventDefault();
+                                  e.dataTransfer.dropEffect = 'move';
+                                  setTargetCategoryHeader(cat);
+                                }}
+                                    onDragLeave = {() => setTargetCategoryHeader(null)}
+                            onDrop={async (e) => {
+                              e.preventDefault();
+                              const sourceId =
+                                e.dataTransfer.getData('application/aws-service-id') ||
+                                draggedServiceId;
+                              setTargetCategoryHeader(null);
+                              setDraggedServiceId(null);
+                              if (sourceId) {
+                                await moveServiceToCategory(sourceId, cat, 'start');
+                              }
+                            }}
+                            className="py-2 px-3 text-center border border-dashed border-[var(--aws-border)] rounded mx-2 my-1.5 text-[11px] text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)]/50 hover:border-[#FF9900] transition-colors"
+                        >
+                            Drop service here to move to {cat}
+                          </div>
+                      ) : (
                       catServices.map((svc, index) => (
                         <ServiceCard
                           key={svc.id}
@@ -541,10 +557,11 @@ export const ServiceCatalog: React.FC = () => {
                       ))
                     )}
                   </div>
-                )}
-              </div>
-            );
-          })
+                  </div>
+                </div>
+    </div>
+  );
+})
         )}
       </div >
     </aside >

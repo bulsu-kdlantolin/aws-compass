@@ -48,7 +48,10 @@ import { CanvasBomPopover } from './CanvasBomPopover';
 import { QuickConnectPopover } from './QuickConnectPopover';
 import { getAWSCategoryColor } from '../../utils/awsCategoryColors';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
-import { Blocks, Pulse } from '../ui/LoadingIndicators';
+import { Pulse } from '../ui/LoadingIndicators';
+import { CompassLoader } from '../ui/CompassBootScreen';
+import { withAutoLayoutGlide } from '../../utils/motionTokens';
+import { SEED_SERVICES } from '../../db/seedServices';
 import type { AWSService, EdgeProtocol, CanvasNodeItem, CanvasEdgeItem } from '../../types/aws';
 
 // Hoist static node & edge registrations
@@ -89,6 +92,10 @@ const ArchitectureCanvasInner: React.FC = () => {
   const removeNode = useCanvasStore((s) => s.removeNode);
   const removeEdge = useCanvasStore((s) => s.removeEdge);
   const duplicateNode = useCanvasStore((s) => s.duplicateNode);
+  const copySelection = useCanvasStore((s) => s.copySelection);
+  const cutSelection = useCanvasStore((s) => s.cutSelection);
+  const pasteSelection = useCanvasStore((s) => s.pasteSelection);
+  const selectAllNodes = useCanvasStore((s) => s.selectAllNodes);
   const activeDiagramName = useCanvasStore((s) => s.activeDiagramName);
   const saveCurrentAsBlueprint = useCanvasStore((s) => s.saveCurrentAsBlueprint);
   const saveStatus = useCanvasStore((s) => s.saveStatus);
@@ -254,6 +261,7 @@ const ArchitectureCanvasInner: React.FC = () => {
   // Canvas viewport pan-drag cursor state (moving around canvas with right/middle click)
   const [isCanvasPanning, setIsCanvasPanning] = useState(false);
   const panStartRef = useRef<{ x: number; y: number; isDown: boolean } | null>(null);
+  const mousePosRef = useRef<{ x: number; y: number } | null>(null);
 
   const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
     // Button 2 is right click, button 1 is middle click (both pan the canvas via panOnDrag={[1, 2]})
@@ -263,6 +271,7 @@ const ArchitectureCanvasInner: React.FC = () => {
   }, []);
 
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent) => {
+    mousePosRef.current = { x: e.clientX, y: e.clientY };
     if (panStartRef.current?.isDown) {
       // Bitmask check: button 2 (right-click) is bit 2, button 1 (middle-click) is bit 4
       if ((e.buttons & 2) !== 0 || (e.buttons & 4) !== 0) {
@@ -324,7 +333,7 @@ const ArchitectureCanvasInner: React.FC = () => {
     initializeCanvas();
   }, [initializeCanvas]);
 
-  // Global Keyboard Shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+D, Delete/Backspace, Escape)
+  // Global Keyboard Shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+D, Ctrl+A, Delete/Backspace, Escape)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isTyping =
@@ -349,18 +358,72 @@ const ArchitectureCanvasInner: React.FC = () => {
         return;
       }
 
+      // Copy: Ctrl+C / Cmd+C
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && !isTyping) {
+        const hasSelection = nodes.some((n) => n.selected) || Boolean(selectedNodeId);
+        if (hasSelection) {
+          e.preventDefault();
+          copySelection();
+          return;
+        }
+      }
+
+      // Cut: Ctrl+X / Cmd+X
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'x' && !isTyping) {
+        const hasSelection = nodes.some((n) => n.selected) || Boolean(selectedNodeId);
+        if (hasSelection) {
+          e.preventDefault();
+          cutSelection();
+          return;
+        }
+      }
+
+      // Paste: Ctrl+V / Cmd+V
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v' && !isTyping) {
+        e.preventDefault();
+        if (mousePosRef.current && reactFlowWrapper.current) {
+          const bounds = reactFlowWrapper.current.getBoundingClientRect();
+          const isInside =
+            mousePosRef.current.x >= bounds.left &&
+            mousePosRef.current.x <= bounds.right &&
+            mousePosRef.current.y >= bounds.top &&
+            mousePosRef.current.y <= bounds.bottom;
+          if (isInside) {
+            const flowPos = reactFlowInstance.screenToFlowPosition({
+              x: mousePosRef.current.x,
+              y: mousePosRef.current.y,
+            });
+            pasteSelection(flowPos);
+            return;
+          }
+        }
+        pasteSelection();
+        return;
+      }
+
       // Duplicate: Ctrl+D / Cmd+D
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd' && !isTyping) {
         e.preventDefault();
-        if (selectedNodeId) {
-          duplicateNode(selectedNodeId);
+        const hasSelection = nodes.some((n) => n.selected) || Boolean(selectedNodeId);
+        if (hasSelection) {
+          duplicateNode(selectedNodeId || '');
         }
+        return;
+      }
+
+      // Select All: Ctrl+A / Cmd+A
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a' && !isTyping) {
+        e.preventDefault();
+        selectAllNodes();
         return;
       }
 
       // Delete: Delete or Backspace
       if ((e.key === 'Delete' || e.key === 'Backspace') && !isTyping) {
-        if (selectedNodeId) {
+        const selectedNodes = nodes.filter((n) => n.selected);
+        if (selectedNodes.length > 0) {
+          selectedNodes.forEach((n) => removeNode(n.id));
+        } else if (selectedNodeId) {
           removeNode(selectedNodeId);
         } else if (selectedEdgeId) {
           removeEdge(selectedEdgeId);
@@ -384,51 +447,98 @@ const ArchitectureCanvasInner: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, duplicateNode, removeNode, removeEdge, selectedNodeId, selectedEdgeId, closeContextMenu, closeInspector, reactFlowInstance]);
+  }, [
+    undo,
+    redo,
+    copySelection,
+    cutSelection,
+    pasteSelection,
+    selectAllNodes,
+    duplicateNode,
+    removeNode,
+    removeEdge,
+    selectedNodeId,
+    selectedEdgeId,
+    nodes,
+    closeContextMenu,
+    closeInspector,
+    reactFlowInstance,
+  ]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
+    event.dataTransfer.dropEffect = 'copy';
   }, []);
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
+      event.stopPropagation();
 
-      const stencilJson = event.dataTransfer.getData('application/aws-stencil');
+      const stencilJson =
+        event.dataTransfer.getData('application/aws-stencil') ||
+        event.dataTransfer.getData('application/json') ||
+        event.dataTransfer.getData('text/plain');
       const serviceId = event.dataTransfer.getData('application/aws-service-id');
 
-      const position = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
+      let position: { x: number; y: number };
+      try {
+        position = reactFlowInstance.screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        });
+      } catch {
+        position = { x: 300, y: 200 };
+      }
+
+      if (typeof position.x !== 'number' || isNaN(position.x) || isNaN(position.y)) {
+        position = { x: 300, y: 200 };
+      }
 
       if (stencilJson) {
         try {
           const stencil = JSON.parse(stencilJson);
-          if (stencil.type === 'service' && stencil.serviceId) {
-            const service = services.find((s) => s.id === stencil.serviceId);
-            if (service) addServiceNode(service, position);
-          } else if (stencil.type === 'boundary' && stencil.boundaryType) {
-            addBoundaryNode(stencil.boundaryType, stencil.label, position);
-          } else if (stencil.type === 'actor' && stencil.actorType) {
-            addExternalActor(stencil.actorType, stencil.label, position);
-          } else if (stencil.type === 'annotation') {
-            addAnnotationNode(stencil.title || 'Architecture Note', '', position);
-          } else if (stencil.type === 'text-block') {
-            addAnnotationNode(stencil.title || 'Architecture Section Header', '', position, {
-              isTextOnly: true,
-              fontSize: 18,
-            });
+          if (stencil && typeof stencil === 'object') {
+            if (stencil.type === 'service' && stencil.serviceId) {
+              const service =
+                services.find((s) => s.id === stencil.serviceId) ||
+                SEED_SERVICES.find((s) => s.id === stencil.serviceId);
+              if (service) {
+                addServiceNode(service, position);
+                return;
+              }
+            } else if (stencil.type === 'boundary' && stencil.boundaryType) {
+              addBoundaryNode(stencil.boundaryType, stencil.label, position);
+              return;
+            } else if (stencil.type === 'actor' && stencil.actorType) {
+              addExternalActor(stencil.actorType, stencil.label, position);
+              return;
+            } else if (stencil.type === 'annotation') {
+              addAnnotationNode(stencil.title || 'Architecture Note', '', position);
+              return;
+            } else if (stencil.type === 'text-block') {
+              addAnnotationNode(stencil.title || 'Architecture Section Header', '', position, {
+                isTextOnly: true,
+                fontSize: 18,
+              });
+              return;
+            }
           }
-          return;
-        } catch (e) {
-          console.error('Failed to parse dropped stencil:', e);
+        } catch {
+          // Fallback if stencilJson is not valid JSON
         }
       }
 
-      if (serviceId) {
-        const service = services.find((s) => s.id === serviceId);
+      const targetServiceId =
+        serviceId ||
+        (typeof stencilJson === 'string' && !stencilJson.startsWith('{')
+          ? stencilJson.trim()
+          : null);
+
+      if (targetServiceId) {
+        const service =
+          services.find((s) => s.id === targetServiceId) ||
+          SEED_SERVICES.find((s) => s.id === targetServiceId);
         if (service) {
           addServiceNode(service, position);
         }
@@ -506,11 +616,16 @@ const ArchitectureCanvasInner: React.FC = () => {
 
   const handleTriggerAutoLayout = (direction: 'LR' | 'TB') => {
     setIsArranging(true);
-    autoLayout(direction);
-    setTimeout(() => {
-      reactFlowInstance.fitView({ padding: 0.18, duration: 250 });
-      setIsArranging(false);
-    }, 220);
+    withAutoLayoutGlide(
+      () => {
+        autoLayout(direction);
+      },
+      () => {
+        reactFlowInstance.fitView({ padding: 0.18, duration: 250 });
+        setIsArranging(false);
+      },
+      260
+    );
   };
 
   const handleSaveAsBlueprint = async (e: React.FormEvent) => {
@@ -580,11 +695,8 @@ const ArchitectureCanvasInner: React.FC = () => {
 
   return (
     <div
-      ref={reactFlowWrapper}
       style={{ backgroundColor: 'var(--aws-canvas-bg)' }}
       className="flex w-full h-full relative overflow-hidden select-none"
-      onDragOver={onDragOver}
-      onDrop={onDrop}
     >
       {/* Dual-Mode Left Sidebar: AWS Catalog & Diagram Stencils */}
       <CanvasSidebar />
@@ -873,7 +985,7 @@ const ArchitectureCanvasInner: React.FC = () => {
               aria-live="polite"
               className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 px-3.5 py-1.5 rounded-[6px] border border-[#FF9900]/40 bg-[#0F141A]/90 text-[#EAEDED] shadow-lg backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150 select-none"
             >
-              <Blocks size={18} sweep="diagonal" color="#FF9900" />
+              <CompassLoader size={18} />
               <span className="text-[12px] font-medium tracking-wide">
                 Arranging architecture graph…
               </span>
@@ -881,10 +993,13 @@ const ArchitectureCanvasInner: React.FC = () => {
           )}
 
           <div
+            ref={reactFlowWrapper}
             className={`w-full h-full transition-opacity duration-200 ${isArranging ? 'opacity-75' : 'opacity-100'
               } ${isCanvasPanning ? 'is-canvas-panning' : ''}`}
             onMouseDown={handleCanvasMouseDown}
             onMouseMove={handleCanvasMouseMove}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
           >
             <ReactFlow
               nodes={nodes}

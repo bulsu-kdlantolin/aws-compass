@@ -9,13 +9,17 @@ import { ArchitectureCanvas } from './components/canvas/ArchitectureCanvas';
 import { CommandPalette } from './components/layout/CommandPalette';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { DisableThemeTransitions } from './components/ui/DisableThemeTransitions';
-import { AWSCompassLogo } from './components/ui/AWSCompassLogo';
+import { MotionProvider } from './components/ui/MotionProvider';
+import { CompassBootScreen } from './components/ui/CompassBootScreen';
 import { useSettingsStore } from './store/useSettingsStore';
+import { AnimatePresence, m } from 'motion/react';
+import { SPRING_SMOOTH } from './utils/motionTokens';
 
 export const App: React.FC = () => {
   const {
     isDbLoaded,
     isSidebarOpen,
+    sidebarWidth,
     toggleSidebar,
     workspaceMode,
     services,
@@ -27,10 +31,17 @@ export const App: React.FC = () => {
   const setIsCanvasFullscreen = useCanvasStore((s) => s.setIsCanvasFullscreen);
   const openSettings = useSettingsStore((s) => s.openSettings);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isMinBootPassed, setIsMinBootPassed] = useState(false);
 
   useEffect(() => {
     initialize();
+    const timer = setTimeout(() => {
+      setIsMinBootPassed(true);
+    }, 450);
+    return () => clearTimeout(timer);
   }, [initialize]);
+
+  const isBooting = !isDbLoaded || !isMinBootPassed;
 
   // Dynamic Tab Title Sync (better-accessibility 2.4.2 SPA rules)
   useEffect(() => {
@@ -96,83 +107,99 @@ export const App: React.FC = () => {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, [isCanvasFullscreen, setIsCanvasFullscreen, workspaceMode]);
 
-  if (!isDbLoaded) {
-    return (
-      <div
-        style={{
-          backgroundColor: 'var(--aws-page-bg)',
-          color: 'var(--aws-text-primary)',
-        }}
-        className="w-screen h-screen flex flex-col items-center justify-center p-4 font-sans select-none"
-      >
-        <DisableThemeTransitions />
-        <div
-          role="status"
-          aria-live="polite"
-          className="flex flex-col items-center gap-3.5 p-6 rounded-[8px] border border-[var(--aws-border)] bg-[var(--aws-card-bg)] shadow-lg max-w-sm w-full mx-4 animate-in fade-in duration-200"
-        >
-          <span className="sr-only">Initializing AWS Compass catalog…</span>
-          <AWSCompassLogo size={42} className="animate-pulse" />
-          <span className="text-[13px] font-medium text-[var(--aws-text-muted)] tracking-wide">
-            Initializing AWS Compass catalog…
-          </span>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div
-      style={{
-        backgroundColor: 'var(--aws-page-bg)',
-        color: 'var(--aws-text-primary)',
-      }}
-      className="flex flex-col w-screen h-screen overflow-hidden font-sans"
-    >
-      <DisableThemeTransitions />
-      {/* Top Application Bar (Hidden in Canvas Fullscreen / Zen Mode) */}
-      {(!isCanvasFullscreen || workspaceMode !== 'canvas') && (
-        <Navbar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
-      )}
-
-      {/* Main App Body */}
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* Service Catalog Sidebar (Only active & usable in Concept Vault) */}
-        {workspaceMode === 'vault' && isSidebarOpen && <ServiceCatalog />}
-
-      {/* Collapsed Sidebar Docked Trigger (Only shown in Concept Vault) */}
-        {workspaceMode === 'vault' && !isSidebarOpen && (
-          <button
-            type="button"
-            onClick={toggleSidebar}
-            className="absolute left-0 top-2 z-30 h-8 pl-2.5 pr-3 rounded-r-[6px] bg-[var(--aws-card-bg)] border-y border-r border-[var(--aws-border)] shadow-md hover:border-[#FF9900] text-[var(--aws-text-primary)] hover:text-[#FF9900] flex items-center gap-1.5 transition-all duration-150 cursor-pointer group"
-            title="Open service catalog"
-            aria-label="Open service catalog"
-          >
-            <ChevronRight className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[#FF9900] transition-colors" strokeWidth={2} />
-            <span className="text-[11px] font-semibold tracking-wide">Catalog</span>
-          </button>
-        )}
-
-        {/* Workspace Area: Concept Vault or Architecture Canvas */}
-        <main className="flex-1 h-full overflow-hidden relative">
-          {workspaceMode === 'vault' ? (
-            <ConceptVault />
+    <MotionProvider>
+        <DisableThemeTransitions />
+        <AnimatePresence mode="wait">
+          {isBooting ? (
+            <CompassBootScreen key="boot-screen" />
           ) : (
-            <ArchitectureCanvas />
-          )}
-        </main>
-      </div>
+            <m.div
+              key="workspace-shell"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.24, ease: [0.2, 0, 0, 1] }}
+              style={{
+                backgroundColor: 'var(--aws-page-bg)',
+                color: 'var(--aws-text-primary)',
+              }}
+              className="flex flex-col w-screen h-screen overflow-hidden font-sans"
+            >
+              {/* Top Application Bar (Hidden in Canvas Fullscreen / Zen Mode) */}
+              {(!isCanvasFullscreen || workspaceMode !== 'canvas') && (
+                <Navbar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
+              )}
 
-      {/* Global Command Palette (Ctrl+K) */}
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-      />
+              {/* Main App Body */}
+              <div className="flex flex-1 overflow-hidden relative">
+                {/* Service Catalog Sidebar (Only active & usable in Concept Vault) with smooth width/opacity glide */}
+                {workspaceMode === 'vault' && (
+                  <div
+                    style={{
+                      width: isSidebarOpen ? `${sidebarWidth}px` : '0px',
+                    }}
+                    className={`h-full shrink-0 relative overflow-hidden transition-[width,opacity,transform] duration-250 ease-[cubic-bezier(0.2,0,0,1)] ${isSidebarOpen
+                        ? 'opacity-100 translate-x-0'
+                        : 'opacity-0 -translate-x-4 pointer-events-none'
+                      }`}
+                  >
+                    <ServiceCatalog />
+                  </div>
+                )}
 
-      {/* Global Settings Modal (Ctrl+,) */}
-      <SettingsModal />
-    </div>
+                {/* Collapsed Sidebar Docked Trigger (Only shown in Concept Vault) */}
+                <AnimatePresence>
+                  {workspaceMode === 'vault' && !isSidebarOpen && (
+                    <m.button
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -12 }}
+                      transition={SPRING_SMOOTH}
+                      type="button"
+                      onClick={toggleSidebar}
+                      className="absolute left-0 top-2 z-30 h-8 pl-2.5 pr-3 rounded-r-[6px] bg-[var(--aws-card-bg)] border-y border-r border-[var(--aws-border)] shadow-md hover:border-[#FF9900] text-[var(--aws-text-primary)] hover:text-[#FF9900] flex items-center gap-1.5 transition-all duration-150 cursor-pointer group"
+                      title="Open service catalog"
+                      aria-label="Open service catalog"
+                    >
+                      <ChevronRight
+                        className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[#FF9900] transition-colors"
+                        strokeWidth={2}
+                      />
+                      <span className="text-[11px] font-semibold tracking-wide">Catalog</span>
+                    </m.button>
+                  )}
+                </AnimatePresence>
+
+                {/* Workspace Area: Concept Vault or Architecture Canvas with Crossfade */}
+                <main className="flex-1 h-full overflow-hidden relative">
+                  <m.div
+                    key={workspaceMode}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.16, ease: [0.2, 0, 0, 1] }}
+                    className="w-full h-full"
+                  >
+                    {workspaceMode === 'vault' ? (
+                      <ConceptVault />
+                    ) : (
+                      <ArchitectureCanvas />
+                    )}
+                  </m.div>
+                </main>
+              </div>
+
+              {/* Global Command Palette (Ctrl+K) */}
+              <CommandPalette
+                isOpen={isCommandPaletteOpen}
+                onClose={() => setIsCommandPaletteOpen(false)}
+              />
+
+        {/* Global Settings Modal (Ctrl+,) */}
+        <SettingsModal />
+      </m.div>
+        )}
+    </AnimatePresence>
+    </MotionProvider >
   );
 };
 

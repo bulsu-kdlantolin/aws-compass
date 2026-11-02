@@ -11,6 +11,8 @@ export interface AWSIconVectorDef {
 
 export const OFFICIAL_CATEGORY_COLORS = {
   Compute: { dark: '#ED7100', light: '#ED7100' },
+  Containers: { dark: '#ED7100', light: '#ED7100' },
+  Serverless: { dark: '#ED7100', light: '#ED7100' },
   Storage: { dark: '#3F8624', light: '#3F8624' },
   Database: { dark: '#3B48CC', light: '#3B48CC' },
   'Networking & Content Delivery': { dark: '#8C4FFF', light: '#8C4FFF' },
@@ -19,11 +21,247 @@ export const OFFICIAL_CATEGORY_COLORS = {
   'Security/IAM': { dark: '#DD344C', light: '#DD344C' },
   Security: { dark: '#DD344C', light: '#DD344C' },
   'Application Integration': { dark: '#E7157B', light: '#E7157B' },
-  Serverless: { dark: '#E7157B', light: '#E7157B' },
   Integration: { dark: '#E7157B', light: '#E7157B' },
+  Analytics: { dark: '#8C4FFF', light: '#8C4FFF' },
+  'Machine Learning & AI': { dark: '#01A88D', light: '#01A88D' },
   'Management & Governance': { dark: '#E7157B', light: '#E7157B' },
   Management: { dark: '#E7157B', light: '#E7157B' },
+  'Developer Tools': { dark: '#C925D1', light: '#C925D1' },
+  'Migration & Transfer': { dark: '#01A88D', light: '#01A88D' },
+  'Front-End Web & Mobile': { dark: '#DD344C', light: '#DD344C' },
+  'Internet of Things (IoT)': { dark: '#3F8624', light: '#3F8624' },
+  'Cloud Financial Management': { dark: '#3F8624', light: '#3F8624' },
 } as const;
+
+export const AWS_CATEGORY_DOMAIN_VECTORS: Record<string, AWSIconVectorDef> = {
+  Compute: {
+    category: 'Compute',
+    tileBg: OFFICIAL_CATEGORY_COLORS.Compute,
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="7" y="8" width="26" height="24" rx="2" />
+        <line x1="7" y1="16" x2="33" y2="16" />
+        <line x1="7" y1="24" x2="33" y2="24" />
+        <circle cx="11" cy="12" r="1.2" fill="#FFFFFF" />
+        <circle cx="11" cy="20" r="1.2" fill="#FFFFFF" />
+        <circle cx="11" cy="28" r="1.2" fill="#FFFFFF" />
+        <line x1="16" y1="12" x2="29" y2="12" />
+        <line x1="16" y1="20" x2="29" y2="20" />
+        <line x1="16" y1="28" x2="29" y2="28" />
+      </g>
+    ),
+  },
+  Containers: {
+    category: 'Containers',
+    tileBg: OFFICIAL_CATEGORY_COLORS.Containers,
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="8" y="8" width="10" height="10" rx="1.5" />
+        <rect x="22" y="8" width="10" height="10" rx="1.5" />
+        <rect x="8" y="22" width="10" height="10" rx="1.5" />
+        <rect x="22" y="22" width="10" height="10" rx="1.5" />
+        <line x1="18" y1="13" x2="22" y2="13" />
+        <line x1="18" y1="27" x2="22" y2="27" />
+        <line x1="13" y1="18" x2="13" y2="22" />
+        <line x1="27" y1="18" x2="27" y2="22" />
+      </g>
+    ),
+  },
+  Serverless: {
+    category: 'Serverless',
+    tileBg: OFFICIAL_CATEGORY_COLORS.Serverless,
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 30L21 10H27" />
+        <path d="M18.5 22.5L28 30" />
+      </g>
+    ),
+  },
+  Storage: {
+    category: 'Storage',
+    tileBg: OFFICIAL_CATEGORY_COLORS.Storage,
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 12L20 6L32 12V28L20 34L8 28Z" />
+        <line x1="20" y1="6" x2="20" y2="34" />
+        <line x1="8" y1="12" x2="20" y2="18" />
+        <line x1="32" y1="12" x2="20" y2="18" />
+      </g>
+    ),
+  },
+  Database: {
+    category: 'Database',
+    tileBg: OFFICIAL_CATEGORY_COLORS.Database,
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <ellipse cx="20" cy="11" rx="12" ry="4" />
+        <path d="M8 11V19C8 21.2 13.4 23 20 23C26.6 23 32 21.2 32 19V11" />
+        <path d="M8 19V27C8 29.2 13.4 31 20 31C26.6 31 32 29.2 32 27V19" />
+      </g>
+    ),
+  },
+  'Networking & Content Delivery': {
+    category: 'Networking & Content Delivery',
+    tileBg: OFFICIAL_CATEGORY_COLORS['Networking & Content Delivery'],
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="20" cy="9" r="3.5" />
+        <circle cx="10" cy="28" r="3.5" />
+        <circle cx="30" cy="28" r="3.5" />
+        <circle cx="20" cy="20" r="2.5" />
+        <line x1="20" y1="12.5" x2="20" y2="17.5" />
+        <line x1="18" y1="21.5" x2="12.5" y2="25.5" />
+        <line x1="22" y1="21.5" x2="27.5" y2="25.5" />
+      </g>
+    ),
+  },
+  'Security, Identity & Compliance': {
+    category: 'Security, Identity & Compliance',
+    tileBg: OFFICIAL_CATEGORY_COLORS['Security, Identity & Compliance'],
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 7L31 11V18C31 24.5 26.3 30.5 20 33C13.7 30.5 9 24.5 9 18V11L20 7Z" />
+        <circle cx="20" cy="17" r="2.5" />
+        <path d="M20 19.5V24" strokeWidth="2.5" />
+      </g>
+    ),
+  },
+  'Application Integration': {
+    category: 'Application Integration',
+    tileBg: OFFICIAL_CATEGORY_COLORS['Application Integration'],
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="7" y="14" width="7" height="12" rx="1.5" />
+        <rect x="16.5" y="14" width="7" height="12" rx="1.5" />
+        <rect x="26" y="14" width="7" height="12" rx="1.5" />
+        <path d="M10.5 10L20 6L29.5 10" />
+      </g>
+    ),
+  },
+  Analytics: {
+    category: 'Analytics',
+    tileBg: OFFICIAL_CATEGORY_COLORS.Analytics,
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="8" y1="31" x2="32" y2="31" />
+        <rect x="10" y="21" width="4" height="10" rx="1" fill="#FFFFFF" />
+        <rect x="18" y="14" width="4" height="17" rx="1" fill="#FFFFFF" />
+        <rect x="26" y="8" width="4" height="23" rx="1" fill="#FFFFFF" />
+        <path d="M12 17L19 10L25 13L32 6" strokeWidth="2" />
+      </g>
+    ),
+  },
+  'Machine Learning & AI': {
+    category: 'Machine Learning & AI',
+    tileBg: OFFICIAL_CATEGORY_COLORS['Machine Learning & AI'],
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="10" cy="13" r="3" />
+        <circle cx="10" cy="27" r="3" />
+        <circle cx="20" cy="20" r="3.5" fill="#FFFFFF" />
+        <circle cx="30" cy="13" r="3" />
+        <circle cx="30" cy="27" r="3" />
+        <line x1="13" y1="13" x2="16.5" y2="18" />
+        <line x1="13" y1="27" x2="16.5" y2="22" />
+        <line x1="23.5" y1="18" x2="27" y2="13" />
+        <line x1="23.5" y1="22" x2="27" y2="27" />
+      </g>
+    ),
+  },
+  'Management & Governance': {
+    category: 'Management & Governance',
+    tileBg: OFFICIAL_CATEGORY_COLORS['Management & Governance'],
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="20" cy="20" r="11" />
+        <path d="M20 14V20L24 23" strokeWidth="2.5" />
+        <circle cx="20" cy="9" r="1" fill="#FFFFFF" />
+        <circle cx="31" cy="20" r="1" fill="#FFFFFF" />
+        <circle cx="20" cy="31" r="1" fill="#FFFFFF" />
+        <circle cx="9" cy="20" r="1" fill="#FFFFFF" />
+      </g>
+    ),
+  },
+  'Developer Tools': {
+    category: 'Developer Tools',
+    tileBg: OFFICIAL_CATEGORY_COLORS['Developer Tools'],
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 12L7 20L14 28" />
+        <path d="M26 12L33 20L26 28" />
+        <line x1="22" y1="10" x2="18" y2="30" strokeWidth="2" />
+      </g>
+    ),
+  },
+  'Migration & Transfer': {
+    category: 'Migration & Transfer',
+    tileBg: OFFICIAL_CATEGORY_COLORS['Migration & Transfer'],
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="7" y="16" width="11" height="14" rx="1.5" />
+        <path d="M18 10L27 10L32 15L32 24" />
+        <path d="M24 7L27 10L24 13" />
+        <path d="M12 21H24M24 21L20 18M24 21L20 24" strokeWidth="2.5" />
+      </g>
+    ),
+  },
+  'Front-End Web & Mobile': {
+    category: 'Front-End Web & Mobile',
+    tileBg: OFFICIAL_CATEGORY_COLORS['Front-End Web & Mobile'],
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="7" y="7" width="18" height="14" rx="2" />
+        <rect x="19" y="15" width="14" height="18" rx="2" />
+        <circle cx="26" cy="29" r="1" fill="#FFFFFF" />
+        <line x1="10" y1="17" x2="15" y2="17" />
+      </g>
+    ),
+  },
+  'Internet of Things (IoT)': {
+    category: 'Internet of Things (IoT)',
+    tileBg: OFFICIAL_CATEGORY_COLORS['Internet of Things (IoT)'],
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="20" cy="24" r="4" fill="#FFFFFF" />
+        <path d="M13 18C15 15.5 17.5 14 20 14C22.5 14 25 15.5 27 18" />
+        <path d="M9 13C12.5 9.5 16 8 20 8C24 8 27.5 9.5 31 13" />
+        <line x1="20" y1="28" x2="20" y2="33" />
+      </g>
+    ),
+  },
+  'Cloud Financial Management': {
+    category: 'Cloud Financial Management',
+    tileBg: OFFICIAL_CATEGORY_COLORS['Cloud Financial Management'],
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="20" cy="20" r="12" />
+        <path d="M20 13V27" strokeWidth="2.5" />
+        <path d="M23.5 16.5C23.5 15.1 22 14.5 20 14.5C18 14.5 16.5 15.2 16.5 16.8C16.5 18.5 18 19.2 20 19.8C22 20.4 23.5 21.2 23.5 23C23.5 24.8 22 25.5 20 25.5C18 25.5 16.5 24.8 16.5 23.2" strokeWidth="2.5" />
+      </g>
+    ),
+  },
+};
+
+export function getCategoryDomainVector(category?: string): AWSIconVectorDef {
+  const norm = (category || '').trim().toLowerCase();
+  if (norm === 'compute') return AWS_CATEGORY_DOMAIN_VECTORS.Compute;
+  if (norm === 'containers') return AWS_CATEGORY_DOMAIN_VECTORS.Containers;
+  if (norm === 'serverless') return AWS_CATEGORY_DOMAIN_VECTORS.Serverless;
+  if (norm === 'storage') return AWS_CATEGORY_DOMAIN_VECTORS.Storage;
+  if (norm === 'database') return AWS_CATEGORY_DOMAIN_VECTORS.Database;
+  if (norm.includes('network') || norm.includes('content delivery')) return AWS_CATEGORY_DOMAIN_VECTORS['Networking & Content Delivery'];
+  if (norm.includes('security') || norm.includes('identity') || norm.includes('compliance') || norm.includes('iam')) return AWS_CATEGORY_DOMAIN_VECTORS['Security, Identity & Compliance'];
+  if (norm.includes('integration')) return AWS_CATEGORY_DOMAIN_VECTORS['Application Integration'];
+  if (norm === 'analytics') return AWS_CATEGORY_DOMAIN_VECTORS.Analytics;
+  if (norm.includes('machine learning') || norm.includes('ai') || norm.includes('sagemaker') || norm.includes('bedrock')) return AWS_CATEGORY_DOMAIN_VECTORS['Machine Learning & AI'];
+  if (norm.includes('management') || norm.includes('governance')) return AWS_CATEGORY_DOMAIN_VECTORS['Management & Governance'];
+  if (norm.includes('developer') || norm.includes('devtools')) return AWS_CATEGORY_DOMAIN_VECTORS['Developer Tools'];
+  if (norm.includes('migration') || norm.includes('transfer')) return AWS_CATEGORY_DOMAIN_VECTORS['Migration & Transfer'];
+  if (norm.includes('front-end') || norm.includes('mobile') || norm.includes('web')) return AWS_CATEGORY_DOMAIN_VECTORS['Front-End Web & Mobile'];
+  if (norm.includes('iot') || norm.includes('things')) return AWS_CATEGORY_DOMAIN_VECTORS['Internet of Things (IoT)'];
+  if (norm.includes('financial') || norm.includes('cost') || norm.includes('billing')) return AWS_CATEGORY_DOMAIN_VECTORS['Cloud Financial Management'];
+  return AWS_CATEGORY_DOMAIN_VECTORS.Compute;
+}
 
 export const AWS_SERVICE_VECTORS: Record<string, AWSIconVectorDef> = {
   // COMPUTE (#ED7100)

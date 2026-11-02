@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { m } from 'motion/react';
+import { SPRING_SMOOTH } from '../../utils/motionTokens';
 import {
   X,
   Palette,
@@ -33,6 +35,7 @@ import { SettingsRow } from './SettingsRow';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { ToggleSwitch } from '../ui/ToggleSwitch';
 import { ShortcutKeycaps } from '../ui/Kbd';
+import { CompassLoader } from '../ui/CompassBootScreen';
 
 export const SettingsModal: React.FC = () => {
   const isSettingsOpen = useSettingsStore((s) => s.isSettingsOpen);
@@ -84,6 +87,7 @@ export const SettingsModal: React.FC = () => {
   const [clearFavoritesConfirm, setClearFavoritesConfirm] = useState(false);
   const [factoryResetConfirm, setFactoryResetConfirm] = useState(false);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   // Load live DB stats when opening the modal or switching to data tab
   useEffect(() => {
@@ -154,6 +158,7 @@ export const SettingsModal: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setIsImporting(true);
     try {
       const text = await file.text();
       const result = await importFullDatabase(text);
@@ -163,6 +168,7 @@ export const SettingsModal: React.FC = () => {
     } catch (err) {
       alert('Failed to import backup: ' + (err as Error).message);
     } finally {
+      setIsImporting(false);
       e.target.value = '';
     }
   };
@@ -213,7 +219,11 @@ export const SettingsModal: React.FC = () => {
     { cmd: 'Open settings dialog', keys: ['mod', ','], scope: 'Global' },
     { cmd: 'Undo canvas edit', keys: ['mod', 'Z'], scope: 'Canvas' },
     { cmd: 'Redo canvas edit', keys: ['mod', 'Y'], scope: 'Canvas' },
-    { cmd: 'Duplicate selected node', keys: ['mod', 'D'], scope: 'Canvas' },
+    { cmd: 'Copy selected nodes', keys: ['mod', 'C'], scope: 'Canvas' },
+    { cmd: 'Cut selected nodes', keys: ['mod', 'X'], scope: 'Canvas' },
+    { cmd: 'Paste nodes', keys: ['mod', 'V'], scope: 'Canvas' },
+    { cmd: 'Duplicate selected nodes', keys: ['mod', 'D'], scope: 'Canvas' },
+    { cmd: 'Select all nodes', keys: ['mod', 'A'], scope: 'Canvas' },
     { cmd: 'Delete selected node or edge', keys: ['Delete'], scope: 'Canvas' },
     { cmd: 'Fit architecture diagram to view', keys: ['F'], scope: 'Canvas' },
     { cmd: 'Close modal or deselect', keys: ['Esc'], scope: 'Global' },
@@ -237,427 +247,441 @@ export const SettingsModal: React.FC = () => {
         onChange={handleImportFile}
       />
 
-      <div className="max-w-[760px] w-[calc(100vw-2rem)] h-[560px] rounded-[14px] overflow-hidden flex border border-[#D5DBDB] dark:border-[#2A3647] bg-white dark:bg-[#161E2D] shadow-[0_20px_50px_rgba(0,0,0,0.45)] animate-in zoom-in-95 duration-150 select-none text-[#16191F] dark:text-[#EAEDED]">
-        {/* Left Navigation Rail (w-52) */}
-        <aside className="w-52 border-r border-[#EAEDED] dark:border-[#222D3C] bg-[#F8F9FA] dark:bg-[#0F141A] p-2 flex flex-col justify-between shrink-0">
-          <div className="space-y-0.5">
-            {TABS.map((tab) => {
-              const isActive = activeSettingsTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => openSettings(tab.id)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[12px] transition-all cursor-pointer text-left ${isActive
-                    ? 'bg-[#EAEDED] dark:bg-[#1F2B3E] text-[#16191F] dark:text-white font-medium shadow-2xs'
-                    : 'text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] hover:bg-[#EAEDED]/50 dark:hover:bg-[#1F2B3E]/40 font-normal'
-                    }`}
-                >
-                  <span className={isActive ? 'text-[#FF9900]' : 'text-current opacity-70'}>
-                    {tab.icon}
-                  </span>
-                  <span className="truncate">{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </aside>
+        <div className="relative max-w-[760px] w-[calc(100vw-2rem)] h-[560px] rounded-[14px] overflow-hidden flex border border-[#D5DBDB] dark:border-[#2A3647] bg-white dark:bg-[#161E2D] shadow-[0_20px_50px_rgba(0,0,0,0.45)] animate-in zoom-in-95 duration-150 select-none text-[#16191F] dark:text-[#EAEDED]">
+          {/* Full-dialog import spinner overlay */}
+          {isImporting && (
+            <div className="absolute inset-0 bg-white/70 dark:bg-[#161E2D]/80 backdrop-blur-xs z-50 flex items-center justify-center">
+              <CompassLoader size={36} label="Restoring workspace from backup…" />
+            </div>
+          )}
 
-        {/* Right Settings Content Area */}
-        <div className="flex-1 flex flex-col h-full min-w-0 bg-white dark:bg-[#161E2D]">
-          {/* Header */}
-          <div className="h-12 px-6 border-b border-[#EAEDED] dark:border-[#222D3C] flex items-center justify-between shrink-0 bg-white dark:bg-[#161E2D]">
-            <h2 id="settings-dialog-title" className="text-[14px] font-semibold text-[#16191F] dark:text-[#EAEDED]">
-              {TABS.find((t) => t.id === activeSettingsTab)?.label}
-            </h2>
-            <button
-              type="button"
-              onClick={closeSettings}
-              className="p-1 rounded-[6px] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] hover:bg-[#EAEDED] dark:hover:bg-[#1F2B3E] transition-colors cursor-pointer"
-              aria-label="Close settings"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+          {/* Left Navigation Rail (w-52) */}
+          <aside className="w-52 border-r border-[#EAEDED] dark:border-[#222D3C] bg-[#F8F9FA] dark:bg-[#0F141A] p-2 flex flex-col justify-between shrink-0">
+            <div className="space-y-0.5">
+              {TABS.map((tab) => {
+                const isActive = activeSettingsTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => openSettings(tab.id)}
+                    className={`relative w-full flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[12px] transition-colors cursor-pointer text-left ${isActive
+                      ? 'text-[#16191F] dark:text-white font-medium'
+                      : 'text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] hover:bg-[#EAEDED]/50 dark:hover:bg-[#1F2B3E]/40 font-normal'
+                      }`}
+                  >
+                    {isActive && (
+                      <m.span
+                        layoutId="settings-nav-pill"
+                        className="pointer-events-none absolute inset-0 rounded-[8px] bg-[#EAEDED] dark:bg-[#1F2B3E] shadow-2xs"
+                        transition={SPRING_SMOOTH}
+                      />
+                    )}
+                    <span className={`relative z-10 ${isActive ? 'text-[#FF9900]' : 'text-current opacity-70'}`}>
+                      {tab.icon}
+                    </span>
+                    <span className="relative z-10 truncate">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
 
-          {/* Body Content */}
-          <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
-            {actionSuccessMsg && (
-              <div className="p-2.5 rounded-[8px] bg-[#1D8102]/10 border border-[#1D8102]/30 text-[#1D8102] dark:text-[#38D9A9] flex items-center gap-2 font-medium text-[12px] mb-4">
-                <Check className="w-4 h-4 shrink-0" />
-                <span>{actionSuccessMsg}</span>
-              </div>
-            )}
+          {/* Right Settings Content Area */}
+          <div className="flex-1 flex flex-col h-full min-w-0 bg-white dark:bg-[#161E2D]">
+            {/* Header */}
+            <div className="h-12 px-6 border-b border-[#EAEDED] dark:border-[#222D3C] flex items-center justify-between shrink-0 bg-white dark:bg-[#161E2D]">
+              <h2 id="settings-dialog-title" className="text-[14px] font-semibold text-[#16191F] dark:text-[#EAEDED]">
+                {TABS.find((t) => t.id === activeSettingsTab)?.label}
+              </h2>
+              <button
+                type="button"
+                onClick={closeSettings}
+                className="p-1 rounded-[6px] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] hover:bg-[#EAEDED] dark:hover:bg-[#1F2B3E] transition-colors cursor-pointer"
+                aria-label="Close settings"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-            {/* TAB 1: APPEARANCE & DENSITY */}
-            {activeSettingsTab === 'appearance' && (
-              <div className="divide-y divide-[#EAEDED] dark:divide-[#222D3C]">
-                <SettingsRow
-                  title="Theme mode"
-                  description="Select a color scheme for the application workspace."
-                  control={
-                    <SegmentedControl<ThemePreference>
-                      ariaLabel="Theme mode"
-                      value={theme}
-                      onChange={setTheme}
-                      options={[
-                        { value: 'light', label: 'Light', icon: <Sun className="w-3.5 h-3.5 text-[#FF9900]" /> },
-                        { value: 'dark', label: 'Dark', icon: <Moon className="w-3.5 h-3.5 text-[#539FE5]" /> },
-                        { value: 'system', label: 'System', icon: <Laptop className="w-3.5 h-3.5 text-[#879596]" /> },
-                      ]}
-                    />
-                  }
-                />
+            {/* Body Content */}
+            <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
+              {actionSuccessMsg && (
+                <div className="p-2.5 rounded-[8px] bg-[#1D8102]/10 border border-[#1D8102]/30 text-[#1D8102] dark:text-[#38D9A9] flex items-center gap-2 font-medium text-[12px] mb-4">
+                  <Check className="w-4 h-4 shrink-0" />
+                  <span>{actionSuccessMsg}</span>
+                </div>
+              )}
 
-                <SettingsRow
-                  title="Workspace density"
-                  description="Controls row heights across the resource table and sidebar tree."
-                  control={
-                    <SegmentedControl<UIDensity>
-                      ariaLabel="Workspace density"
-                      value={uiDensity}
-                      onChange={setUiDensity}
-                      options={[
-                        { value: 'comfortable', label: 'Comfortable' },
-                        { value: 'compact', label: 'Compact' },
-                      ]}
-                    />
-                  }
-                />
-
-                <SettingsRow
-                  title="Monospace font size"
-                  description="Font scale for CLI commands and ARN specification blocks."
-                  control={
-                    <SegmentedControl<CodeFontSize>
-                      ariaLabel="Monospace font size"
-                      value={codeFontSize}
-                      onChange={setCodeFontSize}
-                      options={[
-                        { value: '12px', label: '12px' },
-                        { value: '13px', label: '13px' },
-                        { value: '14px', label: '14px' },
-                      ]}
-                    />
-                  }
-                />
-              </div>
-            )}
-
-            {/* TAB 2: ARCHITECTURE CANVAS */}
-            {activeSettingsTab === 'canvas' && (
-              <div className="divide-y divide-[#EAEDED] dark:divide-[#222D3C]">
-                <SettingsRow
-                  title="Background grid style"
-                  description="Visual guide pattern rendered across canvas background."
-                  control={
-                    <SegmentedControl<CanvasGridVariant>
-                      ariaLabel="Background grid style"
-                      value={canvasGridVariant}
-                      onChange={setCanvasGridVariant}
-                      options={[
-                        { value: 'dots', label: 'Dots' },
-                        { value: 'lines', label: 'Lines' },
-                        { value: 'cross', label: 'Cross' },
-                        { value: 'none', label: 'None' },
-                      ]}
-                    />
-                  }
-                />
-
-                <div>
+              {/* TAB 1: APPEARANCE & DENSITY */}
+              {activeSettingsTab === 'appearance' && (
+                <div className="divide-y divide-[#EAEDED] dark:divide-[#222D3C]">
                   <SettingsRow
-                    title="Snap to alignment grid"
-                    description="Automatically aligns nodes and boundaries during drag operations."
+                    title="Theme mode"
+                    description="Select a color scheme for the application workspace."
                     control={
-                      <ToggleSwitch
-                        ariaLabel="Snap nodes to alignment grid"
-                        checked={snapToGrid}
-                        onChange={setSnapToGrid}
+                      <SegmentedControl<ThemePreference>
+                        ariaLabel="Theme mode"
+                        value={theme}
+                        onChange={setTheme}
+                        options={[
+                          { value: 'light', label: 'Light', icon: <Sun className="w-3.5 h-3.5 text-[#FF9900]" /> },
+                          { value: 'dark', label: 'Dark', icon: <Moon className="w-3.5 h-3.5 text-[#539FE5]" /> },
+                          { value: 'system', label: 'System', icon: <Laptop className="w-3.5 h-3.5 text-[#879596]" /> },
+                        ]}
                       />
                     }
                   />
 
-                  {snapToGrid && (
+                  <SettingsRow
+                    title="Workspace density"
+                    description="Controls row heights across the resource table and sidebar tree."
+                    control={
+                      <SegmentedControl<UIDensity>
+                        ariaLabel="Workspace density"
+                        value={uiDensity}
+                        onChange={setUiDensity}
+                        options={[
+                          { value: 'comfortable', label: 'Comfortable' },
+                          { value: 'compact', label: 'Compact' },
+                        ]}
+                      />
+                    }
+                  />
+
+                  <SettingsRow
+                    title="Monospace font size"
+                    description="Font scale for CLI commands and ARN specification blocks."
+                    control={
+                      <SegmentedControl<CodeFontSize>
+                        ariaLabel="Monospace font size"
+                        value={codeFontSize}
+                        onChange={setCodeFontSize}
+                        options={[
+                          { value: '12px', label: '12px' },
+                          { value: '13px', label: '13px' },
+                          { value: '14px', label: '14px' },
+                        ]}
+                      />
+                    }
+                  />
+                </div>
+              )}
+
+              {/* TAB 2: ARCHITECTURE CANVAS */}
+              {activeSettingsTab === 'canvas' && (
+                <div className="divide-y divide-[#EAEDED] dark:divide-[#222D3C]">
+                  <SettingsRow
+                    title="Background grid style"
+                    description="Visual guide pattern rendered across canvas background."
+                    control={
+                      <SegmentedControl<CanvasGridVariant>
+                        ariaLabel="Background grid style"
+                        value={canvasGridVariant}
+                        onChange={setCanvasGridVariant}
+                        options={[
+                          { value: 'dots', label: 'Dots' },
+                          { value: 'lines', label: 'Lines' },
+                          { value: 'cross', label: 'Cross' },
+                          { value: 'none', label: 'None' },
+                        ]}
+                      />
+                    }
+                  />
+
+                  <div>
                     <SettingsRow
-                      isSubRow
-                      title="Grid step size"
-                      description="Snapping interval in pixels."
+                      title="Snap to alignment grid"
+                      description="Automatically aligns nodes and boundaries during drag operations."
                       control={
-                        <SegmentedControl<SnapGridSize>
-                          size="sm"
-                          ariaLabel="Grid step size"
-                          value={snapGridSize}
-                          onChange={setSnapGridSize}
-                          options={[
-                            { value: 16, label: '16px' },
-                            { value: 24, label: '24px' },
-                            { value: 32, label: '32px' },
-                          ]}
+                        <ToggleSwitch
+                          ariaLabel="Snap nodes to alignment grid"
+                          checked={snapToGrid}
+                          onChange={setSnapToGrid}
                         />
                       }
                     />
-                  )}
-                </div>
 
-                <SettingsRow
-                  title="Default connection routing"
-                  description="Routing algorithm for newly created service connections."
-                  control={
-                    <SegmentedControl<DefaultEdgeStyle>
-                      ariaLabel="Default connection routing"
-                      value={defaultEdgeStyle}
-                      onChange={setDefaultEdgeStyle}
-                      options={[
-                        { value: 'smoothstep', label: 'Smooth step' },
-                        { value: 'bezier', label: 'Bezier' },
-                        { value: 'straight', label: 'Straight' },
-                      ]}
-                    />
-                  }
-                />
-
-                <SettingsRow
-                  title="Animate edge traffic by default"
-                  description="Renders animated SVG stroke pulses along service connections."
-                  control={
-                    <ToggleSwitch
-                      ariaLabel="Animate edge traffic by default"
-                      checked={animateEdgesByDefault}
-                      onChange={setAnimateEdgesByDefault}
-                    />
-                  }
-                />
-
-                <SettingsRow
-                  title="Show canvas minimap"
-                  description="Display floating viewport preview in the bottom corner."
-                  control={
-                    <ToggleSwitch
-                      ariaLabel="Show canvas minimap"
-                      checked={showMiniMap}
-                      onChange={setShowMiniMap}
-                    />
-                  }
-                />
-
-                <SettingsRow
-                  title="Inspector dock position"
-                  description="Default dock edge for the dual-tab Sandbox Inspector."
-                  control={
-                    <SegmentedControl<InspectorDockPosition>
-                      ariaLabel="Inspector dock position"
-                      value={inspectorDockPosition}
-                      onChange={setInspectorDockPosition}
-                      options={[
-                        { value: 'right', label: 'Right' },
-                        { value: 'bottom', label: 'Bottom' },
-                      ]}
-                    />
-                  }
-                />
-              </div>
-            )}
-
-            {/* TAB 3: STUDY & REGION DEFAULTS */}
-            {activeSettingsTab === 'study' && (
-              <div className="divide-y divide-[#EAEDED] dark:divide-[#222D3C]">
-                <SettingsRow
-                  title="Default AWS Region"
-                  description="Target region reflected across ARN examples and blueprint headers."
-                  control={
-                    <SegmentedControl<AWSRegion>
-                      ariaLabel="Default AWS Region"
-                      value={defaultAwsRegion}
-                      onChange={setDefaultAwsRegion}
-                      options={[
-                        { value: 'us-east-1', label: 'us-east-1' },
-                        { value: 'us-west-2', label: 'us-west-2' },
-                        { value: 'eu-west-1', label: 'eu-west-1' },
-                        { value: 'ap-southeast-1', label: 'ap-southeast-1' },
-                      ]}
-                    />
-                  }
-                />
-
-                <SettingsRow
-                  title="Default exam tier filter"
-                  description="Pre-selects an exam tier filter when launching the service catalog."
-                  control={
-                    <SegmentedControl<StudyTierFilter>
-                      ariaLabel="Default exam tier filter"
-                      value={defaultStudyTierFilter}
-                      onChange={setDefaultStudyTierFilter}
-                      options={[
-                        { value: 'all', label: 'All' },
-                        { value: 1, label: 'Tier 1' },
-                        { value: 2, label: 'Tier 2' },
-                        { value: 3, label: 'Tier 3' },
-                      ]}
-                    />
-                  }
-                />
-
-                <SettingsRow
-                  title="Auto-expand architectural flowcharts"
-                  description="Renders full-height Mermaid enterprise diagrams inside dossiers."
-                  control={
-                    <ToggleSwitch
-                      ariaLabel="Auto-expand architectural flowcharts"
-                      checked={autoExpandMermaid}
-                      onChange={setAutoExpandMermaid}
-                    />
-                  }
-                />
-              </div>
-            )}
-
-            {/* TAB 4: DATA, BACKUP & RESET */}
-            {activeSettingsTab === 'data' && (
-              <div>
-                {/* Horizontal Telemetry Readout */}
-                <div className="py-2.5 px-3.5 mb-4 rounded-[8px] bg-[#F8F9FA] dark:bg-[#0F141A] border border-[#EAEDED] dark:border-[#222D3C] text-[12px] font-mono text-[#545B64] dark:text-[#879596] flex items-center justify-between tabular-nums">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#16191F] dark:text-[#EAEDED] font-semibold">{stats.totalServices}</span>
-                    <span className="font-sans text-[11px]">services</span>
-                    <span className="text-[#879596]">·</span>
-                    <span className="text-[#FF9900] font-semibold">{stats.favorited}</span>
-                    <span className="font-sans text-[11px]">favorited</span>
-                    <span className="text-[#879596]">·</span>
-                    <span className="text-[#0972D3] dark:text-[#539FE5] font-semibold">{stats.customBlueprints}</span>
-                    <span className="font-sans text-[11px]">custom blueprints</span>
+                    {snapToGrid && (
+                      <SettingsRow
+                        isSubRow
+                        title="Grid step size"
+                        description="Snapping interval in pixels."
+                        control={
+                          <SegmentedControl<SnapGridSize>
+                            size="sm"
+                            ariaLabel="Grid step size"
+                            value={snapGridSize}
+                            onChange={setSnapGridSize}
+                            options={[
+                              { value: 16, label: '16px' },
+                              { value: 24, label: '24px' },
+                              { value: 32, label: '32px' },
+                            ]}
+                          />
+                        }
+                      />
+                    )}
                   </div>
-                  <div className="text-[11px] text-[#879596] font-sans">IndexedDB active</div>
-                </div>
 
+                  <SettingsRow
+                    title="Default connection routing"
+                    description="Routing algorithm for newly created service connections."
+                    control={
+                      <SegmentedControl<DefaultEdgeStyle>
+                        ariaLabel="Default connection routing"
+                        value={defaultEdgeStyle}
+                        onChange={setDefaultEdgeStyle}
+                        options={[
+                          { value: 'smoothstep', label: 'Smooth step' },
+                          { value: 'bezier', label: 'Bezier' },
+                          { value: 'straight', label: 'Straight' },
+                        ]}
+                      />
+                    }
+                  />
+
+                  <SettingsRow
+                    title="Animate edge traffic by default"
+                    description="Renders animated SVG stroke pulses along service connections."
+                    control={
+                      <ToggleSwitch
+                        ariaLabel="Animate edge traffic by default"
+                        checked={animateEdgesByDefault}
+                        onChange={setAnimateEdgesByDefault}
+                      />
+                    }
+                  />
+
+                  <SettingsRow
+                    title="Show canvas minimap"
+                    description="Display floating viewport preview in the bottom corner."
+                    control={
+                      <ToggleSwitch
+                        ariaLabel="Show canvas minimap"
+                        checked={showMiniMap}
+                        onChange={setShowMiniMap}
+                      />
+                    }
+                  />
+
+                  <SettingsRow
+                    title="Inspector dock position"
+                    description="Default dock edge for the dual-tab Sandbox Inspector."
+                    control={
+                      <SegmentedControl<InspectorDockPosition>
+                        ariaLabel="Inspector dock position"
+                        value={inspectorDockPosition}
+                        onChange={setInspectorDockPosition}
+                        options={[
+                          { value: 'right', label: 'Right' },
+                          { value: 'bottom', label: 'Bottom' },
+                        ]}
+                      />
+                    }
+                  />
+                </div>
+              )}
+
+              {/* TAB 3: STUDY & REGION DEFAULTS */}
+              {activeSettingsTab === 'study' && (
                 <div className="divide-y divide-[#EAEDED] dark:divide-[#222D3C]">
                   <SettingsRow
-                    title="Export workspace backup"
-                    description="Export notes, custom blueprints, and favorited bookmarks as a portable JSON file."
+                    title="Default AWS Region"
+                    description="Target region reflected across ARN examples and blueprint headers."
                     control={
-                      <button
-                        type="button"
-                        onClick={handleExportBackup}
-                        className="h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-white dark:bg-[#161E2D] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2B3E] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-                      >
-                        <Download className="w-3.5 h-3.5 text-[#FF9900]" />
-                        <span>Export .json</span>
-                      </button>
+                      <SegmentedControl<AWSRegion>
+                        ariaLabel="Default AWS Region"
+                        value={defaultAwsRegion}
+                        onChange={setDefaultAwsRegion}
+                        options={[
+                          { value: 'us-east-1', label: 'us-east-1' },
+                          { value: 'us-west-2', label: 'us-west-2' },
+                          { value: 'eu-west-1', label: 'eu-west-1' },
+                          { value: 'ap-southeast-1', label: 'ap-southeast-1' },
+                        ]}
+                      />
                     }
                   />
 
                   <SettingsRow
-                    title="Import workspace backup"
-                    description="Restore notes, custom blueprints, and progress from an existing backup JSON file."
+                    title="Default exam tier filter"
+                    description="Pre-selects an exam tier filter when launching the service catalog."
                     control={
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-white dark:bg-[#161E2D] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2B3E] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-                      >
-                        <Upload className="w-3.5 h-3.5 text-[#539FE5]" />
-                        <span>Import .json</span>
-                      </button>
+                      <SegmentedControl<StudyTierFilter>
+                        ariaLabel="Default exam tier filter"
+                        value={defaultStudyTierFilter}
+                        onChange={setDefaultStudyTierFilter}
+                        options={[
+                          { value: 'all', label: 'All' },
+                          { value: 1, label: 'Tier 1' },
+                          { value: 2, label: 'Tier 2' },
+                          { value: 3, label: 'Tier 3' },
+                        ]}
+                      />
                     }
                   />
 
                   <SettingsRow
-                    title="Clear all favorites"
-                    description="Removes all services from your favorites bookmarks. Custom blueprints and notes are preserved."
+                    title="Auto-expand architectural flowcharts"
+                    description="Renders full-height Mermaid enterprise diagrams inside dossiers."
                     control={
-                      clearFavoritesConfirm ? (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setClearFavoritesConfirm(false)}
-                            className="h-7 px-2.5 text-[11px] rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] text-[#545B64] dark:text-[#879596] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2B3E] cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleClearAllFavorites}
-                            className="h-7 px-2.5 text-[11px] font-medium rounded-[6px] bg-[#D13212] text-white hover:bg-[#B0280D] cursor-pointer"
-                          >
-                            Confirm clear
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setClearFavoritesConfirm(true)}
-                          className="h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-white dark:bg-[#161E2D] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2B3E] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] transition-colors cursor-pointer shadow-2xs"
-                        >
-                          Clear favorites...
-                        </button>
-                      )
-                    }
-                  />
-
-                  <SettingsRow
-                    title="Factory reset database"
-                    description="Wipes all custom changes and restores initial seed services and blueprints."
-                    control={
-                      factoryResetConfirm ? (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setFactoryResetConfirm(false)}
-                            className="h-7 px-2.5 text-[11px] rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] text-[#545B64] dark:text-[#879596] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2B3E] cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleFactoryReset}
-                            className="h-7 px-2.5 text-[11px] font-semibold rounded-[6px] bg-[#D13212] text-white hover:bg-[#B0280D] cursor-pointer"
-                          >
-                            Confirm factory reset
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setFactoryResetConfirm(true)}
-                          className="h-8 px-3 rounded-[6px] border border-[#D13212]/30 dark:border-[#FF7359]/30 text-[#D13212] dark:text-[#FF7359] hover:bg-[#D13212]/10 text-[12px] font-medium transition-colors cursor-pointer"
-                        >
-                          Factory reset...
-                        </button>
-                      )
+                      <ToggleSwitch
+                        ariaLabel="Auto-expand architectural flowcharts"
+                        checked={autoExpandMermaid}
+                        onChange={setAutoExpandMermaid}
+                      />
                     }
                   />
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* TAB 5: KEYBOARD SHORTCUTS */}
-            {activeSettingsTab === 'shortcuts' && (
-              <div className="divide-y divide-[#EAEDED] dark:divide-[#222D3C]">
-                {SHORTCUTS.map((item) => (
-                  <div
-                    key={item.cmd}
-                    className="flex items-center justify-between gap-6 py-3.5"
-                  >
-                    <div className="min-w-0 flex-1 flex items-center gap-2.5">
-                      <span className="text-[13px] font-medium text-[#16191F] dark:text-[#EAEDED]">
-                        {item.cmd}
-                      </span>
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium text-[#545B64] dark:text-[#879596] bg-[#F8F9FA] dark:bg-[#0F141A] border border-[#EAEDED] dark:border-[#222D3C]">
-                        {item.scope}
-                      </span>
+              {/* TAB 4: DATA, BACKUP & RESET */}
+              {activeSettingsTab === 'data' && (
+                <div>
+                  {/* Horizontal Telemetry Readout */}
+                  <div className="py-2.5 px-3.5 mb-4 rounded-[8px] bg-[#F8F9FA] dark:bg-[#0F141A] border border-[#EAEDED] dark:border-[#222D3C] text-[12px] font-mono text-[#545B64] dark:text-[#879596] flex items-center justify-between tabular-nums">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[#16191F] dark:text-[#EAEDED] font-semibold">{stats.totalServices}</span>
+                      <span className="font-sans text-[11px]">services</span>
+                      <span className="text-[#879596]">·</span>
+                      <span className="text-[#FF9900] font-semibold">{stats.favorited}</span>
+                      <span className="font-sans text-[11px]">favorited</span>
+                      <span className="text-[#879596]">·</span>
+                      <span className="text-[#0972D3] dark:text-[#539FE5] font-semibold">{stats.customBlueprints}</span>
+                      <span className="font-sans text-[11px]">custom blueprints</span>
                     </div>
-                    <div className="shrink-0">
-                      <ShortcutKeycaps keys={item.keys} />
-                    </div>
+                    <div className="text-[11px] text-[#879596] font-sans">IndexedDB active</div>
                   </div>
-                ))}
-              </div>
-            )}
+
+                  <div className="divide-y divide-[#EAEDED] dark:divide-[#222D3C]">
+                    <SettingsRow
+                      title="Export workspace backup"
+                      description="Export notes, custom blueprints, and favorited bookmarks as a portable JSON file."
+                      control={
+                        <button
+                          type="button"
+                          onClick={handleExportBackup}
+                          className="h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-white dark:bg-[#161E2D] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2B3E] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                        >
+                          <Download className="w-3.5 h-3.5 text-[#FF9900]" />
+                          <span>Export .json</span>
+                        </button>
+                      }
+                    />
+
+                    <SettingsRow
+                      title="Import workspace backup"
+                      description="Restore notes, custom blueprints, and progress from an existing backup JSON file."
+                      control={
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-white dark:bg-[#161E2D] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2B3E] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                        >
+                          <Upload className="w-3.5 h-3.5 text-[#539FE5]" />
+                          <span>Import .json</span>
+                        </button>
+                      }
+                    />
+
+                    <SettingsRow
+                      title="Clear all favorites"
+                      description="Removes all services from your favorites bookmarks. Custom blueprints and notes are preserved."
+                      control={
+                        clearFavoritesConfirm ? (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setClearFavoritesConfirm(false)}
+                              className="h-7 px-2.5 text-[11px] rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] text-[#545B64] dark:text-[#879596] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2B3E] cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleClearAllFavorites}
+                              className="h-7 px-2.5 text-[11px] font-medium rounded-[6px] bg-[#D13212] text-white hover:bg-[#B0280D] cursor-pointer"
+                            >
+                              Confirm clear
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setClearFavoritesConfirm(true)}
+                            className="h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-white dark:bg-[#161E2D] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2B3E] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] transition-colors cursor-pointer shadow-2xs"
+                          >
+                            Clear favorites...
+                          </button>
+                        )
+                      }
+                    />
+
+                    <SettingsRow
+                      title="Factory reset database"
+                      description="Wipes all custom changes and restores initial seed services and blueprints."
+                      control={
+                        factoryResetConfirm ? (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setFactoryResetConfirm(false)}
+                              className="h-7 px-2.5 text-[11px] rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] text-[#545B64] dark:text-[#879596] hover:bg-[#F8F9FA] dark:hover:bg-[#1F2B3E] cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleFactoryReset}
+                              className="h-7 px-2.5 text-[11px] font-semibold rounded-[6px] bg-[#D13212] text-white hover:bg-[#B0280D] cursor-pointer"
+                            >
+                              Confirm factory reset
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setFactoryResetConfirm(true)}
+                            className="h-8 px-3 rounded-[6px] border border-[#D13212]/30 dark:border-[#FF7359]/30 text-[#D13212] dark:text-[#FF7359] hover:bg-[#D13212]/10 text-[12px] font-medium transition-colors cursor-pointer"
+                          >
+                            Factory reset...
+                          </button>
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 5: KEYBOARD SHORTCUTS */}
+              {activeSettingsTab === 'shortcuts' && (
+                <div className="divide-y divide-[#EAEDED] dark:divide-[#222D3C]">
+                  {SHORTCUTS.map((item) => (
+                    <div
+                      key={item.cmd}
+                      className="flex items-center justify-between gap-6 py-3.5"
+                    >
+                      <div className="min-w-0 flex-1 flex items-center gap-2.5">
+                        <span className="text-[13px] font-medium text-[#16191F] dark:text-[#EAEDED]">
+                          {item.cmd}
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium text-[#545B64] dark:text-[#879596] bg-[#F8F9FA] dark:bg-[#0F141A] border border-[#EAEDED] dark:border-[#222D3C]">
+                          {item.scope}
+                        </span>
+                      </div>
+                      <div className="shrink-0">
+                        <ShortcutKeycaps keys={item.keys} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+      );
 };
 
-export default SettingsModal;
+      export default SettingsModal;

@@ -34,16 +34,25 @@ export async function initializeDatabase(): Promise<void> {
     return;
   }
 
-  // Ensure docsUrl, isFavorite, and overhauled flowchart diagrams are up-to-date
+  // Ensure missing services are added, and docsUrl, isFavorite, and metadata are up-to-date
   const existingServices = await db.services.toArray();
+  const existingMap = new Map(existingServices.map((s) => [s.id, s]));
   const seedMap = new Map(SEED_SERVICES.map((s) => [s.id, s]));
-  const updates: Array<{ id: string; docsUrl?: string; markdownDoc?: string; isFavorite?: boolean }> = [];
+
+  // 1. Bulk insert any missing services from the expanded 230+ catalog
+  const missingServices = SEED_SERVICES.filter((s) => !existingMap.has(s.id));
+  if (missingServices.length > 0) {
+    await db.services.bulkPut(missingServices);
+  }
+
+  // 2. Synchronize existing services with canonical metadata while preserving user favorites & custom notes
+  const updates: Array<{ id: string } & Partial<AWSService>> = [];
 
   for (const svc of existingServices) {
     const seed = seedMap.get(svc.id);
     const canonicalDocsUrl = VERIFIED_AWS_DOCS[svc.id];
     let needsUpdate = false;
-    const updateData: { id: string; docsUrl?: string; markdownDoc?: string; isFavorite?: boolean } = { id: svc.id };
+    const updateData: { id: string } & Partial<AWSService> = { id: svc.id };
 
     if (canonicalDocsUrl && svc.docsUrl !== canonicalDocsUrl) {
       updateData.docsUrl = canonicalDocsUrl;
@@ -55,60 +64,79 @@ export async function initializeDatabase(): Promise<void> {
       needsUpdate = true;
     }
 
-    // Auto-migrate diagrams: if service contains banned sequenceDiagram or differs from refreshed seed
-    if (seed && svc.markdownDoc && (svc.markdownDoc.includes('sequenceDiagram') || svc.markdownDoc !== seed.markdownDoc)) {
-      updateData.markdownDoc = seed.markdownDoc;
-      needsUpdate = true;
+      if (seed) {
+        if (seed.shortName && svc.shortName !== seed.shortName) {
+          updateData.shortName = seed.shortName;
+          needsUpdate = true;
+        }
+        if (seed.cliPrefix && svc.cliPrefix !== seed.cliPrefix) {
+          updateData.cliPrefix = seed.cliPrefix;
+          needsUpdate = true;
+        }
+        if (seed.tier && svc.tier !== seed.tier) {
+          updateData.tier = seed.tier;
+          needsUpdate = true;
+        }
+        if (seed.category && svc.category !== seed.category) {
+          updateData.category = seed.category;
+          needsUpdate = true;
+        }
+
+        // Auto-migrate diagrams: if service contains banned sequenceDiagram
+        if (svc.markdownDoc && svc.markdownDoc.includes('sequenceDiagram')) {
+          updateData.markdownDoc = seed.markdownDoc;
+          needsUpdate = true;
+        }
+      }
+
+      if (needsUpdate) {
+        updates.push(updateData);
+      }
     }
 
-    if (needsUpdate) {
-      updates.push(updateData);
+    if (updates.length > 0) {
+      await db.transaction('rw', db.services, async () => {
+        for (const update of updates) {
+          const { id, ...data } = update;
+          await db.services.update(id, data);
+        }
+      });
     }
   }
 
-  if (updates.length > 0) {
-    await db.transaction('rw', db.services, async () => {
-      for (const update of updates) {
-        const { id, ...data } = update;
-        await db.services.update(id, data);
+  /**
+   * Resets the service catalog to the initial seed dataset.
+   */
+  export async function resetDatabaseToDefaults(): Promise<void> {
+    await db.services.clear();
+    await db.services.bulkPut(SEED_SERVICES);
+  }
+
+  /**
+   * Retrieves all services from the database, sorted by custom order if set, or alphabetically by name.
+   */
+  export async function getAllServices(): Promise<AWSService[]> {
+    const all = await db.services.toArray();
+    return all.sort((a, b) => {
+      if (a.order !== undefined && b.order !== undefined) {
+        return a.order - b.order;
       }
+      if (a.order !== undefined) return -1;
+      if (b.order !== undefined) return 1;
+      return a.name.localeCompare(b.name);
     });
   }
-}
 
-/**
- * Resets the service catalog to the initial seed dataset.
- */
-export async function resetDatabaseToDefaults(): Promise<void> {
-  await db.services.clear();
-  await db.services.bulkPut(SEED_SERVICES);
-}
+  /**
+   * Fetches a single AWS service by its unique ID.
+   */
+  export async function getServiceById(id: string): Promise<AWSService | undefined> {
+    return await db.services.get(id);
+  }
 
-/**
- * Retrieves all services from the database, sorted by custom order if set, or alphabetically by name.
- */
-export async function getAllServices(): Promise<AWSService[]> {
-  const all = await db.services.toArray();
-  return all.sort((a, b) => {
-    if (a.order !== undefined && b.order !== undefined) {
-      return a.order - b.order;
-    }
-    if (a.order !== undefined) return -1;
-    if (b.order !== undefined) return 1;
-    return a.name.localeCompare(b.name);
-  });
-}
-
-/**
- * Fetches a single AWS service by its unique ID.
- */
-export async function getServiceById(id: string): Promise<AWSService | undefined> {
-  return await db.services.get(id);
-}
-
-/**
- * Toggles the favorite status for a specific AWS service.
- */
+  /**
+   * Toggles the favorite status for a specific AWS service.
+   */
   export async function toggleServiceFavorite(id: string): Promise<boolean> {
     const svc = await db.services.get(id);
     if (!svc) return false;

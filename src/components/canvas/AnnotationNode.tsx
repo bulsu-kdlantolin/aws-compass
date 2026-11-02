@@ -4,6 +4,8 @@ import { X, StickyNote, Check } from 'lucide-react';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { useCompassStore } from '../../store/useCompassStore';
 import type { CanvasNodeData } from '../../types/aws';
+import { m } from 'motion/react';
+import { SPRING_SNAPPY } from '../../utils/motionTokens';
 
 interface ColorTheme {
   borderLight: string;
@@ -140,62 +142,69 @@ export const AnnotationNode = memo((props: NodeProps) => {
           height: `${height}px`,
         }}
         className={`relative flex items-center px-2 py-1 rounded-[4px] group select-none cursor-pointer transition-all ${selected
-            ? 'ring-1 ring-[var(--aws-brand)] bg-[var(--aws-brand)]/5'
-            : 'hover:bg-[var(--aws-card-bg)]/60'
+          ? 'ring-1 ring-[var(--aws-brand)] bg-[var(--aws-brand)]/5'
+          : 'hover:bg-[var(--aws-card-bg)]/60'
           }`}
       >
-        <NodeResizer
-          minWidth={120}
-          minHeight={32}
-          isVisible={selected}
-          lineClassName="!border-[var(--aws-brand)]"
-          handleClassName="!w-2 !h-2 !bg-[var(--aws-brand)] !border-none !rounded-none"
-        />
+        <m.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={SPRING_SNAPPY}
+          className="w-full h-full flex items-center"
+        >
+          <NodeResizer
+            minWidth={120}
+            minHeight={32}
+            isVisible={selected}
+            lineClassName="!border-[var(--aws-brand)]"
+            handleClassName="!w-2 !h-2 !bg-[var(--aws-brand)] !border-none !rounded-none"
+          />
 
-        {!isEditing && (
-          <button
-            type="button"
-            onClick={handleDelete}
-            style={{ color: 'var(--aws-text-muted)' }}
-            className="absolute -top-2 -right-2 p-0.5 rounded-full bg-[var(--aws-card-bg)] border border-[var(--aws-border)] hover:text-[#DD344C] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
-            title="Delete text block"
-          >
-            <X className="w-3 h-3" />
-          </button>
-        )}
+              {!isEditing && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  style={{ color: 'var(--aws-text-muted)' }}
+                  className="absolute -top-2 -right-2 p-0.5 rounded-full bg-[var(--aws-card-bg)] border border-[var(--aws-border)] hover:text-[#DD344C] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+                  title="Delete text block"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+          )}
 
-        {isEditing ? (
-          <div className="flex items-center gap-1.5 w-full">
-            <input
-              type="text"
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleSaveEdit();
-                if (e.key === 'Escape') setIsEditing(false);
-              }}
-              onBlur={() => handleSaveEdit()}
+          {isEditing ? (
+            <div className="flex items-center gap-1.5 w-full">
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveEdit();
+                  if (e.key === 'Escape') setIsEditing(false);
+                }}
+                onBlur={() => handleSaveEdit()}
+                style={{ fontSize: `${fontSize}px` }}
+                className="w-full font-bold tracking-tight text-[var(--aws-text-primary)] bg-transparent border-b border-[var(--aws-interactive)] outline-none"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={handleSaveEdit}
+                className="text-[#1D8102] hover:opacity-80 p-0.5 shrink-0"
+              >
+                <Check className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <div
               style={{ fontSize: `${fontSize}px` }}
-              className="w-full font-bold tracking-tight text-[var(--aws-text-primary)] bg-transparent border-b border-[var(--aws-interactive)] outline-none"
-              autoFocus
-            />
-            <button
-              type="button"
-              onClick={handleSaveEdit}
-              className="text-[#1D8102] hover:opacity-80 p-0.5 shrink-0"
+              className="font-bold tracking-tight text-[var(--aws-text-primary)] truncate w-full select-none"
+              title={nodeData.annotationTitle || nodeData.label}
             >
-              <Check className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ) : (
-          <div
-            style={{ fontSize: `${fontSize}px` }}
-            className="font-bold tracking-tight text-[var(--aws-text-primary)] truncate w-full select-none"
-            title={nodeData.annotationTitle || nodeData.label}
-          >
-            {nodeData.annotationTitle || nodeData.label || 'Architecture Section Header'}
-          </div>
-        )}
+              {nodeData.annotationTitle || nodeData.label || 'Architecture Section Header'}
+            </div>
+          )}
+        </m.div>
       </div>
     );
   }
@@ -213,98 +222,105 @@ export const AnnotationNode = memo((props: NodeProps) => {
       className={`relative rounded-[8px] border shadow-xs transition-shadow group flex flex-col overflow-hidden select-none cursor-pointer ${selected ? 'ring-2 ring-[var(--aws-brand)] shadow-md' : 'hover:shadow-sm'
         }`}
     >
-      {/* Node Resizer */}
-      <NodeResizer
-        minWidth={160}
-        minHeight={100}
-        isVisible={selected}
-        lineClassName="!border-[var(--aws-brand)]"
-        handleClassName="!w-2 !h-2 !bg-[var(--aws-brand)] !border-none !rounded-none"
-      />
-
-      {/* Delete button on hover */}
-      {!isEditing && (
-        <button
-          type="button"
-          onClick={handleDelete}
-          style={{ color: 'var(--aws-text-muted)' }}
-          className="absolute top-1.5 right-1.5 p-0.5 rounded-full hover:text-[#DD344C] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
-          title="Delete note"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-      )}
-
-      {/* Header bar */}
-      <div
-        style={{ borderBottomColor: borderColor }}
-        className="px-2.5 py-1.5 border-b flex items-center gap-1.5 shrink-0"
+      <m.div
+        initial={{ opacity: 0, scale: 0.88 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={SPRING_SNAPPY}
+        className="w-full h-full flex flex-col"
       >
-        <StickyNote className="w-3.5 h-3.5 shrink-0" style={{ color: titleColor }} />
-        {isEditing ? (
-          <input
-            type="text"
-            value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSaveEdit();
-              if (e.key === 'Escape') setIsEditing(false);
-            }}
-            placeholder="Note title..."
-            className="w-full text-[12px] font-bold bg-transparent outline-none border-b border-current"
-            style={{ color: titleColor }}
-            autoFocus
-          />
-        ) : (
-          <span
-            className="font-bold text-[12px] truncate"
-            style={{ color: titleColor }}
-            title={nodeData.annotationTitle || nodeData.label}
-          >
-            {nodeData.annotationTitle || nodeData.label || 'Architecture Note'}
-          </span>
-        )}
-      </div>
+        {/* Node Resizer */}
+        <NodeResizer
+          minWidth={160}
+          minHeight={100}
+          isVisible={selected}
+          lineClassName="!border-[var(--aws-brand)]"
+          handleClassName="!w-2 !h-2 !bg-[var(--aws-brand)] !border-none !rounded-none"
+        />
 
-      {/* Body Content */}
-      <div className="p-2.5 flex-1 overflow-y-auto custom-scrollbar text-[11px] leading-relaxed">
-        {isEditing ? (
-          <div className="flex flex-col h-full gap-2">
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              placeholder="Write architecture notes, constraints, or decisions..."
-              rows={3}
-              className="flex-1 w-full text-[11px] bg-transparent outline-none resize-none font-sans"
-              style={{ color: textColor }}
-            />
-            <div className="flex items-center justify-end gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={handleCancelEdit}
-                className="px-2 py-0.5 text-[10px] rounded border border-current text-[var(--aws-text-muted)] hover:opacity-80 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveEdit}
-                style={{ backgroundColor: borderColor, color: '#FFFFFF' }}
-                className="px-2 py-0.5 text-[10px] font-semibold rounded flex items-center gap-1 cursor-pointer"
-              >
-                <Check className="w-3 h-3" /> Save
-              </button>
-            </div>
-          </div>
-        ) : (
-          <p style={{ color: textColor }} className="whitespace-pre-wrap break-words">
-            {nodeData.annotationContent || (
-              <span className="italic opacity-60">Double-click to edit note...</span>
-            )}
-          </p>
+        {/* Delete button on hover */}
+        {!isEditing && (
+          <button
+            type="button"
+            onClick={handleDelete}
+            style={{ color: 'var(--aws-text-muted)' }}
+            className="absolute top-1.5 right-1.5 p-0.5 rounded-full hover:text-[#DD344C] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+            title="Delete note"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         )}
-      </div>
+
+        {/* Header bar */}
+        <div
+          style={{ borderBottomColor: borderColor }}
+          className="px-2.5 py-1.5 border-b flex items-center gap-1.5 shrink-0"
+        >
+          <StickyNote className="w-3.5 h-3.5 shrink-0" style={{ color: titleColor }} />
+          {isEditing ? (
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSaveEdit();
+                if (e.key === 'Escape') setIsEditing(false);
+              }}
+              placeholder="Note title..."
+              className="w-full text-[12px] font-bold bg-transparent outline-none border-b border-current"
+              style={{ color: titleColor }}
+              autoFocus
+            />
+          ) : (
+            <span
+              className="font-bold text-[12px] truncate"
+              style={{ color: titleColor }}
+              title={nodeData.annotationTitle || nodeData.label}
+            >
+              {nodeData.annotationTitle || nodeData.label || 'Architecture Note'}
+            </span>
+          )}
+        </div>
+
+        {/* Body Content */}
+        <div className="p-2.5 flex-1 overflow-y-auto custom-scrollbar text-[11px] leading-relaxed">
+          {isEditing ? (
+            <div className="flex flex-col h-full gap-2">
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                placeholder="Write architecture notes, constraints, or decisions..."
+                rows={3}
+                className="flex-1 w-full text-[11px] bg-transparent outline-none resize-none font-sans"
+                style={{ color: textColor }}
+              />
+              <div className="flex items-center justify-end gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="px-2 py-0.5 text-[10px] rounded border border-current text-[var(--aws-text-muted)] hover:opacity-80 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  style={{ backgroundColor: borderColor, color: '#FFFFFF' }}
+                  className="px-2 py-0.5 text-[10px] font-semibold rounded flex items-center gap-1 cursor-pointer"
+                >
+                  <Check className="w-3 h-3" /> Save
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p style={{ color: textColor }} className="whitespace-pre-wrap break-words">
+              {nodeData.annotationContent || (
+                <span className="italic opacity-60">Double-click to edit note...</span>
+              )}
+            </p>
+          )}
     </div>
+      </m.div >
+    </div >
   );
 });
 

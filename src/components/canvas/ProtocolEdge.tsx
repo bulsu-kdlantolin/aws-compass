@@ -23,6 +23,7 @@ const PROTOCOLS: EdgeProtocol[] = [
   'SQL/TCP',
   'gRPC',
   'WebSocket',
+  'MQTT',
 ];
 
 interface ProtocolStyle {
@@ -60,6 +61,11 @@ const PROTOCOL_STYLES: Record<EdgeProtocol, ProtocolStyle> = {
   },
   WebSocket: {
     stroke: '#539FE5',
+    flowType: 'Stream',
+  },
+  MQTT: {
+    stroke: '#01A88D',
+    strokeDasharray: '4 4',
     flowType: 'Stream',
   },
 };

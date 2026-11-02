@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { AnimatedPopover } from '../ui/AnimatedPopover';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { getAWSCategoryColor } from '../../utils/awsCategoryColors';
 import { useCompassStore } from '../../store/useCompassStore';
 
@@ -169,17 +170,14 @@ export const CanvasBomPopover: React.FC<CanvasBomPopoverProps> = ({
                 }`}
               title="Copy Bill of Materials as Markdown table"
             >
-              {copied ? (
-                <>
+                  <AnimatedIcon iconKey={copied ? 'copied' : 'idle'} size={12} className="w-3 h-3 shrink-0">
+                    {copied ? (
                   <Check className="w-3 h-3 text-[#38D9A9]" />
-                  <span>Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3 h-3" />
-                  <span>Copy Markdown</span>
-                </>
-              )}
+                    ) : (
+                    <Copy className="w-3 h-3" />
+                )}
+                </AnimatedIcon>
+              <span>{copied ? 'Copied' : 'Copy Markdown'}</span>
             </button>
 
             <button

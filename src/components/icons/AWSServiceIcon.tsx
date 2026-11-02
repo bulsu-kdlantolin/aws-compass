@@ -3,11 +3,14 @@ import {
   AWS_SERVICE_VECTORS,
   AWS_GROUP_VECTORS,
   AWS_ACTOR_VECTORS,
+  getCategoryDomainVector,
 } from './awsOfficialVectors';
+import { getAWSServiceIconUrl, getAWSGroupIconUrl } from './awsIconRegistry';
 import { useCompassStore } from '../../store/useCompassStore';
 
 export interface AWSServiceIconProps {
   serviceId?: string;
+  category?: string;
   groupId?: string;
   actorId?: string;
   size?: number;
@@ -17,6 +20,7 @@ export interface AWSServiceIconProps {
 
 export const AWSServiceIcon: React.FC<AWSServiceIconProps> = ({
   serviceId,
+  category,
   groupId,
   actorId,
   size = 24,
@@ -24,7 +28,8 @@ export const AWSServiceIcon: React.FC<AWSServiceIconProps> = ({
   variant = 'service',
 }) => {
   const theme = useCompassStore((s) => s.theme);
-  const [assetLoadFailed, setAssetLoadFailed] = useState(false);
+  const services = useCompassStore((s) => s.services);
+  const [failedUrls, setFailedUrls] = useState<Record<string, boolean>>({});
 
   // Normalize service key: lowercase, trim
   const rawKey = (variant === 'group' ? groupId : variant === 'actor' ? actorId : serviceId) || '';
@@ -60,9 +65,9 @@ export const AWSServiceIcon: React.FC<AWSServiceIconProps> = ({
   // Group Icon Variant
   if (variant === 'group') {
     const groupDef = AWS_GROUP_VECTORS[normalizedKey] || AWS_GROUP_VECTORS['aws-cloud'];
-    const assetUrl = `/aws-icons/groups/${normalizedKey}.svg`;
+    const assetUrl = getAWSGroupIconUrl(normalizedKey);
 
-    if (!assetLoadFailed) {
+    if (!failedUrls[assetUrl]) {
       return (
         <span
           className={`inline-flex items-center justify-center shrink-0 overflow-hidden select-none ${className}`}
@@ -70,11 +75,13 @@ export const AWSServiceIcon: React.FC<AWSServiceIconProps> = ({
           title={groupDef.label}
         >
           <img
+            key={assetUrl}
             src={assetUrl}
             alt={groupDef.label}
             width={size}
             height={size}
-            onError={() => setAssetLoadFailed(true)}
+            draggable={false}
+            onError={() => setFailedUrls((prev) => ({ ...prev, [assetUrl]: true }))}
             className="w-full h-full object-contain block pointer-events-none"
             loading="eager"
           />
@@ -95,17 +102,22 @@ export const AWSServiceIcon: React.FC<AWSServiceIconProps> = ({
   }
 
   // Service / Resource Icon Variant
+  const resolvedCategory =
+    category ||
+    services.find((s) => s.id === normalizedKey || s.id === serviceId)?.category ||
+    '';
+
   const vectorDef =
     AWS_SERVICE_VECTORS[normalizedKey] ||
     AWS_SERVICE_VECTORS[normalizedKey.replace(/-/g, '')] ||
-    AWS_SERVICE_VECTORS['ec2'];
+  getCategoryDomainVector(resolvedCategory);
 
   const tileBgColor = theme === 'dark' ? vectorDef.tileBg.dark : vectorDef.tileBg.light;
   const borderRadius = size <= 24 ? 2 : 4;
-  const assetUrl = `/aws-icons/services/${normalizedKey}.svg`;
+  const assetUrl = getAWSServiceIconUrl(normalizedKey);
 
   // Official AWS Architecture SVG asset pack resolution
-  if (!assetLoadFailed) {
+  if (!failedUrls[assetUrl]) {
     return (
       <span
         style={{
@@ -117,11 +129,13 @@ export const AWSServiceIcon: React.FC<AWSServiceIconProps> = ({
         title={`AWS ${serviceId || 'Service'}`}
       >
         <img
+          key={assetUrl}
           src={assetUrl}
           alt={`AWS ${serviceId}`}
           width={size}
           height={size}
-          onError={() => setAssetLoadFailed(true)}
+          draggable={false}
+          onError={() => setFailedUrls((prev) => ({ ...prev, [assetUrl]: true }))}
           className="w-full h-full object-contain block pointer-events-none"
           loading="eager"
         />

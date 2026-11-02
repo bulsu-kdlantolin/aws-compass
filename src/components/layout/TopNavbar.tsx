@@ -12,6 +12,8 @@ import { useCompassStore } from '../../store/useCompassStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { AWSCompassLogo } from '../ui/AWSCompassLogo';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
+import { m } from 'motion/react';
+import { SPRING_SMOOTH } from '../../utils/motionTokens';
 
 export interface TopNavbarProps {
   onOpenCommandPalette?: () => void;
@@ -74,8 +76,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenCommandPalette }) =>
             <BookOpen className="w-4 h-4 shrink-0" strokeWidth={1.75} />
             <span>Concept vault</span>
             {workspaceMode === 'vault' && (
-              <span
+              <m.span
+                layoutId="navbar-active-tab"
                 className="absolute inset-x-0 bottom-0 h-[3px] bg-[#FF9900]"
+                transition={SPRING_SMOOTH}
                 aria-hidden="true"
               />
             )}
@@ -92,8 +96,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenCommandPalette }) =>
             <LayoutGrid className="w-4 h-4 shrink-0" strokeWidth={1.75} />
             <span>Architecture canvas</span>
             {workspaceMode === 'canvas' && (
-              <span
+              <m.span
+                layoutId="navbar-active-tab"
                 className="absolute inset-x-0 bottom-0 h-[3px] bg-[#FF9900]"
+                transition={SPRING_SMOOTH}
                 aria-hidden="true"
               />
             )}
@@ -148,12 +154,18 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenCommandPalette }) =>
           title={filter.favoritesOnly ? 'Showing favorites only (Click to show all)' : 'Filter by favorited services'}
           aria-label="Favorites quick filter"
         >
-          <Star
-            className={`w-3.5 h-3.5 transition-colors ${filter.favoritesOnly || favoritesCount > 0
-              ? 'fill-[#FF9900] text-[#FF9900]'
-              : 'text-[#879596]'
-              }`}
-          />
+          <AnimatedIcon
+            iconKey={filter.favoritesOnly || favoritesCount > 0 ? 'fav-active' : 'fav-inactive'}
+            size={14}
+            className="w-3.5 h-3.5"
+          >
+            <Star
+              className={`w-3.5 h-3.5 transition-colors ${filter.favoritesOnly || favoritesCount > 0
+                ? 'fill-[#FF9900] text-[#FF9900]'
+                : 'text-[#879596]'
+                }`}
+            />
+          </AnimatedIcon>
           <span className="hidden sm:inline">Favorites</span>
           <span className="font-mono text-[11px] tabular-nums opacity-90">({favoritesCount})</span>
         </button>

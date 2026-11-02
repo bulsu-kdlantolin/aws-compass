@@ -2,6 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import {
   Edit3,
   Copy,
+  Scissors,
+  ClipboardPaste,
   ArrowUp,
   ArrowDown,
   Trash2,
@@ -16,6 +18,7 @@ import {
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { useCompassStore } from '../../store/useCompassStore';
 import { useReactFlow } from '@xyflow/react';
+import { withAutoLayoutGlide } from '../../utils/motionTokens';
 
 export const CanvasContextMenu: React.FC = () => {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -26,6 +29,10 @@ export const CanvasContextMenu: React.FC = () => {
   const removeNode = useCanvasStore((s) => s.removeNode);
   const removeEdge = useCanvasStore((s) => s.removeEdge);
   const duplicateNode = useCanvasStore((s) => s.duplicateNode);
+  const copySelection = useCanvasStore((s) => s.copySelection);
+  const cutSelection = useCanvasStore((s) => s.cutSelection);
+  const pasteSelection = useCanvasStore((s) => s.pasteSelection);
+  const clipboard = useCanvasStore((s) => s.clipboard);
   const reorderNodeZ = useCanvasStore((s) => s.reorderNodeZ);
   const reverseEdgeDirection = useCanvasStore((s) => s.reverseEdgeDirection);
   const updateEdgeProperties = useCanvasStore((s) => s.updateEdgeProperties);
@@ -100,6 +107,52 @@ export const CanvasContextMenu: React.FC = () => {
           >
             <Edit3 className="w-3.5 h-3.5 text-[var(--aws-interactive)]" />
             <span>Inspect properties...</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (contextMenu.targetId) {
+                const state = useCanvasStore.getState();
+                const node = state.nodes.find((n) => n.id === contextMenu.targetId);
+                if (node && !node.selected) {
+                  state.setNodes(state.nodes.map((n) => ({ ...n, selected: n.id === contextMenu.targetId })));
+                }
+                copySelection();
+              }
+              closeContextMenu();
+            }}
+            className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] cursor-pointer text-left"
+          >
+            <div className="flex items-center gap-2">
+              <Copy className="w-3.5 h-3.5 text-[var(--aws-text-muted)]" />
+              <span>Copy</span>
+            </div>
+            <kbd className="font-mono text-[10px] text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)] px-1 rounded border border-[var(--aws-border)]">
+              Ctrl+C
+            </kbd>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (contextMenu.targetId) {
+                const state = useCanvasStore.getState();
+                const node = state.nodes.find((n) => n.id === contextMenu.targetId);
+                if (node && !node.selected) {
+                  state.setNodes(state.nodes.map((n) => ({ ...n, selected: n.id === contextMenu.targetId })));
+                }
+                cutSelection();
+              }
+              closeContextMenu();
+            }}
+            className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] cursor-pointer text-left"
+          >
+            <div className="flex items-center gap-2">
+              <Scissors className="w-3.5 h-3.5 text-[var(--aws-text-muted)]" />
+              <span>Cut</span>
+            </div>
+            <kbd className="font-mono text-[10px] text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)] px-1 rounded border border-[var(--aws-border)]">
+              Ctrl+X
+            </kbd>
           </button>
           <button
             type="button"
@@ -243,6 +296,30 @@ export const CanvasContextMenu: React.FC = () => {
       {/* Canvas Background Context Menu */}
       {contextMenu.type === 'canvas' && (
         <div className="space-y-0.5">
+          {clipboard && clipboard.nodes.length > 0 && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  pasteSelection(flowPosition);
+                  closeContextMenu();
+                }}
+                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-interactive)]/15 text-[var(--aws-interactive)] cursor-pointer text-left font-semibold"
+              >
+                <div className="flex items-center gap-2">
+                  <ClipboardPaste className="w-3.5 h-3.5" />
+                  <span>
+                    Paste {clipboard.nodes.length > 1 ? `(${clipboard.nodes.length} items)` : ''}
+                  </span>
+                </div>
+                <kbd className="font-mono text-[10px] text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)] px-1 rounded border border-[var(--aws-border)]">
+                  Ctrl+V
+                </kbd>
+              </button>
+              <div className="my-1 border-t border-[var(--aws-border)]" />
+            </>
+          )}
+
           <div className="px-2 py-1 text-[10px] font-bold text-[var(--aws-text-muted)] border-b border-[var(--aws-border)] mb-0.5 uppercase tracking-wider">
             Add to Canvas
           </div>
@@ -285,7 +362,15 @@ export const CanvasContextMenu: React.FC = () => {
           <button
             type="button"
             onClick={() => {
-              autoLayout('LR');
+              withAutoLayoutGlide(
+                () => {
+                  autoLayout('LR');
+                },
+                () => {
+                  reactFlow.fitView({ padding: 0.18, duration: 250 });
+                },
+                260
+              );
               closeContextMenu();
             }}
             className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--aws-popover-hover)] cursor-pointer text-left"

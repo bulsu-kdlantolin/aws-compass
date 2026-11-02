@@ -28,6 +28,9 @@ import { CloudscapeAlert } from '../ui/CloudscapeAlert';
 import { CodeFrame } from '../ui/CodeFrame';
 import { DocToc, type TocItem } from './DocToc';
 import { CloudscapeSearchInput } from '../ui/CloudscapeSearchInput';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
+import { m } from 'motion/react';
+import { SPRING_SMOOTH } from '../../utils/motionTokens';
 import { CloudscapeSelect, type CloudscapeSelectOption } from '../ui/CloudscapeSelect';
 import { CloudscapeTextarea } from '../ui/CloudscapeTextarea';
 import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
@@ -320,10 +323,12 @@ const ConceptVaultTable: React.FC<{
                           title={svc.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                           aria-label={svc.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                         >
-                          <Star
-                            className={`w-4 h-4 transition-transform active:scale-90 ${svc.isFavorite ? 'fill-[#FF9900] text-[#FF9900]' : 'text-[var(--aws-text-muted)] hover:text-[#FF9900]'
-                              }`}
-                          />
+                          <AnimatedIcon iconKey={svc.isFavorite ? 'fav' : 'unfav'} size={16}>
+                            <Star
+                              className={`w-4 h-4 transition-transform active:scale-90 ${svc.isFavorite ? 'fill-[#FF9900] text-[#FF9900]' : 'text-[var(--aws-text-muted)] hover:text-[#FF9900]'
+                                }`}
+                            />
+                          </AnimatedIcon>
                         </button>
                       </td>
 
@@ -572,341 +577,189 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
             title={service.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
             aria-label="Toggle favorite"
           >
-            <Star
-              className={`w-3.5 h-3.5 transition-colors ${service.isFavorite ? 'fill-[#FF9900] text-[#FF9900]' : ''
-                }`}
-            />
+            <AnimatedIcon iconKey={service.isFavorite ? 'fav' : 'unfav'} size={14}>
+              <Star
+                className={`w-3.5 h-3.5 transition-colors ${service.isFavorite ? 'fill-[#FF9900] text-[#FF9900]' : ''
+                  }`}
+              />
+            </AnimatedIcon>
             <span>{service.isFavorite ? 'Favorited' : 'Favorite'}</span>
           </button>
 
           {/* 1px Vertical Divider */}
           <div className="h-4 w-px bg-[#D5DBDB] dark:bg-[#2A3647] mx-1" aria-hidden="true" />
 
-          {/* Read / Edit Sunken Borderless Segmented Pill */}
-          <div className="flex items-center p-0.5 rounded-[6px] bg-[#EAEDED]/70 dark:bg-[#0F141A] select-none">
-            <button
-              type="button"
-              onClick={() => setIsEditing(false)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-medium rounded-[4px] transition-all duration-150 cursor-pointer ${!isEditing
-                ? 'bg-white dark:bg-[#161E2D] text-[var(--aws-text-primary)] shadow-xs font-semibold'
-                : 'text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
-                }`}
-            >
-              <BookOpen
-                className={`w-3.5 h-3.5 ${!isEditing ? 'text-[#FF9900]' : 'opacity-70'}`}
-                strokeWidth={2}
-              />
-              <span>Read</span>
-            </button>
+            {/* Read / Edit Sunken Borderless Segmented Pill with sliding indicator */}
+            <div className="relative flex items-center p-0.5 rounded-[6px] bg-[#EAEDED]/70 dark:bg-[#0F141A] select-none">
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+              className={`relative flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-medium rounded-[4px] transition-colors cursor-pointer ${!isEditing
+                  ? 'text-[var(--aws-text-primary)] font-semibold'
+                  : 'text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
+                  }`}
+              >
+                {!isEditing && (
+                  <m.span
+                    layoutId="read-edit-pill"
+                    className="pointer-events-none absolute inset-0 rounded-[4px] bg-white dark:bg-[#161E2D] shadow-xs"
+                    transition={SPRING_SMOOTH}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1.5">
+                  <BookOpen
+                    className={`w-3.5 h-3.5 ${!isEditing ? 'text-[#FF9900]' : 'opacity-70'}`}
+                    strokeWidth={2}
+                  />
+                  <span>Read</span>
+                </span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setEditorContent(service.markdownDoc);
-                setIsEditing(true);
-              }}
-              className={`flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-medium rounded-[4px] transition-all duration-150 cursor-pointer ${isEditing
-                ? 'bg-white dark:bg-[#161E2D] text-[var(--aws-text-primary)] shadow-xs font-semibold'
-                : 'text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
-                }`}
-            >
-              <Edit3
-                className={`w-3.5 h-3.5 ${isEditing ? 'text-[#FF9900]' : 'opacity-70'}`}
-                strokeWidth={2}
-              />
-              <span>Edit</span>
-            </button>
-          </div>
-
-          {/* 1px Vertical Divider */}
-          <div className="h-4 w-px bg-[#D5DBDB] dark:bg-[#2A3647] mx-1" aria-hidden="true" />
-
-          {/* + Add to Canvas Ghost Button */}
-          <button
-            type="button"
-            onClick={handleAddToCanvas}
-            className="flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1 h-8 rounded-[6px] text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#FF9900] active:scale-[0.98] transition-all duration-150 cursor-pointer select-none"
-            title={`Add ${service.name} node to active architecture canvas`}
-            aria-label={`Add ${service.name} to canvas`}
-          >
-            <Plus className="w-3.5 h-3.5 text-[#FF9900]" strokeWidth={2.5} />
-            <span>Add to Canvas</span>
-          </button>
-
-          {/* External AWS Docs Ghost Button */}
-          {(() => {
-            const docsUrl = getVerifiedAWSDocsUrl(service.id, service.docsUrl);
-            if (!docsUrl) return null;
-            return (
-              <>
-                <div className="h-4 w-px bg-[#D5DBDB] dark:bg-[#2A3647] mx-1" aria-hidden="true" />
-                <a
-                  href={docsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1 h-8 rounded-[6px] text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[var(--aws-interactive)] active:scale-[0.98] transition-all duration-150 cursor-pointer select-none"
-                  title="Open official AWS documentation in a new tab"
-                  aria-label={`Open official ${service.name} documentation`}
-                >
-                  <ExternalLink className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[var(--aws-interactive)] transition-colors" />
-                  <span>AWS docs ↗</span>
-                </a>
-              </>
-            );
-          })()}
-        </div>
-      </div>
-
-      {/* Main Workspace Body */}
-      {
-        isEditing ? (
-          /* Editor Layout */
-          <div
-            style={{ backgroundColor: 'var(--aws-page-bg)' }}
-            className="flex flex-col flex-1 min-h-0 overflow-hidden relative"
-          >
-            {/* Editor Action Header */}
-            <div
-              style={{
-                backgroundColor: 'var(--aws-card-bg)',
-                borderBottomColor: 'var(--aws-border)',
-              }}
-              className="flex items-center justify-between px-6 py-2 border-b text-[12px] shrink-0"
-            >
-              <span style={{ color: 'var(--aws-text-muted)' }}>
-                Editing 6-part concept dossier (Markdown + Mermaid)
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleResetToSeed}
-                  style={{
-                    backgroundColor: 'var(--aws-page-bg)',
-                    borderColor: 'var(--aws-border)',
-                    color: 'var(--aws-text-muted)',
-                  }}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] border transition-colors cursor-pointer hover:text-[var(--aws-text-primary)]"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>Reset to seed</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveDoc}
-                  style={{
-                    backgroundColor: 'var(--aws-brand)',
-                    color: '#0F141A',
-                  }}
-                  className="flex items-center gap-1 px-3 py-1 rounded-[4px] font-bold transition-[background-color,transform] duration-150 ease-out enabled:active:scale-[0.96] cursor-pointer hover:bg-[var(--aws-brand-hover)]"
-                >
-                  {savedSuccess ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
-                  <span>{savedSuccess ? 'Saved' : 'Save changes'}</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditorContent(service.markdownDoc);
+                  setIsEditing(true);
+                }}
+              className={`relative flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-medium rounded-[4px] transition-colors cursor-pointer ${isEditing
+                  ? 'text-[var(--aws-text-primary)] font-semibold'
+                  : 'text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
+                  }`}
+              >
+                {isEditing && (
+                  <m.span
+                    layoutId="read-edit-pill"
+                    className="pointer-events-none absolute inset-0 rounded-[4px] bg-white dark:bg-[#161E2D] shadow-xs"
+                    transition={SPRING_SMOOTH}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1.5">
+                  <Edit3
+                    className={`w-3.5 h-3.5 ${isEditing ? 'text-[#FF9900]' : 'opacity-70'}`}
+                    strokeWidth={2}
+                  />
+                  <span>Edit</span>
+                </span>
+              </button>
             </div>
 
-            {/* Split Editor / Preview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 flex-1 min-h-0 overflow-hidden">
-              <div
-                style={{ borderRightColor: 'var(--aws-border)' }}
-                className="flex flex-col h-full border-r overflow-hidden"
-              >
-                <CloudscapeTextarea
-                  value={editorContent}
-                  onChange={setEditorContent}
-                  placeholder="Enter markdown document with mermaid diagrams..."
-                  spellCheck={false}
-                  className="w-full h-full border-0 rounded-none font-mono text-[12px] p-4"
-                />
-              </div>
+            {/* 1px Vertical Divider */}
+            <div className="h-4 w-px bg-[#D5DBDB] dark:bg-[#2A3647] mx-1" aria-hidden="true" />
 
-              <div className="flex flex-col h-full overflow-hidden">
-                <div className="flex-1 overflow-y-auto p-6 vault-prose scrollbar-thin custom-scrollbar">
-                  <Markdown
-                    components={{
-                      code(props) {
-                        const { children, className, ...rest } = props;
-                        const match = /language-(\w+)/.exec(className || '');
-                        const language = match ? match[1] : '';
-                        if (language === 'mermaid') {
-                          return <MermaidViewer chart={String(children).replace(/\n$/, '')} service={service} />;
-                        }
-                        if (language === 'bash' || language === 'sh' || language === 'shell') {
-                          return (
-                            <CodeFrame
-                              code={String(children).replace(/\n$/, '')}
-                              title={`aws ${service.id}`}
-                              language="bash"
-                            />
-                          );
-                        }
-                        return (
-                          <code className={className} {...rest}>
-                            {children}
-                          </code>
-                        );
-                      },
-                    }}
+            {/* + Add to Canvas Ghost Button */}
+            <button
+              type="button"
+              onClick={handleAddToCanvas}
+              className="flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1 h-8 rounded-[6px] text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#FF9900] active:scale-[0.98] transition-all duration-150 cursor-pointer select-none"
+              title={`Add ${service.name} node to active architecture canvas`}
+              aria-label={`Add ${service.name} to canvas`}
+            >
+              <Plus className="w-3.5 h-3.5 text-[#FF9900]" strokeWidth={2.5} />
+              <span>Add to Canvas</span>
+            </button>
+
+            {/* External AWS Docs Ghost Button */}
+            {(() => {
+              const docsUrl = getVerifiedAWSDocsUrl(service.id, service.docsUrl);
+              if (!docsUrl) return null;
+              return (
+                <>
+                  <div className="h-4 w-px bg-[#D5DBDB] dark:bg-[#2A3647] mx-1" aria-hidden="true" />
+                  <a
+                    href={docsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1 h-8 rounded-[6px] text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[var(--aws-interactive)] active:scale-[0.98] transition-all duration-150 cursor-pointer select-none"
+                    title="Open official AWS documentation in a new tab"
+                    aria-label={`Open official ${service.name} documentation`}
                   >
-                    {editorContent}
-                  </Markdown>
+                    <ExternalLink className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[var(--aws-interactive)] transition-colors" />
+                    <span>AWS docs ↗</span>
+                  </a>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+
+        {/* Main Workspace Body */}
+        {
+          isEditing ? (
+            /* Editor Layout */
+            <div
+              style={{ backgroundColor: 'var(--aws-page-bg)' }}
+              className="flex flex-col flex-1 min-h-0 overflow-hidden relative"
+            >
+              {/* Editor Action Header */}
+              <div
+                style={{
+                  backgroundColor: 'var(--aws-card-bg)',
+                  borderBottomColor: 'var(--aws-border)',
+                }}
+                className="flex items-center justify-between px-6 py-2 border-b text-[12px] shrink-0"
+              >
+                <span style={{ color: 'var(--aws-text-muted)' }}>
+                  Editing 6-part concept dossier (Markdown + Mermaid)
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleResetToSeed}
+                    style={{
+                      backgroundColor: 'var(--aws-page-bg)',
+                      borderColor: 'var(--aws-border)',
+                      color: 'var(--aws-text-muted)',
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] border transition-colors cursor-pointer hover:text-[var(--aws-text-primary)]"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset to seed</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveDoc}
+                    style={{
+                      backgroundColor: 'var(--aws-brand)',
+                      color: '#0F141A',
+                    }}
+                    className="flex items-center gap-1 px-3 py-1 rounded-[4px] font-bold transition-[background-color,transform] duration-150 ease-out enabled:active:scale-[0.96] cursor-pointer hover:bg-[var(--aws-brand-hover)]"
+                  >
+                    {savedSuccess ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                    <span>{savedSuccess ? 'Saved' : 'Save changes'}</span>
+                  </button>
                 </div>
               </div>
-            </div>
-          </div>
-        ) : (
-          /* Reading View Layout */
-          <div
-            ref={scrollContainerRef}
-            className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 scrollbar-thin custom-scrollbar"
-          >
-            <div className="max-w-7xl mx-auto flex items-start gap-8">
-              {/* Main Content Column */}
-              <div className="flex-1 min-w-0 space-y-6 pb-12">
-                {/* Cloudscape Container: Service Header & Key-Value Grid */}
-                <CloudscapeContainer
-                  className="relative z-10"
-                  header={
-                    <div className="flex items-center gap-3">
-                      <AWSServiceIcon serviceId={service.id} size={32} />
-                      <div>
-                        <h2
-                          style={{ color: 'var(--aws-text-primary)' }}
-                          className="text-[18px] font-bold leading-[22px]"
-                        >
-                          {service.name}
-                        </h2>
-                        <span className="text-[11px] font-mono text-[var(--aws-text-muted)] uppercase">
-                          {service.id}
-                        </span>
-                      </div>
-                    </div>
-                  }
-                >
-                  {/* Key-Value Grid with 1px vertical dividers */}
-                  <div
-                    style={{ borderColor: 'var(--aws-border)' }}
-                    className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-2"
-                  >
-                    {/* Category */}
-                    <div className="sm:border-r border-[var(--aws-border)] sm:pr-6">
-                      <span
-                        style={{ color: 'var(--aws-text-muted)' }}
-                        className="text-[12px] block font-medium"
-                      >
-                        Category
-                      </span>
-                      <span
-                        style={{ color: 'var(--aws-text-primary)' }}
-                        className="text-[13px] font-semibold mt-0.5 block"
-                      >
-                        {service.category}
-                      </span>
-                    </div>
 
-                    {/* Tier */}
-                    <div className="sm:border-r border-[var(--aws-border)] sm:pr-6">
-                      <span
-                        style={{ color: 'var(--aws-text-muted)' }}
-                        className="text-[12px] block font-medium"
-                      >
-                        Service tier
-                      </span>
-                      <span
-                        style={{ color: 'var(--aws-text-primary)' }}
-                        className="text-[13px] font-semibold mt-0.5 block font-mono"
-                      >
-                        {service.tier === 1
-                          ? 'Tier 1 (Core & Popular)'
-                          : service.tier === 2
-                            ? 'Tier 2 (Enterprise)'
-                            : 'Tier 3 (Specialized)'}
-                      </span>
-                    </div>
-
-                    {/* CLI Prefix */}
-                    <div>
-                      <span
-                        style={{ color: 'var(--aws-text-muted)' }}
-                        className="text-[12px] block font-medium"
-                      >
-                        CLI prefix
-                      </span>
-                      <span
-                        style={{ color: 'var(--aws-interactive)' }}
-                        className="text-[13px] font-mono mt-0.5 block font-medium"
-                      >
-                        aws {service.id}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* ARN Example Flush Bottom Band */}
-                  {service.arnExample && (
-                    <div
-                      className="-mx-5 -mb-5 mt-5 px-5 py-3 bg-[#F8F9FA] dark:bg-[#0F141A] border-t border-[#D5DBDB] dark:border-[#222D3C] rounded-b-[8px] flex items-center justify-between gap-3 text-[12px] font-mono"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[var(--aws-text-muted)] shrink-0 font-sans">
-                          ARN pattern:
-                        </span>
-                        <span
-                          style={{ color: 'var(--aws-text-primary)' }}
-                          className="truncate select-all"
-                        >
-                          {service.arnExample}
-                        </span>
-                      </div>
-                      <CloudscapeCopyButton
-                        textToCopy={service.arnExample}
-                        ariaLabel="Copy ARN pattern"
-                        showLabel={false}
-                        className="shrink-0"
-                      />
-                    </div>
-                  )}
-                </CloudscapeContainer>
-
-                {/* Unified Cloudscape Container for 6-Part Concept Dossier */}
+              {/* Split Editor / Preview */}
+              <div className="grid grid-cols-1 md:grid-cols-2 flex-1 min-h-0 overflow-hidden">
                 <div
-                  style={{
-                    backgroundColor: 'var(--aws-card-bg)',
-                    borderColor: 'var(--aws-border)',
-                  }}
-                  className="rounded-[8px] border p-6 shadow-none"
+                  style={{ borderRightColor: 'var(--aws-border)' }}
+                  className="flex flex-col h-full border-r overflow-hidden"
                 >
-                  <div className="vault-prose">
+                  <CloudscapeTextarea
+                    value={editorContent}
+                    onChange={setEditorContent}
+                    placeholder="Enter markdown document with mermaid diagrams..."
+                    spellCheck={false}
+                    className="w-full h-full border-0 rounded-none font-mono text-[12px] p-4"
+                  />
+                </div>
+
+                <div className="flex flex-col h-full overflow-hidden">
+                  <div className="flex-1 overflow-y-auto p-6 vault-prose scrollbar-thin custom-scrollbar">
                     <Markdown
                       components={{
-                        h2(props) {
-                          const text = String(props.children);
-                          let id = '';
-                          if (text.includes('1.') || text.toLowerCase().includes('core purpose')) id = 'section-1';
-                          else if (text.includes('2.') || text.toLowerCase().includes('primitives')) id = 'section-2';
-                          else if (text.includes('3.') || text.toLowerCase().includes('flow')) id = 'section-3';
-                          else if (text.includes('4.') || text.toLowerCase().includes('canvas connections')) id = 'section-4';
-                          else if (text.includes('5.') || text.toLowerCase().includes('gotchas')) id = 'section-5';
-                          else if (text.includes('6.') || text.toLowerCase().includes('cli')) id = 'section-6';
-
-                          return (
-                            <h2 id={id} className="scroll-mt-6" {...props}>
-                              {props.children}
-                            </h2>
-                          );
-                        },
                         code(props) {
                           const { children, className, ...rest } = props;
                           const match = /language-(\w+)/.exec(className || '');
                           const language = match ? match[1] : '';
-                          const codeContent = String(children).replace(/\n$/, '');
-
                           if (language === 'mermaid') {
-                            return <MermaidViewer chart={codeContent} service={service} />;
+                            return <MermaidViewer chart={String(children).replace(/\n$/, '')} service={service} />;
                           }
                           if (language === 'bash' || language === 'sh' || language === 'shell') {
                             return (
                               <CodeFrame
-                                code={codeContent}
+                                code={String(children).replace(/\n$/, '')}
                                 title={`aws ${service.id}`}
                                 language="bash"
                               />
@@ -918,167 +771,339 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
                             </code>
                           );
                         },
-                        blockquote(props) {
-                          return (
-                            <CloudscapeAlert
-                              type="warning"
-                              header="Exam & Production Gotcha"
-                              className="my-4"
-                            >
-                              {props.children}
-                            </CloudscapeAlert>
-                          );
-                        },
                       }}
                     >
-                      {service.markdownDoc}
+                      {editorContent}
                     </Markdown>
                   </div>
                 </div>
+              </div>
+            </div>
+          ) : (
+            /* Reading View Layout */
+            <div
+              ref={scrollContainerRef}
+              className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 scrollbar-thin custom-scrollbar"
+            >
+              <div className="max-w-7xl mx-auto flex items-start gap-8">
+                {/* Main Content Column */}
+                <div className="flex-1 min-w-0 space-y-6 pb-12">
+                  {/* Cloudscape Container: Service Header & Key-Value Grid */}
+                  <CloudscapeContainer
+                    className="relative z-10"
+                    header={
+                      <div className="flex items-center gap-3">
+                        <AWSServiceIcon serviceId={service.id} size={32} />
+                        <div>
+                          <h2
+                            style={{ color: 'var(--aws-text-primary)' }}
+                            className="text-[18px] font-bold leading-[22px]"
+                          >
+                            {service.name}
+                          </h2>
+                          <span className="text-[11px] font-mono text-[var(--aws-text-muted)] uppercase">
+                            {service.id}
+                          </span>
+                        </div>
+                      </div>
+                    }
+                  >
+                    {/* Key-Value Grid with 1px vertical dividers */}
+                    <div
+                      style={{ borderColor: 'var(--aws-border)' }}
+                      className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-2"
+                    >
+                      {/* Category */}
+                      <div className="sm:border-r border-[var(--aws-border)] sm:pr-6">
+                        <span
+                          style={{ color: 'var(--aws-text-muted)' }}
+                          className="text-[12px] block font-medium"
+                        >
+                          Category
+                        </span>
+                        <span
+                          style={{ color: 'var(--aws-text-primary)' }}
+                          className="text-[13px] font-semibold mt-0.5 block"
+                        >
+                          {service.category}
+                        </span>
+                      </div>
 
-                {/* Referenced in Blueprints Footer Strip */}
-                <div
-                  id="section-blueprints"
-                  style={{
-                    backgroundColor: 'var(--aws-card-bg)',
-                    borderColor: 'var(--aws-border)',
-                  }}
-                  className="rounded-[8px] border p-5 shadow-none scroll-mt-6"
-                >
-                  <div className="flex items-center justify-between pb-3 mb-4 border-b border-[var(--aws-border)]">
-                    <div className="flex items-center gap-2">
-                      <Boxes className="w-4 h-4 text-[#FF9900]" />
-                      <h3
-                        style={{ color: 'var(--aws-text-primary)' }}
-                        className="text-[14px] font-bold"
-                      >
-                        Referenced in Blueprints
-                      </h3>
-                      <span
-                        style={{
-                          backgroundColor: 'var(--aws-page-bg)',
-                          borderColor: 'var(--aws-border)',
-                          color: 'var(--aws-text-muted)',
-                        }}
-                        className="text-[11px] font-mono px-2 py-0.5 rounded-full border"
-                      >
-                        {matchingBlueprints.length} {matchingBlueprints.length === 1 ? 'diagram' : 'diagrams'}
-                      </span>
+                      {/* Tier */}
+                      <div className="sm:border-r border-[var(--aws-border)] sm:pr-6">
+                        <span
+                          style={{ color: 'var(--aws-text-muted)' }}
+                          className="text-[12px] block font-medium"
+                        >
+                          Service tier
+                        </span>
+                        <span
+                          style={{ color: 'var(--aws-text-primary)' }}
+                          className="text-[13px] font-semibold mt-0.5 block font-mono"
+                        >
+                          {service.tier === 1
+                            ? 'Tier 1 (Core & Popular)'
+                            : service.tier === 2
+                              ? 'Tier 2 (Enterprise)'
+                              : 'Tier 3 (Specialized)'}
+                        </span>
+                      </div>
+
+                      {/* CLI Prefix */}
+                      <div>
+                        <span
+                          style={{ color: 'var(--aws-text-muted)' }}
+                          className="text-[12px] block font-medium"
+                        >
+                          CLI prefix
+                        </span>
+                        <span
+                          style={{ color: 'var(--aws-interactive)' }}
+                          className="text-[13px] font-mono mt-0.5 block font-medium"
+                        >
+                          aws {service.id}
+                        </span>
+                      </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={handleCreateBlueprintWithService}
-                      className="flex items-center gap-1.5 text-[11px] font-semibold text-[#FF9900] hover:underline cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>New Blueprint with {service.name}</span>
-                    </button>
+                    {/* ARN Example Flush Bottom Band */}
+                    {service.arnExample && (
+                      <div
+                        className="-mx-5 -mb-5 mt-5 px-5 py-3 bg-[#F8F9FA] dark:bg-[#0F141A] border-t border-[#D5DBDB] dark:border-[#222D3C] rounded-b-[8px] flex items-center justify-between gap-3 text-[12px] font-mono"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-[var(--aws-text-muted)] shrink-0 font-sans">
+                            ARN pattern:
+                          </span>
+                          <span
+                            style={{ color: 'var(--aws-text-primary)' }}
+                            className="truncate select-all"
+                          >
+                            {service.arnExample}
+                          </span>
+                        </div>
+                        <CloudscapeCopyButton
+                          textToCopy={service.arnExample}
+                          ariaLabel="Copy ARN pattern"
+                          showLabel={false}
+                          className="shrink-0"
+                        />
+                      </div>
+                    )}
+                  </CloudscapeContainer>
+
+                  {/* Unified Cloudscape Container for 6-Part Concept Dossier */}
+                  <div
+                    style={{
+                      backgroundColor: 'var(--aws-card-bg)',
+                      borderColor: 'var(--aws-border)',
+                    }}
+                    className="rounded-[8px] border p-6 shadow-none"
+                  >
+                    <div className="vault-prose">
+                      <Markdown
+                        components={{
+                          h2(props) {
+                            const text = String(props.children);
+                            let id = '';
+                            if (text.includes('1.') || text.toLowerCase().includes('core purpose')) id = 'section-1';
+                            else if (text.includes('2.') || text.toLowerCase().includes('primitives')) id = 'section-2';
+                            else if (text.includes('3.') || text.toLowerCase().includes('flow')) id = 'section-3';
+                            else if (text.includes('4.') || text.toLowerCase().includes('canvas connections')) id = 'section-4';
+                            else if (text.includes('5.') || text.toLowerCase().includes('gotchas')) id = 'section-5';
+                            else if (text.includes('6.') || text.toLowerCase().includes('cli')) id = 'section-6';
+
+                            return (
+                              <h2 id={id} className="scroll-mt-6" {...props}>
+                                {props.children}
+                              </h2>
+                            );
+                          },
+                          code(props) {
+                            const { children, className, ...rest } = props;
+                            const match = /language-(\w+)/.exec(className || '');
+                            const language = match ? match[1] : '';
+                            const codeContent = String(children).replace(/\n$/, '');
+
+                            if (language === 'mermaid') {
+                              return <MermaidViewer chart={codeContent} service={service} />;
+                            }
+                            if (language === 'bash' || language === 'sh' || language === 'shell') {
+                              return (
+                                <CodeFrame
+                                  code={codeContent}
+                                  title={`aws ${service.id}`}
+                                  language="bash"
+                                />
+                              );
+                            }
+                            return (
+                              <code className={className} {...rest}>
+                                {children}
+                              </code>
+                            );
+                          },
+                          blockquote(props) {
+                            return (
+                              <CloudscapeAlert
+                                type="warning"
+                                header="Exam & Production Gotcha"
+                                className="my-4"
+                              >
+                                {props.children}
+                              </CloudscapeAlert>
+                            );
+                          },
+                        }}
+                      >
+                        {service.markdownDoc}
+                      </Markdown>
+                    </div>
                   </div>
 
-                  {matchingBlueprints.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      {matchingBlueprints.map((bp) => (
-                        <div
-                          key={bp.id}
+                  {/* Referenced in Blueprints Footer Strip */}
+                  <div
+                    id="section-blueprints"
+                    style={{
+                      backgroundColor: 'var(--aws-card-bg)',
+                      borderColor: 'var(--aws-border)',
+                    }}
+                    className="rounded-[8px] border p-5 shadow-none scroll-mt-6"
+                  >
+                    <div className="flex items-center justify-between pb-3 mb-4 border-b border-[var(--aws-border)]">
+                      <div className="flex items-center gap-2">
+                        <Boxes className="w-4 h-4 text-[#FF9900]" />
+                        <h3
+                          style={{ color: 'var(--aws-text-primary)' }}
+                          className="text-[14px] font-bold"
+                        >
+                          Referenced in Blueprints
+                        </h3>
+                        <span
                           style={{
                             backgroundColor: 'var(--aws-page-bg)',
                             borderColor: 'var(--aws-border)',
+                            color: 'var(--aws-text-muted)',
                           }}
-                          className="rounded-[6px] border p-3.5 flex flex-col justify-between hover:border-[var(--aws-interactive)] transition-all group"
+                          className="text-[11px] font-mono px-2 py-0.5 rounded-full border"
                         >
-                          <div>
-                            <div className="flex items-center justify-between gap-2 mb-1">
-                              <span
-                                style={{ color: 'var(--aws-text-primary)' }}
-                                className="text-[13px] font-semibold truncate group-hover:text-[var(--aws-interactive)] transition-colors"
-                              >
-                                {bp.name}
-                              </span>
-                              <span
-                                className={`text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-[4px] border ${bp.isTemplate
-                                  ? 'bg-[#0972D3]/10 text-[#0972D3] dark:text-[#539FE5] border-[#0972D3]/30'
-                                  : 'bg-[#1D8102]/10 text-[#1D8102] dark:text-[#38D9A9] border-[#1D8102]/30'
-                                  }`}
-                              >
-                                {bp.isTemplate ? 'Template' : 'Custom'}
-                              </span>
-                            </div>
-                            <p
-                              style={{ color: 'var(--aws-text-muted)' }}
-                              className="text-[11px] line-clamp-2 mb-3"
-                            >
-                              {bp.description}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center justify-between pt-2 border-t border-[var(--aws-border)] text-[11px]">
-                            <span className="font-mono text-[var(--aws-text-muted)]">
-                              {bp.nodes.length} nodes · {bp.edges.length} edges
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleOpenBlueprint(bp)}
-                              className="flex items-center gap-1 font-semibold text-[var(--aws-interactive)] hover:underline cursor-pointer"
-                            >
-                              <span>Open in Canvas</span>
-                              <ExternalLink className="w-3 h-3" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div
-                      style={{ backgroundColor: 'var(--aws-page-bg)' }}
-                      className="rounded-[6px] border border-dashed border-[var(--aws-border)] p-6 text-center"
-                    >
-                      <Layers className="w-8 h-8 text-[var(--aws-text-muted)] mx-auto mb-2 opacity-50" />
-                      <p
-                        style={{ color: 'var(--aws-text-primary)' }}
-                        className="text-[13px] font-medium mb-1"
-                      >
-                        No blueprints currently reference {service.name}
-                      </p>
-                      <p
-                        style={{ color: 'var(--aws-text-muted)' }}
-                        className="text-[12px] max-w-md mx-auto mb-4"
-                      >
-                        You can add {service.name} to your active canvas or create a new dedicated architecture blueprint.
-                      </p>
-                      <div className="flex items-center justify-center gap-3">
-                        <button
-                          type="button"
-                          onClick={handleAddToCanvas}
-                          className="h-8 px-3.5 rounded-[6px] bg-[#FF9900] text-[#0F141A] font-bold text-[12px] hover:bg-[#EC7211] active:scale-[0.98] transition-all cursor-pointer shadow-xs"
-                        >
-                          + Add to Active Canvas
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleCreateBlueprintWithService}
-                          style={{
-                            backgroundColor: 'var(--aws-card-bg)',
-                            borderColor: 'var(--aws-border)',
-                            color: 'var(--aws-text-primary)',
-                          }}
-                          className="h-8 px-3.5 rounded-[6px] border text-[12px] font-medium hover:border-[var(--aws-interactive)] transition-all cursor-pointer"
-                        >
-                          Create New Blueprint
-                        </button>
+                          {matchingBlueprints.length} {matchingBlueprints.length === 1 ? 'diagram' : 'diagrams'}
+                        </span>
                       </div>
-                    </div>
-                  )}
-                </div>
-              </div>
 
-              {/* Sticky Table of Contents on xl viewports */}
-              <DocToc items={tocItems} containerRef={scrollContainerRef} />
+                      <button
+                        type="button"
+                        onClick={handleCreateBlueprintWithService}
+                        className="flex items-center gap-1.5 text-[11px] font-semibold text-[#FF9900] hover:underline cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>New Blueprint with {service.name}</span>
+                      </button>
+                    </div>
+
+                    {matchingBlueprints.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                        {matchingBlueprints.map((bp) => (
+                          <div
+                            key={bp.id}
+                            style={{
+                              backgroundColor: 'var(--aws-page-bg)',
+                              borderColor: 'var(--aws-border)',
+                            }}
+                            className="rounded-[6px] border p-3.5 flex flex-col justify-between hover:border-[var(--aws-interactive)] transition-all group"
+                          >
+                            <div>
+                              <div className="flex items-center justify-between gap-2 mb-1">
+                                <span
+                                  style={{ color: 'var(--aws-text-primary)' }}
+                                  className="text-[13px] font-semibold truncate group-hover:text-[var(--aws-interactive)] transition-colors"
+                                >
+                                  {bp.name}
+                                </span>
+                                <span
+                                  className={`text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-[4px] border ${bp.isTemplate
+                                    ? 'bg-[#0972D3]/10 text-[#0972D3] dark:text-[#539FE5] border-[#0972D3]/30'
+                                    : 'bg-[#1D8102]/10 text-[#1D8102] dark:text-[#38D9A9] border-[#1D8102]/30'
+                                    }`}
+                                >
+                                  {bp.isTemplate ? 'Template' : 'Custom'}
+                                </span>
+                              </div>
+                              <p
+                                style={{ color: 'var(--aws-text-muted)' }}
+                                className="text-[11px] line-clamp-2 mb-3"
+                              >
+                                {bp.description}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-2 border-t border-[var(--aws-border)] text-[11px]">
+                              <span className="font-mono text-[var(--aws-text-muted)]">
+                                {bp.nodes.length} nodes · {bp.edges.length} edges
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenBlueprint(bp)}
+                                className="flex items-center gap-1 font-semibold text-[var(--aws-interactive)] hover:underline cursor-pointer"
+                              >
+                                <span>Open in Canvas</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        style={{ backgroundColor: 'var(--aws-page-bg)' }}
+                        className="rounded-[6px] border border-dashed border-[var(--aws-border)] p-6 text-center"
+                      >
+                        <Layers className="w-8 h-8 text-[var(--aws-text-muted)] mx-auto mb-2 opacity-50" />
+                        <p
+                          style={{ color: 'var(--aws-text-primary)' }}
+                          className="text-[13px] font-medium mb-1"
+                        >
+                          No blueprints currently reference {service.name}
+                        </p>
+                        <p
+                          style={{ color: 'var(--aws-text-muted)' }}
+                          className="text-[12px] max-w-md mx-auto mb-4"
+                        >
+                          You can add {service.name} to your active canvas or create a new dedicated architecture blueprint.
+                        </p>
+                        <div className="flex items-center justify-center gap-3">
+                          <button
+                            type="button"
+                            onClick={handleAddToCanvas}
+                            className="h-8 px-3.5 rounded-[6px] bg-[#FF9900] text-[#0F141A] font-bold text-[12px] hover:bg-[#EC7211] active:scale-[0.98] transition-all cursor-pointer shadow-xs"
+                          >
+                            + Add to Active Canvas
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCreateBlueprintWithService}
+                            style={{
+                              backgroundColor: 'var(--aws-card-bg)',
+                              borderColor: 'var(--aws-border)',
+                              color: 'var(--aws-text-primary)',
+                            }}
+                            className="h-8 px-3.5 rounded-[6px] border text-[12px] font-medium hover:border-[var(--aws-interactive)] transition-all cursor-pointer"
+                          >
+                            Create New Blueprint
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Sticky Table of Contents on xl viewports */}
+                <DocToc items={tocItems} containerRef={scrollContainerRef} />
+              </div>
             </div>
-          </div>
-        )}
-    </div >
-  );
+          )}
+      </div >
+      );
 };
 
 /* -------------------------------------------------------------------------- */
@@ -1087,31 +1112,36 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = ({
 
 export const ConceptVault: React.FC = () => {
   const {
-    services,
-    selectedServiceId,
-    setSelectedServiceId,
-    updateServiceDoc,
+        services,
+        selectedServiceId,
+        setSelectedServiceId,
+        updateServiceDoc,
   } = useCompassStore();
 
   const selectedService = services.find((s) => s.id === selectedServiceId);
 
-  if (!selectedService) {
-    return (
-      <ConceptVaultTable
-        services={services}
-        onSelectService={(id) => setSelectedServiceId(id)}
-      />
-    );
-  }
-
-  return (
-    <ServiceDossierContent
-      key={selectedService.id}
-      service={selectedService}
-      onBackToTable={() => setSelectedServiceId(null)}
-      onUpdateDoc={updateServiceDoc}
-    />
-  );
+      return (
+      <m.div
+        key={selectedService ? selectedService.id : 'vault-table'}
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.16, ease: [0.2, 0, 0, 1] }}
+        className="w-full h-full overflow-hidden flex flex-col"
+      >
+        {selectedService ? (
+          <ServiceDossierContent
+            service={selectedService}
+            onBackToTable={() => setSelectedServiceId(null)}
+            onUpdateDoc={updateServiceDoc}
+          />
+        ) : (
+          <ConceptVaultTable
+            services={services}
+            onSelectService={(id) => setSelectedServiceId(id)}
+          />
+        )}
+      </m.div>
+      );
 };
 
-export default ConceptVault;
+      export default ConceptVault;

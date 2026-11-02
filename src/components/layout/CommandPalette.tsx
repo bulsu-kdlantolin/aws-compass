@@ -27,6 +27,7 @@ interface PaletteItem {
   id: string;
   section: 'Favorited services' | 'Quick actions' | 'Architecture blueprints' | 'AWS services';
   title: string;
+  shortName?: string;
   cliPrefix?: string;
   metadata: string;
   tier?: number;
@@ -34,6 +35,7 @@ interface PaletteItem {
   actionLabel: string;
   icon: React.ReactNode;
   serviceId?: string;
+  category?: string;
   action: () => void;
 }
 
@@ -77,10 +79,12 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
           id: `fav-${svc.id}`,
           section: 'Favorited services',
           title: svc.name,
-          cliPrefix: `aws ${svc.id}`,
+          shortName: svc.shortName,
+          cliPrefix: svc.cliPrefix || `aws ${svc.id}`,
           metadata: `${svc.category} · T${svc.tier}`,
           tier: svc.tier,
           isFavorite: true,
+          category: svc.category,
           actionLabel: 'Open documentation',
           serviceId: svc.id,
           icon: null,
@@ -187,10 +191,12 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
         id: `service-${svc.id}`,
         section: 'AWS services',
         title: svc.name,
-        cliPrefix: `aws ${svc.id}`,
+        shortName: svc.shortName,
+        cliPrefix: svc.cliPrefix || `aws ${svc.id}`,
         metadata: `${svc.category} · T${svc.tier}`,
         tier: svc.tier,
         isFavorite: svc.isFavorite,
+        category: svc.category,
         actionLabel: 'Open documentation',
         serviceId: svc.id,
         icon: null,
@@ -219,17 +225,33 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
   // Filter items matching query
   const filteredItems = useMemo(() => {
     if (!search.trim()) {
-      return allItems;
+      // High-performance default view: keep Favorited, Quick actions, Blueprints,
+      // and slice 'AWS services' to the top 25 foundational items (T1 first, then alphabetical)
+      const nonServices = allItems.filter((item) => item.section !== 'AWS services');
+      const serviceItems = allItems.filter((item) => item.section === 'AWS services');
+
+      const sortedServices = [...serviceItems].sort((a, b) => {
+        if ((a.tier || 3) !== (b.tier || 3)) {
+          return (a.tier || 3) - (b.tier || 3);
+        }
+        return a.title.localeCompare(b.title);
+      });
+
+      const topServices = sortedServices.slice(0, 25);
+      return [...nonServices, ...topServices];
     }
+
     const q = search.toLowerCase().trim();
-    // Exclude the duplicate 'Favorited services' section when actively searching
+    // Exclude the duplicate 'Favorited services' section when actively searching across the 230+ catalog
     return allItems
       .filter((item) => item.section !== 'Favorited services')
       .filter(
         (item) =>
           item.title.toLowerCase().includes(q) ||
+          (item.shortName && item.shortName.toLowerCase().includes(q)) ||
           (item.cliPrefix && item.cliPrefix.toLowerCase().includes(q)) ||
           (item.metadata && item.metadata.toLowerCase().includes(q)) ||
+          (item.category && item.category.toLowerCase().includes(q)) ||
           (item.serviceId && item.serviceId.toLowerCase().includes(q))
       );
   }, [allItems, search]);
@@ -392,6 +414,7 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
                           {item.serviceId ? (
                             <AWSServiceIcon
                               serviceId={item.serviceId}
+                              category={item.category}
                               size={26}
                               className="rounded-[5px] shrink-0"
                             />

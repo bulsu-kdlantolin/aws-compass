@@ -254,5 +254,40 @@ To maintain absolute visual consistency and flexible desktop screen real estate:
   - Mounts a fixed fullscreen pointer shield during drag to prevent cursor flickering over React Flow canvas elements or accidental text selections.
   - Fully accessible with `role="separator"`, `aria-orientation="vertical"`, and arrow-key adjustments.
 
+---
+
+## 15. Cohesive Motion & Fluidity Contract
+
+To eliminate abrupt mounts, static tab switching, and instantaneous layout jumps, the application adheres to the following motion patterns ported from Jakub Krehel's `loading-dev`:
+
+### 15.1. Global Motion Infrastructure (`MotionProvider.tsx` & `motionTokens.ts`)
+- **Bundle-Optimized Motion**: Root is wrapped in `<LazyMotion features={domMax}><MotionConfig reducedMotion="user">{children}</MotionConfig></LazyMotion>`. All animations use lightweight `<m.*>` components from `motion/react`.
+- **Shared Physics-Based Spring Constants**:
+  - `SPRING_SNAPPY`: `{ type: "spring", stiffness: 550, damping: 38, mass: 0.8 }` — for modal overlays, drawer flyouts, and layout shifts.
+  - `SPRING_SMOOTH`: `{ type: "spring", bounce: 0, duration: 0.3 }` — for gliding `layoutId` indicator pills, tabs, and `AnimatedIcon` morphs.
+  - `SPRING_TOC`: `{ type: "spring", stiffness: 800, damping: 80, mass: 2 }` — for table of contents active section tracking.
+- **Anti-Smearing Theme Toggle Protection (`DisableThemeTransitions.tsx`)**:
+  - Injects a temporary `<style>*,*::before,*::after{transition:none !important}</style>` tag when theme switches between light and dark, removing it after two `requestAnimationFrame` ticks to prevent 500+ elements from flashing asynchronously while preserving spring physics during normal interaction.
+
+### 15.2. Gliding `layoutId` Indicators
+- **Navbar Mode Tabs (`TopNavbar.tsx`)**: Mode switch underline (`Concept vault` <-> `Architecture canvas`) glides across tabs using `<m.span layoutId="navbar-active-tab" transition={SPRING_SMOOTH} />`.
+- **Segmented Controls (`SegmentedControl.tsx`)**: Active background pill physically glides across options using `<m.span layoutId={`segmented-${groupId}`} transition={SPRING_SMOOTH} />`.
+- **Inspector Tabs & Settings Rail**: Inspector tabs use `<m.span layoutId="inspector-tab-underline" transition={SPRING_SMOOTH} />` and settings navigation rail uses `<m.span layoutId="settings-nav-pill" transition={SPRING_SMOOTH} />`.
+
+### 15.3. Stateful Morphing with `<AnimatedIcon />`
+- Buttons with binary toggle states (Favorite star outline <-> solid `#FF9900` fill, Copy <-> Checkmark, Sun <-> Moon theme toggle, Chevron expanded <-> collapsed) must wrap icons in `<AnimatedIcon stateKey={...}>`.
+- Transitions use `<AnimatePresence initial={false} mode="popLayout">` with subtle scale (`0.25 -> 1`) and blur (`4px -> 0px`) under `SPRING_SMOOTH`.
+
+### 15.4. Fluid Layouts, Drawers & Accordions
+- **CSS Grid Height Transition for Catalog Accordions**: In `ServiceCatalog.tsx`, category collapse/expand uses `grid transition-[grid-template-rows,opacity] duration-200 ease-out` (`grid-rows-[1fr]` when open, `grid-rows-[0fr]` when closed) instead of unmounting children abruptly.
+- **Split Panel Flyout (`CloudscapeSplitPanel.tsx`)**: Side and bottom inspector flyouts animate through `<AnimatePresence>` and `<m.aside initial={{ width: 0, opacity: 0, x: 24 }} animate={{ width: panelWidth, opacity: 1, x: 0 }} exit={{ width: 0, opacity: 0, x: 24 }} transition={SPRING_SNAPPY}>`.
+- **Floating Dock Morphing (`CanvasFormatBar.tsx`)**: Bottom canvas format bar views (multi-node, single-node, edge properties) wrap in `<m.div layout transition={SPRING_SMOOTH}>` for fluid dimension morphing.
+- **Node Spawning**: Canvas nodes (`AWSServiceNode`, `AWSGroupNode`, `AnnotationNode`) mount with `<m.div initial={{ opacity: 0, scale: 0.88 }} animate={{ opacity: 1, scale: 1 }} transition={SPRING_SNAPPY}>`.
+
+### 15.5. 260ms Auto-Layout Dagre Glide Trick (`withAutoLayoutGlide`)
+- During automated Dagre layout calculations, `withAutoLayoutGlide` injects `.react-flow__node { transition: transform 260ms cubic-bezier(0.2, 0, 0, 1) !important; }` for the exact layout calculation period, gliding all nodes into their new coordinates.
+- The style tag is immediately removed after 260ms so that manual user node dragging remains completely 0ms lag-free without CSS transition overhead.
+
+
 
 

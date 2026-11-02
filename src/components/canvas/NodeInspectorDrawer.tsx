@@ -28,6 +28,8 @@ import { CloudscapeTabs } from '../ui/CloudscapeTabs';
 import { CloudscapeCodeBlock } from '../ui/CloudscapeCodeBlock';
 import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
 import { CloudscapeSelect, type CloudscapeSelectOption } from '../ui/CloudscapeSelect';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
+import { m } from 'motion/react';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { ToggleSwitch } from '../ui/ToggleSwitch';
 import { getVerifiedAWSDocsUrl } from '../../utils/awsDocs';
@@ -48,6 +50,7 @@ const PROTOCOLS: EdgeProtocol[] = [
   'SQL/TCP',
   'gRPC',
   'WebSocket',
+  'MQTT',
 ];
 
 const PROTOCOL_OPTIONS: CloudscapeSelectOption<EdgeProtocol>[] = PROTOCOLS.map((p) => ({
@@ -261,11 +264,13 @@ export const NodeInspectorDrawer: React.FC = () => {
           title={service.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
           aria-label="Toggle favorite"
         >
-          <Star
-            className={`w-4 h-4 transition-transform active:scale-90 ${
-              service.isFavorite ? 'fill-[#FF9900] text-[#FF9900]' : ''
-            }`}
-          />
+          <AnimatedIcon iconKey={service.isFavorite ? 'fav' : 'unfav'} size={16}>
+            <Star
+              className={`w-4 h-4 transition-transform active:scale-90 ${
+                service.isFavorite ? 'fill-[#FF9900] text-[#FF9900]' : ''
+              }`}
+            />
+          </AnimatedIcon>
         </button>
       )}
       <button
@@ -279,6 +284,8 @@ export const NodeInspectorDrawer: React.FC = () => {
     </div>
   ) : null;
 
+  const selectedTargetId = currentNode?.id || currentEdge?.id || 'empty';
+
   return (
     <CloudscapeSplitPanel
       isOpen={isInspectorOpen}
@@ -290,6 +297,7 @@ export const NodeInspectorDrawer: React.FC = () => {
     >
       {/* Flush Underline Tabs */}
       <CloudscapeTabs
+        layoutId="inspector-tab-underline"
         tabs={[
           { id: 'properties', label: 'Properties' },
           {
@@ -308,8 +316,15 @@ export const NodeInspectorDrawer: React.FC = () => {
 
       {/* Flush Property Sheet (No nested bordered cards) */}
       <div className="overflow-y-auto custom-scrollbar flex-1 bg-white dark:bg-[#141C28]">
-        {inspectorActiveTab === 'properties' ? (
-          <div>
+        <m.div
+          key={selectedTargetId}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.16, ease: 'easeOut' }}
+          className="min-h-full"
+        >
+          {inspectorActiveTab === 'properties' ? (
+            <div>
             {/* ================= AWS SERVICE NODE CUSTOMIZER ================= */}
             {currentNode && !currentNode.data.isBoundary && !currentNode.data.isActor && !currentNode.data.isAnnotation && (
               <>
@@ -1016,6 +1031,7 @@ export const NodeInspectorDrawer: React.FC = () => {
             )}
           </div>
         )}
+        </m.div>
       </div>
     </CloudscapeSplitPanel>
   );

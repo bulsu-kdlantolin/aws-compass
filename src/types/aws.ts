@@ -3,13 +3,29 @@
  * Strictly typed interfaces for AWS services, canvas nodes, and diagramming.
  */
 
-export type AWSCategory =
+  export type CanonicalAWSCategory =
   | 'Compute'
+  | 'Containers'
+  | 'Serverless'
   | 'Storage'
   | 'Database'
+  | 'Networking & Content Delivery'
+  | 'Security, Identity & Compliance'
+  | 'Application Integration'
+  | 'Analytics'
+  | 'Machine Learning & AI'
+  | 'Management & Governance'
+  | 'Developer Tools'
+  | 'Migration & Transfer'
+  | 'Front-End Web & Mobile'
+  | 'Internet of Things (IoT)'
+  | 'Cloud Financial Management';
+
+export type AWSCategory =
+  | CanonicalAWSCategory
   | 'Networking'
   | 'Security/IAM'
-  | 'Serverless';
+  | 'Security & IAM';
 
 export type ServiceTier = 1 | 2 | 3;
 
@@ -20,11 +36,34 @@ export type EdgeProtocol =
   | 'VPC PrivateLink'
   | 'SQL/TCP'
   | 'gRPC'
-  | 'WebSocket';
+  | 'WebSocket'
+  | 'MQTT';
+
+export interface AWSCatalogEntry {
+  id: string;
+  name: string;
+  shortName: string;
+  category: AWSCategory;
+  tier: ServiceTier;
+  cliPrefix: string;
+  arnPattern: string;
+  summary: string;
+  primitives: Array<{ name: string; detail: string }>;
+  flow: {
+    upstream: string[];
+    downstream: string[];
+    edgeProtocol: EdgeProtocol;
+    subgraphLabel: string;
+  };
+  gotchas: string[];
+  cliCommands: Array<{ description: string; command: string }>;
+  docsUrl?: string;
+}
 
 export interface AWSService {
   id: string;
   name: string;
+  shortName?: string;
   category: AWSCategory;
   tier: ServiceTier;
   isFavorite: boolean;
@@ -34,6 +73,7 @@ export interface AWSService {
   color?: string;
   arnExample?: string;
   docsUrl?: string;
+  cliPrefix?: string;
   order?: number;
   updatedAt: number;
 }
@@ -145,6 +185,7 @@ export interface CanvasEdgeItem {
   label?: string;
   protocol?: EdgeProtocol;
   animated?: boolean;
+  selected?: boolean;
   style?: Record<string, string | number>;
   data?: CanvasEdgeData;
 }

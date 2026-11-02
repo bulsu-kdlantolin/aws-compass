@@ -2,6 +2,7 @@ import React from 'react';
 import type { AWSService } from '../../types/aws';
 import { GripVertical, Star } from 'lucide-react';
 import { AWSServiceIcon } from '../icons/AWSServiceIcon';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { useCompassStore } from '../../store/useCompassStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 
@@ -111,7 +112,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
       </span>
 
       {/* Official AWS Architecture Icon tile */}
-      <AWSServiceIcon serviceId={service.id} size={isCompact ? 18 : 20} className="shrink-0" />
+      <AWSServiceIcon serviceId={service.id} category={service.category} size={isCompact ? 18 : 20} className="shrink-0" />
 
       {/* Service Name (Sentence case, truncate) */}
       <span className={`${isCompact ? 'text-[12px] leading-[16px]' : 'text-[13px] leading-[18px]'} truncate flex-1 min-w-0`}>
@@ -120,37 +121,38 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
 
       {/* Tier Monospace Label */}
       <span
-        className={`text-[11px] font-mono font-medium tabular-nums shrink-0 ${
-          service.tier === 1
-            ? 'text-[#FF9900]/90'
-            : service.tier === 2
-              ? 'text-[#539FE5]/90'
-              : 'text-[#879596]'
-        }`}
-      >
-        T{service.tier}
-      </span>
-
-      {/* 14px Star Favorite Action Button */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          toggleFavorite(service.id);
-        }}
-        className={`shrink-0 p-0.5 rounded transition-all cursor-pointer ${service.isFavorite
-            ? 'opacity-100 text-[#FF9900]'
-            : 'opacity-0 group-hover:opacity-100 text-[var(--aws-text-muted)] hover:text-[#FF9900]'
+        className={`text-[11px] font-mono font-medium tabular-nums shrink-0 ${service.tier === 1
+          ? 'text-[#FF9900]/90'
+          : service.tier === 2
+            ? 'text-[#539FE5]/90'
+            : 'text-[#879596]'
           }`}
-        title={service.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-        aria-label={service.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
       >
-        <Star
-          className={`w-3.5 h-3.5 transition-transform active:scale-90 ${service.isFavorite ? 'fill-[#FF9900] text-[#FF9900]' : ''
-            }`}
-        />
-      </button>
-    </div>
+      T{service.tier}
+    </span>
+
+      {/* 14px Star Favorite Action Button */ }
+  <button
+    type="button"
+    onClick={(e) => {
+      e.stopPropagation();
+      toggleFavorite(service.id);
+    }}
+    className={`shrink-0 p-0.5 rounded transition-all cursor-pointer ${service.isFavorite
+        ? 'opacity-100 text-[#FF9900]'
+        : 'opacity-0 group-hover:opacity-100 text-[var(--aws-text-muted)] hover:text-[#FF9900]'
+      }`}
+    title={service.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+    aria-label={service.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+  >
+    <AnimatedIcon iconKey={service.isFavorite ? 'fav' : 'unfav'} size={14}>
+      <Star
+        className={`w-3.5 h-3.5 transition-transform active:scale-90 ${service.isFavorite ? 'fill-[#FF9900] text-[#FF9900]' : ''
+          }`}
+      />
+    </AnimatedIcon>
+  </button>
+    </div >
   );
 };
 
