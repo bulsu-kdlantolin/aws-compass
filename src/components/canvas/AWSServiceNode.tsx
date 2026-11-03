@@ -80,132 +80,132 @@ export const AWSServiceNode = memo((props: NodeProps) => {
       title={`${nodeData.customTitle || nodeData.label} - Click to inspect, double-click text to edit`}
     >
       <m.div
-        initial={{ opacity: 0, scale: 0.88 }}
+        initial={false}
         animate={{ opacity: 1, scale: 1 }}
         transition={SPRING_SNAPPY}
         className="flex flex-col items-center w-full"
       >
-      {/* Delete button (hover only) */}
-      <button
-        type="button"
-        onClick={handleDeleteClick}
-        style={{
-          backgroundColor: 'var(--aws-card-bg)',
-          borderColor: 'var(--aws-border)',
-          color: 'var(--aws-text-muted)',
-        }}
-        className="absolute -top-2.5 -right-2 p-0.5 rounded-full border shadow-sm opacity-0 group-hover:opacity-100 hover:text-[#DD344C] hover:border-[#DD344C] transition-opacity cursor-pointer z-20"
-        title="Remove node"
-      >
-        <X className="w-3 h-3" />
-      </button>
-
-      {/* Badges Bar (Environment & AZ) */}
-      <div className="flex items-center gap-1 mb-1 pointer-events-none">
-        {nodeData.env && nodeData.env !== 'None' && (
-          <span
-            style={{ backgroundColor: envColorMap[nodeData.env] || '#545B64' }}
-            className="text-[9px] font-bold text-white uppercase px-1.5 py-0.2 rounded-[3px] tracking-wider shadow-xs"
-          >
-            {nodeData.env}
-          </span>
-        )}
-        {nodeData.az && (
-          <span className="text-[9px] font-mono text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)] px-1 py-0.2 rounded border border-[var(--aws-border)] shadow-xs">
-            {nodeData.az}
-          </span>
-        )}
-      </div>
-
-          {/* Centered 48x48px Official AWS Service or Actor Icon Tile */ }
-          < div
+        {/* Delete button (hover only) */}
+        <button
+          type="button"
+          onClick={handleDeleteClick}
           style={{
-          boxShadow: isCurrentSelected
-            ? '0 0 0 2px #FF9900, 0 4px 12px rgba(255, 153, 0, 0.3)'
-            : '0 2px 8px rgba(0, 0, 0, 0.15)',
-        }}
-        className={`relative w-12 h-12 rounded-[4px] flex items-center justify-center motion-safe:transition-[box-shadow,transform] duration-150 ease-out ${isCurrentSelected ? 'motion-safe:scale-105' : 'motion-safe:hover:scale-105'
-          }`}
+            backgroundColor: 'var(--aws-card-bg)',
+            borderColor: 'var(--aws-border)',
+            color: 'var(--aws-text-muted)',
+          }}
+          className="absolute -top-2.5 -right-2 p-0.5 rounded-full border shadow-sm opacity-0 group-hover:opacity-100 hover:text-[#DD344C] hover:border-[#DD344C] transition-opacity cursor-pointer z-20"
+          title="Remove node"
         >
-        {nodeData.isActor ? (
-          <AWSServiceIcon
-            variant="actor"
-            actorId={nodeData.actorType || 'user-browser'}
-            size={48}
-          />
-        ) : (
-          <AWSServiceIcon
-          serviceId={nodeData.serviceId}
-          category={nodeData.category}
-          size={48}
-          variant="service"
-        />
+          <X className="w-3 h-3" />
+        </button>
+
+        {/* Badges Bar (Environment & AZ) */}
+        <div className="flex items-center gap-1 mb-1 pointer-events-none">
+          {nodeData.env && nodeData.env !== 'None' && (
+            <span
+              style={{ backgroundColor: envColorMap[nodeData.env] || '#545B64' }}
+              className="text-[9px] font-bold text-white uppercase px-1.5 py-0.2 rounded-[3px] tracking-wider shadow-xs"
+            >
+              {nodeData.env}
+            </span>
+          )}
+          {nodeData.az && (
+            <span className="text-[9px] font-mono text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)] px-1 py-0.2 rounded border border-[var(--aws-border)] shadow-xs">
+              {nodeData.az}
+            </span>
+          )}
+        </div>
+
+        {/* Centered 48x48px Official AWS Service or Actor Icon Tile */}
+        < div
+          style={{
+            boxShadow: isCurrentSelected
+              ? '0 0 0 2px #FF9900, 0 4px 12px rgba(255, 153, 0, 0.3)'
+              : '0 2px 8px rgba(0, 0, 0, 0.15)',
+          }}
+          className={`relative w-12 h-12 rounded-[4px] flex items-center justify-center motion-safe:transition-[box-shadow,transform] duration-150 ease-out ${isCurrentSelected ? 'motion-safe:scale-105' : 'motion-safe:hover:scale-105'
+            }`}
+        >
+          {nodeData.isActor ? (
+            <AWSServiceIcon
+              variant="actor"
+              actorId={nodeData.actorType || 'user-browser'}
+              size={48}
+            />
+          ) : (
+            <AWSServiceIcon
+              serviceId={nodeData.serviceId}
+              category={nodeData.category}
+              size={48}
+              variant="service"
+            />
           )}
 
-      {/* 4-Way Directional Connection Handles with Explicit IDs */}
-      <Handle
-        type="source"
-        position={Position.Top}
-        id="top"
-        isConnectable={true}
-        style={{ backgroundColor: 'var(--aws-interactive)' }}
-        className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-        title="Connect (Top)"
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="right"
-        isConnectable={true}
-        style={{ backgroundColor: 'var(--aws-interactive)' }}
-        className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-        title="Connect (Right)"
-      />
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        id="bottom"
-        isConnectable={true}
-        style={{ backgroundColor: 'var(--aws-interactive)' }}
-        className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-        title="Connect (Bottom)"
-      />
-      <Handle
-        type="source"
-        position={Position.Left}
-        id="left"
-        isConnectable={true}
-        style={{ backgroundColor: 'var(--aws-interactive)' }}
-        className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-        title="Connect (Left)"
-      />
-    </div>
+          {/* 4-Way Directional Connection Handles with Explicit IDs */}
+          <Handle
+            type="source"
+            position={Position.Top}
+            id="top"
+            isConnectable={true}
+            style={{ backgroundColor: 'var(--aws-interactive)' }}
+            className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Connect (Top)"
+          />
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="right"
+            isConnectable={true}
+            style={{ backgroundColor: 'var(--aws-interactive)' }}
+            className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Connect (Right)"
+          />
+          <Handle
+            type="source"
+            position={Position.Bottom}
+            id="bottom"
+            isConnectable={true}
+            style={{ backgroundColor: 'var(--aws-interactive)' }}
+            className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Connect (Bottom)"
+          />
+          <Handle
+            type="source"
+            position={Position.Left}
+            id="left"
+            isConnectable={true}
+            style={{ backgroundColor: 'var(--aws-interactive)' }}
+            className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Connect (Left)"
+          />
+        </div>
 
-            {/* Service Title (12px bold sentence case, double-click inline edit) */ }
-            <div className="mt-2 w-full flex justify-center">
-              {isEditingTitle ? (
-                <div className="flex items-center gap-1 w-full px-1">
-                  <input
-                    type="text"
-                    value={titleDraft}
-                    onChange={(e) => setTitleDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleCommitTitle();
-                      if (e.key === 'Escape') setIsEditingTitle(false);
-                    }}
-                    onBlur={() => handleCommitTitle()}
-                    autoFocus
-                    className="w-full text-center text-[12px] font-bold bg-[var(--aws-card-bg)] text-[var(--aws-text-primary)] border border-[var(--aws-interactive)] rounded px-1 py-0.5 outline-none shadow-xs"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleCommitTitle}
-                    className="text-[#1D8102] hover:opacity-80 p-0.5"
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ) : (
+        {/* Service Title (12px bold sentence case, double-click inline edit) */}
+        <div className="mt-2 w-full flex justify-center">
+          {isEditingTitle ? (
+            <div className="flex items-center gap-1 w-full px-1">
+              <input
+                type="text"
+                value={titleDraft}
+                onChange={(e) => setTitleDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCommitTitle();
+                  if (e.key === 'Escape') setIsEditingTitle(false);
+                }}
+                onBlur={() => handleCommitTitle()}
+                autoFocus
+                className="w-full text-center text-[12px] font-bold bg-[var(--aws-card-bg)] text-[var(--aws-text-primary)] border border-[var(--aws-interactive)] rounded px-1 py-0.5 outline-none shadow-xs"
+              />
+              <button
+                type="button"
+                onClick={handleCommitTitle}
+                className="text-[#1D8102] hover:opacity-80 p-0.5"
+              >
+                <Check className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
             <div
               onDoubleClick={(e) => {
                 e.stopPropagation();
@@ -217,35 +217,35 @@ export const AWSServiceNode = memo((props: NodeProps) => {
               title="Double-click to edit title"
             >
               {nodeData.customTitle || nodeData.label}
-  </div>
+            </div>
           )}
         </div >
 
-            {/* Resource Identifier / Subtitle (11px monospace, line-clamp-2, double-click inline edit) */ }
-            <div className="mt-0.5 w-full flex justify-center">
-              {isEditingSubtitle ? (
-                <div className="flex items-center gap-1 w-full px-1">
-                  <input
-                    type="text"
-                    value={subtitleDraft}
-                    onChange={(e) => setSubtitleDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleCommitSubtitle();
-                      if (e.key === 'Escape') setIsEditingSubtitle(false);
-                    }}
-                    onBlur={() => handleCommitSubtitle()}
-                    autoFocus
-                    className="w-full text-center text-[11px] font-mono bg-[var(--aws-card-bg)] text-[var(--aws-text-muted)] border border-[var(--aws-interactive)] rounded px-1 py-0.5 outline-none shadow-xs"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleCommitSubtitle}
-                    className="text-[#1D8102] hover:opacity-80 p-0.5"
-                  >
-                    <Check className="w-3 h-3" />
-                  </button>
-                </div>
-              ) : (
+        {/* Resource Identifier / Subtitle (11px monospace, line-clamp-2, double-click inline edit) */}
+        <div className="mt-0.5 w-full flex justify-center">
+          {isEditingSubtitle ? (
+            <div className="flex items-center gap-1 w-full px-1">
+              <input
+                type="text"
+                value={subtitleDraft}
+                onChange={(e) => setSubtitleDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCommitSubtitle();
+                  if (e.key === 'Escape') setIsEditingSubtitle(false);
+                }}
+                onBlur={() => handleCommitSubtitle()}
+                autoFocus
+                className="w-full text-center text-[11px] font-mono bg-[var(--aws-card-bg)] text-[var(--aws-text-muted)] border border-[var(--aws-interactive)] rounded px-1 py-0.5 outline-none shadow-xs"
+              />
+              <button
+                type="button"
+                onClick={handleCommitSubtitle}
+                className="text-[#1D8102] hover:opacity-80 p-0.5"
+              >
+                <Check className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
             <div
               onDoubleClick={(e) => {
                 e.stopPropagation();
@@ -259,19 +259,19 @@ export const AWSServiceNode = memo((props: NodeProps) => {
               {nodeData.roleSubtitle || nodeData.customNotes || (nodeData.isActor ? 'Actor' : nodeData.serviceId)}
             </div>
           )
-  }
+          }
         </div >
 
-  {/* Custom Metadata Pill (e.g. 10.0.1.24 or kms:Encrypted) */ }
-{
-  nodeData.metadataPill && (
-    <div className="mt-1">
-      <span className="text-[10px] font-mono text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)] px-1.5 py-0.5 rounded-[4px] border border-[var(--aws-border)] shadow-xs max-w-[130px] truncate block text-center">
-        {nodeData.metadataPill}
-      </span>
-    </div>
-  )
-}
+        {/* Custom Metadata Pill (e.g. 10.0.1.24 or kms:Encrypted) */}
+        {
+          nodeData.metadataPill && (
+            <div className="mt-1">
+              <span className="text-[10px] font-mono text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)] px-1.5 py-0.5 rounded-[4px] border border-[var(--aws-border)] shadow-xs max-w-[130px] truncate block text-center">
+                {nodeData.metadataPill}
+              </span>
+            </div>
+          )
+        }
       </m.div >
     </div >
   );

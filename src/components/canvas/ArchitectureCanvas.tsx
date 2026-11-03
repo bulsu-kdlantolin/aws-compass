@@ -70,7 +70,6 @@ const ArchitectureCanvasInner: React.FC = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const reactFlowInstance = useReactFlow();
 
-  const services = useCompassStore((s) => s.services);
   const theme = useCompassStore((s) => s.theme);
 
   const nodes = useCanvasStore((s) => s.nodes);
@@ -321,7 +320,12 @@ const ArchitectureCanvasInner: React.FC = () => {
     };
   }, [isCanvasPanning]);
 
+  const isFirstFullscreenMountRef = useRef(true);
   useEffect(() => {
+    if (isFirstFullscreenMountRef.current) {
+      isFirstFullscreenMountRef.current = false;
+      return;
+    }
     // When toggling fullscreen / Zen mode, smoothly re-fit the canvas to new bounds
     const timer = setTimeout(() => {
       reactFlowInstance.fitView({ padding: 0.18, duration: 250 });
@@ -500,8 +504,9 @@ const ArchitectureCanvasInner: React.FC = () => {
           const stencil = JSON.parse(stencilJson);
           if (stencil && typeof stencil === 'object') {
             if (stencil.type === 'service' && stencil.serviceId) {
+              const liveServices = useCompassStore.getState().services;
               const service =
-                services.find((s) => s.id === stencil.serviceId) ||
+                liveServices.find((s) => s.id === stencil.serviceId) ||
                 SEED_SERVICES.find((s) => s.id === stencil.serviceId);
               if (service) {
                 addServiceNode(service, position);
@@ -536,15 +541,16 @@ const ArchitectureCanvasInner: React.FC = () => {
           : null);
 
       if (targetServiceId) {
+        const liveServices = useCompassStore.getState().services;
         const service =
-          services.find((s) => s.id === targetServiceId) ||
+          liveServices.find((s) => s.id === targetServiceId) ||
           SEED_SERVICES.find((s) => s.id === targetServiceId);
         if (service) {
           addServiceNode(service, position);
         }
       }
     },
-    [reactFlowInstance, services, addServiceNode, addBoundaryNode, addExternalActor, addAnnotationNode]
+    [reactFlowInstance, addServiceNode, addBoundaryNode, addExternalActor, addAnnotationNode]
   );
 
   // Dynamic Group Nesting when node is dragged into boundary container

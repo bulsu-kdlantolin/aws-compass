@@ -147,7 +147,7 @@ export const AnnotationNode = memo((props: NodeProps) => {
           }`}
       >
         <m.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={false}
           animate={{ opacity: 1, scale: 1 }}
           transition={SPRING_SNAPPY}
           className="w-full h-full flex items-center"
@@ -160,16 +160,16 @@ export const AnnotationNode = memo((props: NodeProps) => {
             handleClassName="!w-2 !h-2 !bg-[var(--aws-brand)] !border-none !rounded-none"
           />
 
-              {!isEditing && (
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  style={{ color: 'var(--aws-text-muted)' }}
-                  className="absolute -top-2 -right-2 p-0.5 rounded-full bg-[var(--aws-card-bg)] border border-[var(--aws-border)] hover:text-[#DD344C] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
-                  title="Delete text block"
-                >
-                  <X className="w-3 h-3" />
-                </button>
+          {!isEditing && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              style={{ color: 'var(--aws-text-muted)' }}
+              className="absolute -top-2 -right-2 p-0.5 rounded-full bg-[var(--aws-card-bg)] border border-[var(--aws-border)] hover:text-[#DD344C] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+              title="Delete text block"
+            >
+              <X className="w-3 h-3" />
+            </button>
           )}
 
           {isEditing ? (
@@ -223,7 +223,7 @@ export const AnnotationNode = memo((props: NodeProps) => {
         }`}
     >
       <m.div
-        initial={{ opacity: 0, scale: 0.88 }}
+        initial={false}
         animate={{ opacity: 1, scale: 1 }}
         transition={SPRING_SNAPPY}
         className="w-full h-full flex flex-col"
@@ -318,7 +318,7 @@ export const AnnotationNode = memo((props: NodeProps) => {
               )}
             </p>
           )}
-    </div>
+        </div>
       </m.div >
     </div >
   );

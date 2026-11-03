@@ -46,15 +46,17 @@
         color: #EAEDED;
       }
 
-      /* Pre-React Zero-Flash Compass Keyframes */
-      @keyframes compass-seek {
+      /* Pre-React Zero-Flash Official Compass Keyframes */
+      @keyframes compass-spin-real {
         0% { transform: rotate(0deg); }
-        14% { transform: rotate(-35deg); }
-        42% { transform: rotate(110deg); }
-        62% { transform: rotate(30deg); }
-        78% { transform: rotate(52deg); }
-        88% { transform: rotate(45deg); }
-        100% { transform: rotate(405deg); }
+        35% { transform: rotate(395deg); }
+        50% { transform: rotate(335deg); }
+        65% { transform: rotate(372deg); }
+        78% { transform: rotate(354deg); }
+        88% { transform: rotate(362deg); }
+        94% { transform: rotate(360deg); }
+        97% { transform: rotate(361.5deg); }
+        100% { transform: rotate(360deg); }
       }
       @keyframes compass-track-rot {
         0% { transform: rotate(0deg); }
@@ -65,12 +67,12 @@
         100% { transform: translateX(300%); }
       }
       .pre-needle {
-        transform-origin: 36px 36px;
-        animation: compass-seek 2.8s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+        transform-origin: 12px 12px;
+        animation: compass-spin-real 3.2s ease-in-out infinite;
       }
       .pre-track {
-        transform-origin: 36px 36px;
-        animation: compass-track-rot 20s linear infinite;
+        transform-origin: 42px 42px;
+        animation: compass-track-rot 24s linear infinite;
       }
       .pre-shimmer {
         animation: compass-shimmer 1.4s ease-in-out infinite;
@@ -78,7 +80,7 @@
       @media (prefers-reduced-motion: reduce) {
         .pre-needle {
           animation: none !important;
-          transform: rotate(45deg);
+          transform: rotate(0deg);
         }
         .pre-track, .pre-shimmer {
           animation: none !important;
@@ -105,44 +107,59 @@
   <body>
     <div id="root">
       <div style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;user-select:none;">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:1.25rem;max-width:20rem;width:100%;">
-          <div style="position:relative;width:72px;height:72px;display:flex;align-items:center;justify-content:center;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:1.5rem;max-width:20rem;width:100%;">
+          <div style="position:relative;width:84px;height:84px;display:flex;align-items:center;justify-content:center;">
             <!-- Ambient Glow -->
-            <div style="position:absolute;inset:-12px;border-radius:9999px;background:rgba(255,153,0,0.12);filter:blur(16px);pointer-events:none;"></div>
+            <div style="position:absolute;inset:-16px;border-radius:9999px;background:rgba(255,153,0,0.18);filter:blur(20px);pointer-events:none;"></div>
             
-            <!-- Degree Track -->
-            <svg width="72" height="72" viewBox="0 0 72 72" style="position:absolute;inset:0;pointer-events:none;" class="pre-track">
-              <circle cx="36" cy="36" r="34" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="2 6" opacity="0.4"></circle>
+            <!-- Outer Degree Track -->
+            <svg width="84" height="84" viewBox="0 0 84 84" style="position:absolute;inset:0;pointer-events:none;" class="pre-track">
+              <circle cx="42" cy="42" r="40" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="2 6" opacity="0.5"></circle>
             </svg>
 
-            <!-- Isometric AWS Hexagon Cube -->
-            <svg width="72" height="72" viewBox="0 0 72 72" fill="none" style="position:absolute;inset:0;pointer-events:none;">
-              <polygon points="36,18 51.6,27 36,36 20.4,27" fill="#FF9900" fill-opacity="0.14"></polygon>
-              <polygon points="20.4,27 36,36 36,54 20.4,45" fill="#232F3E" fill-opacity="0.5"></polygon>
-              <polygon points="51.6,27 36,36 36,54 51.6,45" fill="#16191F" fill-opacity="0.75"></polygon>
-              <path d="M 36,18 L 51.6,27 L 51.6,45 L 36,54 L 20.4,45 L 20.4,27 Z" stroke="#545B64" stroke-width="1.25" stroke-linejoin="round" fill="none"></path>
-              <line x1="36" y1="36" x2="36" y2="54" stroke="#545B64" stroke-width="1" opacity="0.6"></line>
-              <line x1="36" y1="36" x2="20.4" y2="27" stroke="#545B64" stroke-width="1" opacity="0.6"></line>
-              <line x1="36" y1="36" x2="51.6" y2="27" stroke="#545B64" stroke-width="1" opacity="0.6"></line>
-            </svg>
-
-            <!-- Magnetic Seeking Needle -->
-            <svg width="72" height="72" viewBox="0 0 72 72" style="position:absolute;inset:0;pointer-events:none;" class="pre-needle">
-              <polygon points="36,15 33,36 36,36" fill="#ED7100"></polygon>
-              <polygon points="36,15 36,36 39,36" fill="#FF9900"></polygon>
-              <polygon points="36,57 33,36 36,36" fill="#D5DBDB"></polygon>
-              <polygon points="36,57 36,36 39,36" fill="#FFFFFF"></polygon>
-              <circle cx="36" cy="36" r="3.5" fill="#0F141A" stroke="#FF9900" stroke-width="1"></circle>
-              <circle cx="36" cy="36" r="1.2" fill="#FF9900"></circle>
-            </svg>
+            <!-- Official AWS Compass Logo -->
+            <div style="position:relative;width:72px;height:72px;display:flex;align-items:center;justify-content:center;border-radius:9999px;box-shadow:0 12px 32px rgba(255,153,0,0.3);">
+              <svg width="72" height="72" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
+                <!-- Outer Casing -->
+                <circle cx="12" cy="12" r="11" fill="#FF9900" stroke="rgba(255, 255, 255, 0.35)" stroke-width="0.8"></circle>
+                <!-- Precision Ring -->
+                <circle cx="12" cy="12" r="9.5" stroke="#0F141A" stroke-width="0.8" opacity="0.8" fill="none"></circle>
+                <!-- Azimuth Track -->
+                <circle cx="12" cy="12" r="7.75" stroke="#0F141A" stroke-width="0.5" stroke-dasharray="0.8 1.2" opacity="0.45" fill="none"></circle>
+                <!-- Cardinal Ticks -->
+                <line x1="12" y1="1.6" x2="12" y2="4.2" stroke="#0F141A" stroke-width="1.2" stroke-linecap="round"></line>
+                <line x1="12" y1="19.8" x2="12" y2="22.4" stroke="#0F141A" stroke-width="1.2" stroke-linecap="round"></line>
+                <line x1="1.6" y1="12" x2="4.2" y2="12" stroke="#0F141A" stroke-width="1.2" stroke-linecap="round"></line>
+                <line x1="19.8" y1="12" x2="22.4" y2="12" stroke="#0F141A" stroke-width="1.2" stroke-linecap="round"></line>
+                <!-- Ordinal Ticks -->
+                <line x1="17.6" y1="6.4" x2="19.2" y2="4.8" stroke="#0F141A" stroke-width="0.8" stroke-linecap="round" opacity="0.7"></line>
+                <line x1="17.6" y1="17.6" x2="19.2" y2="19.2" stroke="#0F141A" stroke-width="0.8" stroke-linecap="round" opacity="0.7"></line>
+                <line x1="6.4" y1="17.6" x2="4.8" y2="19.2" stroke="#0F141A" stroke-width="0.8" stroke-linecap="round" opacity="0.7"></line>
+                <line x1="6.4" y1="6.4" x2="4.8" y2="4.8" stroke="#0F141A" stroke-width="0.8" stroke-linecap="round" opacity="0.7"></line>
+                <!-- Spinning Compass Needle -->
+                <g class="pre-needle">
+                  <polygon points="12,12 10.2,10.2 17,7 13.8,13.8" fill="#0F141A"></polygon>
+                  <polygon points="12,12 13.8,13.8 7,17 10.2,10.2" fill="#FFFFFF"></polygon>
+                  <circle cx="12" cy="12" r="1.35" fill="#FF9900" stroke="#0F141A" stroke-width="0.6"></circle>
+                  <circle cx="12" cy="12" r="0.5" fill="#0F141A"></circle>
+                </g>
+              </svg>
+            </div>
           </div>
 
-          <div style="display:flex;flex-direction:column;align-items:center;gap:0.375rem;text-align:center;">
-            <div style="font-size:15px;font-weight:700;letter-spacing:-0.01em;">AWS Compass</div>
-            <div style="font-size:12px;font-family:monospace;opacity:0.75;">Mounting IndexedDB catalog…</div>
-            <div style="width:120px;height:2px;border-radius:9999px;overflow:hidden;background:rgba(213,219,219,0.3);margin-top:0.25rem;position:relative;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;text-align:center;">
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <span style="font-size:16px;font-weight:700;letter-spacing:-0.01em;">AWS Compass</span>
+              <span style="font-size:10px;font-family:monospace;padding:0.125rem 0.375rem;border-radius:0.25rem;background:rgba(255,153,0,0.15);color:#FF9900;font-weight:600;text-transform:uppercase;">Studio</span>
+            </div>
+            <div style="font-size:12px;font-weight:500;opacity:0.8;">Loading AWS Architecture Studio…</div>
+            <div style="width:140px;height:2.5px;border-radius:9999px;overflow:hidden;background:rgba(213,219,219,0.3);margin-top:0.25rem;position:relative;">
               <div class="pre-shimmer" style="height:100%;width:33.333%;background:#FF9900;border-radius:9999px;"></div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
           </div>
         </div>
       </div>

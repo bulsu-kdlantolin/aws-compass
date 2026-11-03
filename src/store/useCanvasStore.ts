@@ -203,6 +203,7 @@ export interface CanvasState {
   deleteSnapshot: (diagramId: string) => Promise<void>;
   refreshSavedDiagrams: () => Promise<void>;
   initializeCanvas: () => Promise<void>;
+  isCanvasInitialized: boolean;
 
   // Auto Layout
   autoLayout: (direction?: 'LR' | 'TB') => void;
@@ -223,6 +224,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   savedDiagrams: [],
   saveStatus: 'idle',
   clipboard: null,
+  isCanvasInitialized: false,
 
   // Fullscreen / Zen Mode
   isCanvasFullscreen: false,
@@ -321,6 +323,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   initializeCanvas: async () => {
+    if (get().isCanvasInitialized) return;
     try {
       const allSaved = await dbGetAllDiagrams();
       const userSaved = allSaved.filter((d) => d.id !== 'active-canvas-diagram');
@@ -342,6 +345,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             edges: isKnownBlueprint.edges,
             activeDiagramId: isKnownBlueprint.id,
             activeDiagramName: isKnownBlueprint.name,
+            isCanvasInitialized: true,
           });
           scheduleDebouncedAutoSave(isKnownBlueprint.nodes, isKnownBlueprint.edges, set);
           return;
@@ -352,10 +356,14 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
           edges: activeAutoSave.edges,
           activeDiagramId: 'active-canvas-diagram',
           activeDiagramName: activeAutoSave.name || 'Active Canvas',
+          isCanvasInitialized: true,
         });
+      } else {
+        set({ isCanvasInitialized: true });
       }
     } catch {
       // Fallback to default template
+      set({ isCanvasInitialized: true });
     }
   },
 

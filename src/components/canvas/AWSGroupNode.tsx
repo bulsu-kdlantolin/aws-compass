@@ -215,8 +215,8 @@ export const AWSGroupNode = memo((props: NodeProps) => {
       </div>
 
       {/* Flush Top-Left Official Group Badge */}
-        <m.div
-        initial={{ opacity: 0, scale: 0.94 }}
+      <m.div
+        initial={false}
         animate={{ opacity: 1, scale: 1 }}
         transition={SPRING_SNAPPY}
         onClick={handleHeaderClick}
@@ -283,7 +283,7 @@ export const AWSGroupNode = memo((props: NodeProps) => {
         >
           <X className="w-3.5 h-3.5" />
         </button>
-    </m.div>
+      </m.div>
     </div >
   );
 });

@@ -35,6 +35,7 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     initialize();
+    useCanvasStore.getState().initializeCanvas();
     const timer = setTimeout(() => {
       setIsMinBootPassed(true);
     }, 450);
@@ -109,96 +110,108 @@ export const App: React.FC = () => {
 
   return (
     <MotionProvider>
-        <DisableThemeTransitions />
-        <AnimatePresence mode="wait">
-          {isBooting ? (
-            <CompassBootScreen key="boot-screen" />
-          ) : (
-            <m.div
-              key="workspace-shell"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.24, ease: [0.2, 0, 0, 1] }}
-              style={{
-                backgroundColor: 'var(--aws-page-bg)',
-                color: 'var(--aws-text-primary)',
-              }}
-              className="flex flex-col w-screen h-screen overflow-hidden font-sans"
-            >
-              {/* Top Application Bar (Hidden in Canvas Fullscreen / Zen Mode) */}
-              {(!isCanvasFullscreen || workspaceMode !== 'canvas') && (
-                <Navbar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
-              )}
+      <DisableThemeTransitions />
+      <AnimatePresence mode="wait">
+        {isBooting ? (
+          <CompassBootScreen key="boot-screen" />
+        ) : (
+          <m.div
+            key="workspace-shell"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.24, ease: [0.2, 0, 0, 1] }}
+            style={{
+              backgroundColor: 'var(--aws-page-bg)',
+              color: 'var(--aws-text-primary)',
+            }}
+            className="flex flex-col w-screen h-screen overflow-hidden font-sans"
+          >
+            {/* Top Application Bar (Hidden in Canvas Fullscreen / Zen Mode) */}
+            {(!isCanvasFullscreen || workspaceMode !== 'canvas') && (
+              <Navbar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
+            )}
 
-              {/* Main App Body */}
-              <div className="flex flex-1 overflow-hidden relative">
-                {/* Service Catalog Sidebar (Only active & usable in Concept Vault) with smooth width/opacity glide */}
-                {workspaceMode === 'vault' && (
-                  <div
-                    style={{
-                      width: isSidebarOpen ? `${sidebarWidth}px` : '0px',
-                    }}
-                    className={`h-full shrink-0 relative overflow-hidden transition-[width,opacity,transform] duration-250 ease-[cubic-bezier(0.2,0,0,1)] ${isSidebarOpen
-                        ? 'opacity-100 translate-x-0'
-                        : 'opacity-0 -translate-x-4 pointer-events-none'
-                      }`}
-                  >
-                    <ServiceCatalog />
-                  </div>
-                )}
-
-                {/* Collapsed Sidebar Docked Trigger (Only shown in Concept Vault) */}
-                <AnimatePresence>
-                  {workspaceMode === 'vault' && !isSidebarOpen && (
-                    <m.button
-                      initial={{ opacity: 0, x: -12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -12 }}
-                      transition={SPRING_SMOOTH}
-                      type="button"
-                      onClick={toggleSidebar}
-                      className="absolute left-0 top-2 z-30 h-8 pl-2.5 pr-3 rounded-r-[6px] bg-[var(--aws-card-bg)] border-y border-r border-[var(--aws-border)] shadow-md hover:border-[#FF9900] text-[var(--aws-text-primary)] hover:text-[#FF9900] flex items-center gap-1.5 transition-all duration-150 cursor-pointer group"
-                      title="Open service catalog"
-                      aria-label="Open service catalog"
-                    >
-                      <ChevronRight
-                        className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[#FF9900] transition-colors"
-                        strokeWidth={2}
-                      />
-                      <span className="text-[11px] font-semibold tracking-wide">Catalog</span>
-                    </m.button>
-                  )}
-                </AnimatePresence>
-
-                {/* Workspace Area: Concept Vault or Architecture Canvas with Crossfade */}
-                <main className="flex-1 h-full overflow-hidden relative">
-                  <m.div
-                    key={workspaceMode}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.16, ease: [0.2, 0, 0, 1] }}
-                    className="w-full h-full"
-                  >
-                    {workspaceMode === 'vault' ? (
-                      <ConceptVault />
-                    ) : (
-                      <ArchitectureCanvas />
-                    )}
-                  </m.div>
-                </main>
+            {/* Main App Body */}
+            <div className="flex flex-1 overflow-hidden relative">
+              {/* Service Catalog Sidebar (Only active & usable in Concept Vault) with smooth width/opacity glide */}
+              <div
+                style={{
+                  width: workspaceMode === 'vault' && isSidebarOpen ? `${sidebarWidth}px` : '0px',
+                }}
+                className={`h-full shrink-0 relative overflow-hidden transition-[width,opacity,transform] duration-250 ease-[cubic-bezier(0.2,0,0,1)] ${workspaceMode === 'vault' && isSidebarOpen
+                    ? 'opacity-100 translate-x-0'
+                    : 'opacity-0 -translate-x-4 pointer-events-none'
+                  }`}
+                aria-hidden={workspaceMode !== 'vault' || !isSidebarOpen}
+              >
+                <ServiceCatalog />
               </div>
 
-              {/* Global Command Palette (Ctrl+K) */}
-              <CommandPalette
-                isOpen={isCommandPaletteOpen}
-                onClose={() => setIsCommandPaletteOpen(false)}
-              />
+              {/* Collapsed Sidebar Docked Trigger (Only shown in Concept Vault) */}
+              <AnimatePresence>
+                {workspaceMode === 'vault' && !isSidebarOpen && (
+                  <m.button
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -12 }}
+                    transition={SPRING_SMOOTH}
+                    type="button"
+                    onClick={toggleSidebar}
+                    className="absolute left-0 top-2 z-30 h-8 pl-2.5 pr-3 rounded-r-[6px] bg-[var(--aws-card-bg)] border-y border-r border-[var(--aws-border)] shadow-md hover:border-[#FF9900] text-[var(--aws-text-primary)] hover:text-[#FF9900] flex items-center gap-1.5 transition-all duration-150 cursor-pointer group"
+                    title="Open service catalog"
+                    aria-label="Open service catalog"
+                  >
+                    <ChevronRight
+                      className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[#FF9900] transition-colors"
+                      strokeWidth={2}
+                    />
+                    <span className="text-[11px] font-semibold tracking-wide">Catalog</span>
+                  </m.button>
+                )}
+              </AnimatePresence>
 
-        {/* Global Settings Modal (Ctrl+,) */}
-        <SettingsModal />
-      </m.div>
-        )}
-    </AnimatePresence>
+              {/* Workspace Area: Concept Vault or Architecture Canvas (Preserved instances for zero-lag switching) */}
+              <main className="flex-1 h-full overflow-hidden relative">
+                  <div
+                  className={`w-full h-full ${workspaceMode === 'vault'
+                      ? 'relative z-10 opacity-100 pointer-events-auto'
+                      : 'absolute inset-0 pointer-events-none opacity-0 -z-10'
+                    }`}
+                  style={{
+                    visibility: workspaceMode === 'vault' ? 'visible' : 'hidden',
+                  }}
+                  aria-hidden={workspaceMode !== 'vault'}
+                >
+                <ConceptVault />
+            </div>
+
+            <div
+              className={`w-full h-full ${workspaceMode === 'canvas'
+                  ? 'relative z-10 opacity-100 pointer-events-auto'
+                  : 'absolute inset-0 pointer-events-none opacity-0 -z-10'
+                }`}
+              style={{
+                visibility: workspaceMode === 'canvas' ? 'visible' : 'hidden',
+              }}
+              aria-hidden={workspaceMode !== 'canvas'}
+            >
+              <ArchitectureCanvas />
+            </div>
+          </main>
+              </div>
+
+      {/* Global Command Palette (Ctrl+K) */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+      />
+
+      {/* Global Settings Modal (Ctrl+,) */}
+      <SettingsModal />
+    </m.div>
+  )
+}
+    </AnimatePresence >
     </MotionProvider >
   );
 };
