@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useRef, useState, useEffect, memo } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -1161,12 +1161,12 @@ const ArchitectureCanvasInner: React.FC = () => {
   );
 };
 
-export const ArchitectureCanvas: React.FC = () => {
-  return (
-    <ReactFlowProvider>
-      <ArchitectureCanvasInner />
-    </ReactFlowProvider>
-  );
-};
+  export const ArchitectureCanvas: React.FC = memo(() => {
+    return (
+      <ReactFlowProvider>
+        <ArchitectureCanvasInner />
+      </ReactFlowProvider>
+    );
+});
 
 export default ArchitectureCanvas;

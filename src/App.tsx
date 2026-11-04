@@ -1,9 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useCompassStore } from './store/useCompassStore';
 import { useCanvasStore } from './store/useCanvasStore';
 import { Navbar } from './components/layout/Navbar';
-import { ServiceCatalog } from './components/catalog/ServiceCatalog';
 import { ConceptVault } from './components/vault/ConceptVault';
 import { ArchitectureCanvas } from './components/canvas/ArchitectureCanvas';
 import { CommandPalette } from './components/layout/CommandPalette';
@@ -13,19 +11,13 @@ import { MotionProvider } from './components/ui/MotionProvider';
 import { CompassBootScreen } from './components/ui/CompassBootScreen';
 import { useSettingsStore } from './store/useSettingsStore';
 import { AnimatePresence, m } from 'motion/react';
-import { SPRING_SMOOTH } from './utils/motionTokens';
 
 export const App: React.FC = () => {
-  const {
-    isDbLoaded,
-    isSidebarOpen,
-    sidebarWidth,
-    toggleSidebar,
-    workspaceMode,
-    services,
-    selectedServiceId,
-    initialize,
-  } = useCompassStore();
+  const isDbLoaded = useCompassStore((s) => s.isDbLoaded);
+  const workspaceMode = useCompassStore((s) => s.workspaceMode);
+  const selectedServiceId = useCompassStore((s) => s.selectedServiceId);
+  const initialize = useCompassStore((s) => s.initialize);
+
   const activeDiagramName = useCanvasStore((s) => s.activeDiagramName);
   const isCanvasFullscreen = useCanvasStore((s) => s.isCanvasFullscreen);
   const setIsCanvasFullscreen = useCanvasStore((s) => s.setIsCanvasFullscreen);
@@ -55,6 +47,7 @@ export const App: React.FC = () => {
       const blueprintName = activeDiagramName || 'Architecture Canvas';
       document.title = `${blueprintName} · Architecture Canvas · AWS Compass`;
     } else {
+      const services = useCompassStore.getState().services;
       const selectedService = services.find((s) => s.id === selectedServiceId);
       if (selectedService) {
         const short = (selectedService as any).shortName;
@@ -64,141 +57,101 @@ export const App: React.FC = () => {
         document.title = 'Concept Vault · AWS Compass';
       }
     }
-  }, [isDbLoaded, workspaceMode, selectedServiceId, services, activeDiagramName]);
+}, [isDbLoaded, workspaceMode, selectedServiceId, activeDiagramName]);
 
-  // Global Keyboard Shortcuts (Ctrl+K Command Palette, Ctrl+, Settings, Shift+F Fullscreen)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setIsCommandPaletteOpen((prev) => !prev);
-      } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {
-        e.preventDefault();
-        openSettings();
-      } else if (e.shiftKey && e.key.toLowerCase() === 'f' && workspaceMode === 'canvas') {
-        e.preventDefault();
-        useCanvasStore.getState().toggleCanvasFullscreen();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [openSettings, workspaceMode]);
-
-  // Sync browser fullscreen API
-  useEffect(() => {
-    if (workspaceMode !== 'canvas') return;
-
-    if (isCanvasFullscreen) {
-      if (typeof document !== 'undefined' && !document.fullscreenElement) {
-        document.documentElement.requestFullscreen?.().catch(() => { });
-      }
-    } else {
-      if (typeof document !== 'undefined' && document.fullscreenElement) {
-        document.exitFullscreen?.().catch(() => { });
-      }
+// Global Keyboard Shortcuts (Ctrl+K Command Palette, Ctrl+, Settings, Shift+F Fullscreen)
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      setIsCommandPaletteOpen((prev) => !prev);
+    } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+      e.preventDefault();
+      openSettings();
+    } else if (e.shiftKey && e.key.toLowerCase() === 'f' && workspaceMode === 'canvas') {
+      e.preventDefault();
+      useCanvasStore.getState().toggleCanvasFullscreen();
     }
+  };
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, [openSettings, workspaceMode]);
 
-    const handleFullscreenChange = () => {
-      if (!document.fullscreenElement && isCanvasFullscreen) {
-        setIsCanvasFullscreen(false);
-      }
-    };
+// Sync browser fullscreen API
+useEffect(() => {
+  if (workspaceMode !== 'canvas') return;
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, [isCanvasFullscreen, setIsCanvasFullscreen, workspaceMode]);
+  if (isCanvasFullscreen) {
+    if (typeof document !== 'undefined' && !document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => { });
+    }
+  } else {
+    if (typeof document !== 'undefined' && document.fullscreenElement) {
+      document.exitFullscreen?.().catch(() => { });
+    }
+  }
 
-  return (
-    <MotionProvider>
-      <DisableThemeTransitions />
-      <AnimatePresence mode="wait">
-        {isBooting ? (
-          <CompassBootScreen key="boot-screen" />
-        ) : (
-          <m.div
-            key="workspace-shell"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.24, ease: [0.2, 0, 0, 1] }}
-            style={{
-              backgroundColor: 'var(--aws-page-bg)',
-              color: 'var(--aws-text-primary)',
-            }}
-            className="flex flex-col w-screen h-screen overflow-hidden font-sans"
-          >
-            {/* Top Application Bar (Hidden in Canvas Fullscreen / Zen Mode) */}
-            {(!isCanvasFullscreen || workspaceMode !== 'canvas') && (
-              <Navbar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
-            )}
+  const handleFullscreenChange = () => {
+    if (!document.fullscreenElement && isCanvasFullscreen) {
+      setIsCanvasFullscreen(false);
+    }
+  };
 
-            {/* Main App Body */}
-            <div className="flex flex-1 overflow-hidden relative">
-              {/* Service Catalog Sidebar (Only active & usable in Concept Vault) with smooth width/opacity glide */}
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+  return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+}, [isCanvasFullscreen, setIsCanvasFullscreen, workspaceMode]);
+
+const handleOpenCommandPalette = useCallback(() => {
+  setIsCommandPaletteOpen(true);
+}, []);
+
+return (
+  <MotionProvider>
+    <DisableThemeTransitions />
+    <AnimatePresence mode="wait">
+      {isBooting ? (
+        <CompassBootScreen key="boot-screen" />
+      ) : (
+        <m.div
+          key="workspace-shell"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.24, ease: [0.2, 0, 0, 1] }}
+          style={{
+            backgroundColor: 'var(--aws-page-bg)',
+            color: 'var(--aws-text-primary)',
+          }}
+          className="flex flex-col w-screen h-screen overflow-hidden font-sans"
+        >
+          {/* Top Application Bar (Hidden in Canvas Fullscreen / Zen Mode) */}
+          {(!isCanvasFullscreen || workspaceMode !== 'canvas') && (
+              <Navbar onOpenCommandPalette={handleOpenCommandPalette} />
+          )}
+
+            {/* Main Workspace Area (GPU-accelerated, zero-layout-shift view transition) */}
+            <main className="flex-1 h-full w-full overflow-hidden relative">
+              {/* Concept Vault Workspace */}
               <div
-                style={{
-                  width: workspaceMode === 'vault' && isSidebarOpen ? `${sidebarWidth}px` : '0px',
-                }}
-                className={`h-full shrink-0 relative overflow-hidden transition-[width,opacity,transform] duration-250 ease-[cubic-bezier(0.2,0,0,1)] ${workspaceMode === 'vault' && isSidebarOpen
-                    ? 'opacity-100 translate-x-0'
-                    : 'opacity-0 -translate-x-4 pointer-events-none'
+                className={`absolute inset-0 w-full h-full transition-[opacity,visibility] duration-200 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-none will-change-[opacity] ${workspaceMode === 'vault'
+                    ? 'opacity-100 visible z-10 pointer-events-auto'
+                    : 'opacity-0 invisible -z-10 pointer-events-none'
                   }`}
-                aria-hidden={workspaceMode !== 'vault' || !isSidebarOpen}
+                aria-hidden={workspaceMode !== 'vault'}
               >
-                <ServiceCatalog />
-              </div>
-
-              {/* Collapsed Sidebar Docked Trigger (Only shown in Concept Vault) */}
-              <AnimatePresence>
-                {workspaceMode === 'vault' && !isSidebarOpen && (
-                  <m.button
-                    initial={{ opacity: 0, x: -12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -12 }}
-                    transition={SPRING_SMOOTH}
-                    type="button"
-                    onClick={toggleSidebar}
-                    className="absolute left-0 top-2 z-30 h-8 pl-2.5 pr-3 rounded-r-[6px] bg-[var(--aws-card-bg)] border-y border-r border-[var(--aws-border)] shadow-md hover:border-[#FF9900] text-[var(--aws-text-primary)] hover:text-[#FF9900] flex items-center gap-1.5 transition-all duration-150 cursor-pointer group"
-                    title="Open service catalog"
-                    aria-label="Open service catalog"
-                  >
-                    <ChevronRight
-                      className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[#FF9900] transition-colors"
-                      strokeWidth={2}
-                    />
-                    <span className="text-[11px] font-semibold tracking-wide">Catalog</span>
-                  </m.button>
-                )}
-              </AnimatePresence>
-
-              {/* Workspace Area: Concept Vault or Architecture Canvas (Preserved instances for zero-lag switching) */}
-              <main className="flex-1 h-full overflow-hidden relative">
-                  <div
-                  className={`w-full h-full ${workspaceMode === 'vault'
-                      ? 'relative z-10 opacity-100 pointer-events-auto'
-                      : 'absolute inset-0 pointer-events-none opacity-0 -z-10'
-                    }`}
-                  style={{
-                    visibility: workspaceMode === 'vault' ? 'visible' : 'hidden',
-                  }}
-                  aria-hidden={workspaceMode !== 'vault'}
-                >
                 <ConceptVault />
-            </div>
-
-            <div
-              className={`w-full h-full ${workspaceMode === 'canvas'
-                  ? 'relative z-10 opacity-100 pointer-events-auto'
-                  : 'absolute inset-0 pointer-events-none opacity-0 -z-10'
-                }`}
-              style={{
-                visibility: workspaceMode === 'canvas' ? 'visible' : 'hidden',
-              }}
-              aria-hidden={workspaceMode !== 'canvas'}
-            >
-              <ArchitectureCanvas />
-            </div>
-          </main>
               </div>
+
+              {/* Architecture Canvas Workspace */}
+              <div
+                  className={`absolute inset-0 w-full h-full transition-[opacity,visibility] duration-200 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-none will-change-[opacity] ${workspaceMode === 'canvas'
+                      ? 'opacity-100 visible z-10 pointer-events-auto'
+                      : 'opacity-0 invisible -z-10 pointer-events-none'
+                    }`}
+              aria-hidden={workspaceMode !== 'canvas'}
+              >
+              <ArchitectureCanvas />
+          </div>
+        </main>
 
       {/* Global Command Palette (Ctrl+K) */}
       <CommandPalette
@@ -206,12 +159,11 @@ export const App: React.FC = () => {
         onClose={() => setIsCommandPaletteOpen(false)}
       />
 
-      {/* Global Settings Modal (Ctrl+,) */}
-      <SettingsModal />
-    </m.div>
-  )
-}
-    </AnimatePresence >
+  {/* Global Settings Modal (Ctrl+,) */ }
+  < SettingsModal />
+          </m.div >
+        )}
+      </AnimatePresence >
     </MotionProvider >
   );
 };

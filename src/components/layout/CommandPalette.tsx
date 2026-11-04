@@ -25,7 +25,7 @@ export interface CommandPaletteProps {
 
 interface PaletteItem {
   id: string;
-  section: 'Favorited services' | 'Quick actions' | 'Architecture blueprints' | 'AWS services';
+  section: 'Favorite services' | 'Quick actions' | 'Architecture blueprints' | 'AWS services';
   title: string;
   shortName?: string;
   cliPrefix?: string;
@@ -71,13 +71,13 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
   const allItems: PaletteItem[] = useMemo(() => {
     const items: PaletteItem[] = [];
 
-    // 0. Favorited services (prioritized at the top of default search list)
+    // 0. Favorite services (prioritized at the top of default search list)
     services
       .filter((s) => s.isFavorite)
       .forEach((svc) => {
         items.push({
           id: `fav-${svc.id}`,
-          section: 'Favorited services',
+          section: 'Favorite services',
           title: svc.name,
           shortName: svc.shortName,
           cliPrefix: svc.cliPrefix || `aws ${svc.id}`,
@@ -242,9 +242,9 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
     }
 
     const q = search.toLowerCase().trim();
-    // Exclude the duplicate 'Favorited services' section when actively searching across the 230+ catalog
+    // Exclude the duplicate 'Favorite services' section when actively searching across the 230+ catalog
     return allItems
-      .filter((item) => item.section !== 'Favorited services')
+      .filter((item) => item.section !== 'Favorite services')
       .filter(
         (item) =>
           item.title.toLowerCase().includes(q) ||
@@ -259,7 +259,7 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
   // Group filtered items by section maintaining flat indexes for keyboard navigation
   const groupedSections = useMemo(() => {
     const sectionNames: Array<PaletteItem['section']> = [
-      'Favorited services',
+      'Favorite services',
       'Quick actions',
       'Architecture blueprints',
       'AWS services',

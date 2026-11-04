@@ -16,7 +16,7 @@ import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { m } from 'motion/react';
 import { SPRING_SMOOTH } from '../../utils/motionTokens';
 
-export const ServiceCatalog: React.FC = () => {
+export const ServiceCatalog: React.FC = React.memo(() => {
   const {
     services,
     selectedServiceId,
@@ -113,484 +113,484 @@ export const ServiceCatalog: React.FC = () => {
     const order = categoryOrder && categoryOrder.length > 0 ? categoryOrder : DEFAULT_CATEGORIES;
     // If a service belongs to a category not in the order, append it
     const missing = DEFAULT_CATEGORIES.filter((c) => !order.includes(c));
-  const allCategories = [...order, ...missing];
+    const allCategories = [...order, ...missing];
 
-  // When showing favorites only, ONLY include categories that actually have favorited services in them!
-  if (filter.favoritesOnly) {
-    return allCategories.filter((cat) => {
-      const catServices = servicesByCategory.get(cat);
-      return catServices && catServices.length > 0;
-    });
-  }
-
-  // When filtering by a specific category, only render that category
-  if (filter.category !== 'All') {
-    return allCategories.filter((cat) => cat === filter.category);
-  }
-
-  // When filtering by tier, exclude categories with no services matching that tier
-  if (filter.tier !== 'All') {
-    return allCategories.filter((cat) => {
-      const catServices = servicesByCategory.get(cat);
-      return catServices && catServices.length > 0;
-    });
-  }
-
-  return allCategories;
-}, [categoryOrder, filter.favoritesOnly, filter.category, filter.tier, servicesByCategory]);
-
-const allCollapsed = useMemo(() => {
-  if (categoriesToRender.length === 0) return false;
-  return categoriesToRender.every((cat) => collapsedCategories[cat]);
-}, [categoriesToRender, collapsedCategories]);
-
-const toggleCollapseAll = () => {
-  if (allCollapsed) {
-    setCollapsedCategories({});
-  } else {
-    const next: Record<string, boolean> = {};
-    categoriesToRender.forEach((cat) => {
-      next[cat] = true;
-    });
-    setCollapsedCategories(next);
-  }
-};
-
-const clearAllFilters = () => {
-  setSearch('');
-  setCategoryFilter('All');
-  setTierFilter('All');
-  setFavoritesFilter(false);
-};
-
-const isSearching = filter.search.trim().length > 0;
-
-// --- Drag and Drop Handlers for Service Cards ---
-const handleCardDragStart = (_e: React.DragEvent, service: AWSService) => {
-  setDraggedServiceId(service.id);
-};
-
-const handleCardDragOver = (e: React.DragEvent, targetService: AWSService) => {
-  e.preventDefault();
-  e.stopPropagation();
-  e.dataTransfer.dropEffect = 'move';
-
-  const sourceId = e.dataTransfer.getData('application/aws-service-id') || draggedServiceId;
-  if (!sourceId || sourceId === targetService.id) {
-    if (targetCardId) {
-      setTargetCardId(null);
-      setTargetCardDropPosition(null);
+    // When showing favorites only, ONLY include categories that actually have favorited services in them!
+    if (filter.favoritesOnly) {
+      return allCategories.filter((cat) => {
+        const catServices = servicesByCategory.get(cat);
+        return catServices && catServices.length > 0;
+      });
     }
-    return;
-  }
 
-  const rect = e.currentTarget.getBoundingClientRect();
-  const pos = e.clientY - rect.top < rect.height / 2 ? 'top' : 'bottom';
-
-  if (targetCardId !== targetService.id || targetCardDropPosition !== pos) {
-    setTargetCardId(targetService.id);
-    setTargetCardDropPosition(pos);
-    setTargetCategoryHeader(null);
-  }
-};
-
-const handleCardDragLeave = (e: React.DragEvent, targetService: AWSService) => {
-  const related = e.relatedTarget as Node | null;
-  if (!e.currentTarget.contains(related)) {
-    if (targetCardId === targetService.id) {
-      setTargetCardId(null);
-      setTargetCardDropPosition(null);
+    // When filtering by a specific category, only render that category
+    if (filter.category !== 'All') {
+      return allCategories.filter((cat) => cat === filter.category);
     }
-  }
-};
 
-const handleCardDrop = async (e: React.DragEvent, targetService: AWSService) => {
-  e.preventDefault();
-  e.stopPropagation();
+    // When filtering by tier, exclude categories with no services matching that tier
+    if (filter.tier !== 'All') {
+      return allCategories.filter((cat) => {
+        const catServices = servicesByCategory.get(cat);
+        return catServices && catServices.length > 0;
+      });
+    }
 
-  const sourceId = e.dataTransfer.getData('application/aws-service-id') || draggedServiceId;
-  const position = targetCardDropPosition === 'top' ? 'before' : 'after';
+    return allCategories;
+  }, [categoryOrder, filter.favoritesOnly, filter.category, filter.tier, servicesByCategory]);
 
-  setDraggedServiceId(null);
-  setTargetCardId(null);
-  setTargetCardDropPosition(null);
-  setTargetCategoryHeader(null);
+  const allCollapsed = useMemo(() => {
+    if (categoriesToRender.length === 0) return false;
+    return categoriesToRender.every((cat) => collapsedCategories[cat]);
+  }, [categoriesToRender, collapsedCategories]);
 
-  if (!sourceId || sourceId === targetService.id) return;
+  const toggleCollapseAll = () => {
+    if (allCollapsed) {
+      setCollapsedCategories({});
+    } else {
+      const next: Record<string, boolean> = {};
+      categoriesToRender.forEach((cat) => {
+        next[cat] = true;
+      });
+      setCollapsedCategories(next);
+    }
+  };
 
-  await reorderService(sourceId, targetService.id, position, targetService.category);
-};
+  const clearAllFilters = () => {
+    setSearch('');
+    setCategoryFilter('All');
+    setTierFilter('All');
+    setFavoritesFilter(false);
+  };
 
-const handleCardDragEnd = () => {
-  setDraggedServiceId(null);
-  setTargetCardId(null);
-  setTargetCardDropPosition(null);
-  setTargetCategoryHeader(null);
-};
+  const isSearching = filter.search.trim().length > 0;
 
-// --- Drag and Drop Handlers for Moving Services onto Category Headers ---
-const handleCategoryHeaderDragOver = (e: React.DragEvent, cat: AWSCategory) => {
-  if (!draggedServiceId) return;
-  e.preventDefault();
-  e.stopPropagation();
-  e.dataTransfer.dropEffect = 'move';
-  setTargetCategoryHeader(cat);
-  setTargetCardId(null);
-};
+  // --- Drag and Drop Handlers for Service Cards ---
+  const handleCardDragStart = (_e: React.DragEvent, service: AWSService) => {
+    setDraggedServiceId(service.id);
+  };
 
-const handleCategoryHeaderDragLeave = (e: React.DragEvent, cat: AWSCategory) => {
-  const related = e.relatedTarget as Node | null;
-  if (!e.currentTarget.contains(related)) {
-    if (targetCategoryHeader === cat) {
+  const handleCardDragOver = (e: React.DragEvent, targetService: AWSService) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+
+    const sourceId = e.dataTransfer.getData('application/aws-service-id') || draggedServiceId;
+    if (!sourceId || sourceId === targetService.id) {
+      if (targetCardId) {
+        setTargetCardId(null);
+        setTargetCardDropPosition(null);
+      }
+      return;
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pos = e.clientY - rect.top < rect.height / 2 ? 'top' : 'bottom';
+
+    if (targetCardId !== targetService.id || targetCardDropPosition !== pos) {
+      setTargetCardId(targetService.id);
+      setTargetCardDropPosition(pos);
       setTargetCategoryHeader(null);
     }
-  }
-};
+  };
 
-const handleCategoryHeaderDrop = async (e: React.DragEvent, cat: AWSCategory) => {
-  e.preventDefault();
-  e.stopPropagation();
+  const handleCardDragLeave = (e: React.DragEvent, targetService: AWSService) => {
+    const related = e.relatedTarget as Node | null;
+    if (!e.currentTarget.contains(related)) {
+      if (targetCardId === targetService.id) {
+        setTargetCardId(null);
+        setTargetCardDropPosition(null);
+      }
+    }
+  };
 
-  const serviceSource = e.dataTransfer.getData('application/aws-service-id') || draggedServiceId;
+  const handleCardDrop = async (e: React.DragEvent, targetService: AWSService) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-  setTargetCategoryHeader(null);
-  setDraggedServiceId(null);
-  setTargetCardId(null);
+    const sourceId = e.dataTransfer.getData('application/aws-service-id') || draggedServiceId;
+    const position = targetCardDropPosition === 'top' ? 'before' : 'after';
 
-  if (serviceSource) {
-    // Move service into this category header (at start) and auto-expand
-    setCollapsedCategories((prev) => ({ ...prev, [cat]: false }));
-    await moveServiceToCategory(serviceSource, cat, 'start');
-  }
-};
+    setDraggedServiceId(null);
+    setTargetCardId(null);
+    setTargetCardDropPosition(null);
+    setTargetCategoryHeader(null);
 
-return (
-  <aside
-    style={{
-      backgroundColor: 'var(--aws-sidebar-bg)',
-      borderRightColor: 'var(--aws-border)',
-      width: `${sidebarWidth}px`,
-    }}
-    className="relative flex flex-col h-full border-r shrink-0 select-none rounded-none"
-  >
-    {/* Draggable Resize Handle */}
-    <SidebarResizeHandle
-      sidebarWidth={sidebarWidth}
-      onWidthChange={setSidebarWidth}
-    />
-    {/* Top Header: Full-Width Search Input + Sleek Sidebar Collapse Icon Button */}
-    <div
+    if (!sourceId || sourceId === targetService.id) return;
+
+    await reorderService(sourceId, targetService.id, position, targetService.category);
+  };
+
+  const handleCardDragEnd = () => {
+    setDraggedServiceId(null);
+    setTargetCardId(null);
+    setTargetCardDropPosition(null);
+    setTargetCategoryHeader(null);
+  };
+
+  // --- Drag and Drop Handlers for Moving Services onto Category Headers ---
+  const handleCategoryHeaderDragOver = (e: React.DragEvent, cat: AWSCategory) => {
+    if (!draggedServiceId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    setTargetCategoryHeader(cat);
+    setTargetCardId(null);
+  };
+
+  const handleCategoryHeaderDragLeave = (e: React.DragEvent, cat: AWSCategory) => {
+    const related = e.relatedTarget as Node | null;
+    if (!e.currentTarget.contains(related)) {
+      if (targetCategoryHeader === cat) {
+        setTargetCategoryHeader(null);
+      }
+    }
+  };
+
+  const handleCategoryHeaderDrop = async (e: React.DragEvent, cat: AWSCategory) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const serviceSource = e.dataTransfer.getData('application/aws-service-id') || draggedServiceId;
+
+    setTargetCategoryHeader(null);
+    setDraggedServiceId(null);
+    setTargetCardId(null);
+
+    if (serviceSource) {
+      // Move service into this category header (at start) and auto-expand
+      setCollapsedCategories((prev) => ({ ...prev, [cat]: false }));
+      await moveServiceToCategory(serviceSource, cat, 'start');
+    }
+  };
+
+  return (
+    <aside
       style={{
-        borderBottomColor: 'var(--aws-border)',
-        backgroundColor: 'var(--aws-card-bg)',
+        backgroundColor: 'var(--aws-sidebar-bg)',
+        borderRightColor: 'var(--aws-border)',
+        width: `${sidebarWidth}px`,
       }}
-      className="h-12 px-2.5 border-b flex items-center gap-1.5 shrink-0 select-none"
+      className="relative flex flex-col h-full border-r shrink-0 select-none rounded-none"
     >
-      <div className="relative flex-1">
-        <div className="h-8 w-full rounded-[6px] bg-[var(--aws-page-bg)] border border-[var(--aws-input-border)] focus-within:border-[var(--aws-interactive)] flex items-center px-2.5 gap-2 transition-[border-color,box-shadow] duration-150">
-          <div className="flex items-center justify-center shrink-0 pointer-events-none" aria-hidden="true">
-            <Search className="w-3.5 h-3.5 text-[var(--aws-text-muted)]" strokeWidth={1.75} />
+      {/* Draggable Resize Handle */}
+      <SidebarResizeHandle
+        sidebarWidth={sidebarWidth}
+        onWidthChange={setSidebarWidth}
+      />
+      {/* Top Header: Full-Width Search Input + Sleek Sidebar Collapse Icon Button */}
+      <div
+        style={{
+          borderBottomColor: 'var(--aws-border)',
+          backgroundColor: 'var(--aws-card-bg)',
+        }}
+        className="h-12 px-2.5 border-b flex items-center gap-1.5 shrink-0 select-none"
+      >
+        <div className="relative flex-1">
+          <div className="h-8 w-full rounded-[6px] bg-[var(--aws-page-bg)] border border-[var(--aws-input-border)] focus-within:border-[var(--aws-interactive)] flex items-center px-2.5 gap-2 transition-[border-color,box-shadow] duration-150">
+            <div className="flex items-center justify-center shrink-0 pointer-events-none" aria-hidden="true">
+              <Search className="w-3.5 h-3.5 text-[var(--aws-text-muted)]" strokeWidth={1.75} />
+            </div>
+            <input
+              type="text"
+              value={filter.search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Filter services..."
+              className="w-full h-full bg-transparent text-[12px] text-[var(--aws-text-primary)] placeholder:text-[var(--aws-text-muted)] focus:outline-none min-w-0 flex-1 leading-normal self-center p-0 border-none"
+            />
+            {filter.search && (
+              <button
+                type="button"
+                onClick={() => handleSearchChange('')}
+                className="text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] p-0.5 rounded cursor-pointer shrink-0"
+                title="Clear search"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+            {/* 1-click Favorites Filter button */}
+            <button
+              type="button"
+              onClick={() => setFavoritesFilter(!filter.favoritesOnly)}
+              className={`p-1 rounded-[4px] cursor-pointer shrink-0 transition-colors ${filter.favoritesOnly
+                ? 'text-[#FF9900] bg-[#FF9900]/10 hover:bg-[#FF9900]/20'
+                : 'text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-card-bg)]'
+                }`}
+              title={filter.favoritesOnly ? 'Showing favorite services only (Click to show all)' : 'Show favorite services only'}
+              aria-label="Filter favorite services"
+            >
+              <Star
+                className={`w-3.5 h-3.5 transition-transform active:scale-90 ${filter.favoritesOnly ? 'fill-[#FF9900] text-[#FF9900]' : ''
+                  }`}
+              />
+            </button>
           </div>
-          <input
-            type="text"
-            value={filter.search}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Filter services..."
-            className="w-full h-full bg-transparent text-[12px] text-[var(--aws-text-primary)] placeholder:text-[var(--aws-text-muted)] focus:outline-none min-w-0 flex-1 leading-normal self-center p-0 border-none"
-          />
-          {filter.search && (
-            <button
-              type="button"
-              onClick={() => handleSearchChange('')}
-              className="text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] p-0.5 rounded cursor-pointer shrink-0"
-              title="Clear search"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          )}
-          {/* 1-click Favorites Filter button */}
-          <button
-            type="button"
-            onClick={() => setFavoritesFilter(!filter.favoritesOnly)}
-            className={`p-1 rounded-[4px] cursor-pointer shrink-0 transition-colors ${filter.favoritesOnly
-              ? 'text-[#FF9900] bg-[#FF9900]/10 hover:bg-[#FF9900]/20'
-              : 'text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-card-bg)]'
-              }`}
-            title={filter.favoritesOnly ? 'Showing favorited services only (Click to show all)' : 'Show favorited services only'}
-            aria-label="Filter favorited services"
-          >
-            <Star
-              className={`w-3.5 h-3.5 transition-transform active:scale-90 ${filter.favoritesOnly ? 'fill-[#FF9900] text-[#FF9900]' : ''
-                }`}
-            />
-          </button>
+        </div>
+
+        {/* Sidebar Collapse Button */}
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          className="h-8 w-8 rounded-[6px] flex items-center justify-center text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border border-[var(--aws-border)]/70 hover:border-[var(--aws-border)] transition-all cursor-pointer shadow-2xs shrink-0 group"
+          title="Collapse sidebar"
+          aria-label="Collapse sidebar"
+        >
+          <ChevronLeft className="w-4 h-4 text-[var(--aws-text-muted)] group-hover:text-[var(--aws-text-primary)] transition-colors" strokeWidth={2} />
+        </button>
+      </div>
+
+      {/* Segmented Tier Filter Track */}
+      <div
+        style={{
+          borderBottomColor: 'var(--aws-border)',
+          backgroundColor: 'var(--aws-card-bg)',
+        }}
+        className="p-2 border-b shrink-0"
+      >
+        <div className="h-7 p-0.5 rounded-[6px] bg-[var(--aws-page-bg)] border border-[var(--aws-border)] grid grid-cols-4 gap-0.5">
+          {(['All', 1, 2, 3] as const).map((tierVal) => {
+            const isSelected = filter.tier === tierVal;
+            const label = tierVal === 'All' ? 'All' : `Tier ${tierVal}`;
+            return (
+              <button
+                key={tierVal}
+                type="button"
+                onClick={() => setTierFilter(tierVal)}
+                className={`relative rounded-[4px] text-[11px] font-medium flex items-center justify-center transition-colors cursor-pointer select-none ${isSelected
+                  ? 'text-[var(--aws-text-primary)] font-semibold'
+                  : 'text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)]'
+                  }`}
+              >
+                {isSelected && (
+                  <m.span
+                    layoutId="tier-filter-pill"
+                    className="pointer-events-none absolute inset-0 rounded-[4px] bg-[var(--aws-card-bg)] shadow-xs border border-[var(--aws-border)]/50"
+                    transition={SPRING_SMOOTH}
+                  />
+                )}
+                <span className="relative z-10">{label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Sidebar Collapse Button */}
-      <button
-        type="button"
-        onClick={toggleSidebar}
-        className="h-8 w-8 rounded-[6px] flex items-center justify-center text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] border border-[var(--aws-border)]/70 hover:border-[var(--aws-border)] transition-all cursor-pointer shadow-2xs shrink-0 group"
-        title="Collapse sidebar"
-        aria-label="Collapse sidebar"
+      {/* Service Count & Category Expand/Collapse All Row */}
+      <div
+        style={{
+          borderBottomColor: 'var(--aws-border)',
+          backgroundColor: 'var(--aws-card-bg)',
+        }}
+        className="px-3 py-1.5 border-b flex items-center justify-between text-[11px] text-[var(--aws-text-muted)] shrink-0"
       >
-        <ChevronLeft className="w-4 h-4 text-[var(--aws-text-muted)] group-hover:text-[var(--aws-text-primary)] transition-colors" strokeWidth={2} />
-      </button>
-    </div>
+        <span className="tabular-nums font-mono">
+          {filter.favoritesOnly
+            ? `${filteredServices.length} favorites`
+            : `${filteredServices.length} of ${services.length} services`}
+        </span>
 
-    {/* Segmented Tier Filter Track */}
-    <div
-      style={{
-        borderBottomColor: 'var(--aws-border)',
-        backgroundColor: 'var(--aws-card-bg)',
-      }}
-      className="p-2 border-b shrink-0"
-    >
-      <div className="h-7 p-0.5 rounded-[6px] bg-[var(--aws-page-bg)] border border-[var(--aws-border)] grid grid-cols-4 gap-0.5">
-        {(['All', 1, 2, 3] as const).map((tierVal) => {
-          const isSelected = filter.tier === tierVal;
-          const label = tierVal === 'All' ? 'All' : `Tier ${tierVal}`;
-          return (
-            <button
-              key={tierVal}
-              type="button"
-              onClick={() => setTierFilter(tierVal)}
-              className={`relative rounded-[4px] text-[11px] font-medium flex items-center justify-center transition-colors cursor-pointer select-none ${isSelected
-                ? 'text-[var(--aws-text-primary)] font-semibold'
-                : 'text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)]'
-                }`}
-            >
-              {isSelected && (
-                <m.span
-                  layoutId="tier-filter-pill"
-                  className="pointer-events-none absolute inset-0 rounded-[4px] bg-[var(--aws-card-bg)] shadow-xs border border-[var(--aws-border)]/50"
-                  transition={SPRING_SMOOTH}
-                />
-              )}
-              <span className="relative z-10">{label}</span>
-            </button>
-          );
-        })}
+        {/* Tree Collapse / Expand All Button */}
+        <button
+          type="button"
+          onClick={toggleCollapseAll}
+          className="h-6 px-1.5 rounded flex items-center gap-1 text-[11px] font-medium text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] transition-colors cursor-pointer"
+          title={allCollapsed ? 'Expand all categories' : 'Collapse all categories'}
+          aria-label={allCollapsed ? 'Expand all categories' : 'Collapse all categories'}
+        >
+          <ChevronsUpDown className="w-3.5 h-3.5" strokeWidth={1.75} />
+          <span>{allCollapsed ? 'Expand all' : 'Collapse all'}</span>
+        </button>
       </div>
-    </div>
 
-    {/* Service Count & Category Expand/Collapse All Row */}
-    <div
-      style={{
-        borderBottomColor: 'var(--aws-border)',
-        backgroundColor: 'var(--aws-card-bg)',
-      }}
-      className="px-3 py-1.5 border-b flex items-center justify-between text-[11px] text-[var(--aws-text-muted)] shrink-0"
-    >
-      <span className="tabular-nums font-mono">
-        {filter.favoritesOnly
-          ? `${filteredServices.length} favorites`
-          : `${filteredServices.length} of ${services.length} services`}
-      </span>
-
-      {/* Tree Collapse / Expand All Button */}
-      <button
-        type="button"
-        onClick={toggleCollapseAll}
-        className="h-6 px-1.5 rounded flex items-center gap-1 text-[11px] font-medium text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] transition-colors cursor-pointer"
-        title={allCollapsed ? 'Expand all categories' : 'Collapse all categories'}
-        aria-label={allCollapsed ? 'Expand all categories' : 'Collapse all categories'}
-      >
-        <ChevronsUpDown className="w-3.5 h-3.5" strokeWidth={1.75} />
-        <span>{allCollapsed ? 'Expand all' : 'Collapse all'}</span>
-      </button>
-    </div>
-
-    {/* Tree Content */}
-    <div className="flex-1 overflow-y-auto divide-y divide-[var(--aws-border)] scrollbar-thin custom-scrollbar">
-      {filteredServices.length === 0 ? (
-        <div className="p-6 text-center text-[var(--aws-text-muted)]">
-          <p className="text-[13px] font-medium text-[var(--aws-text-primary)]">
-            {filter.favoritesOnly ? 'No favorite services found' : 'No services match filters'}
-          </p>
-          <p className="text-[11px] mt-1">
-            {filter.favoritesOnly
-              ? 'Star any service card to bookmark it and view it here.'
-              : 'Try adjusting the search query or status filter.'}
-          </p>
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={clearAllFilters}
-              className="mt-3 text-[11px] px-2.5 py-1 rounded-[4px] bg-[var(--aws-page-bg)] text-[var(--aws-interactive)] border border-[var(--aws-border)] transition-colors cursor-pointer"
-            >
-              Clear all filters
-            </button>
-          )}
-        </div>
-      ) : isSearching ? (
-        /* Flat list during active search */
-        <div className="py-1">
-          {filteredServices.map((svc, index) => (
-            <ServiceCard
-              key={svc.id}
-              service={svc}
-              isSelected={svc.id === selectedServiceId}
-              isDragging={draggedServiceId === svc.id}
-              dropPosition={targetCardId === svc.id ? targetCardDropPosition : null}
-              onSelect={() => setSelectedServiceId(svc.id)}
-              onDragStart={handleCardDragStart}
-              onDragOver={handleCardDragOver}
-              onDragLeave={handleCardDragLeave}
-              onDrop={handleCardDrop}
-              onDragEnd={handleCardDragEnd}
-              onMoveUp={() => {
-                if (index > 0) {
-                  reorderService(svc.id, filteredServices[index - 1].id, 'before');
-                }
-              }}
-              onMoveDown={() => {
-                if (index < filteredServices.length - 1) {
-                  reorderService(svc.id, filteredServices[index + 1].id, 'after');
-                }
-              }}
-            />
-          ))}
-        </div>
-      ) : (
-        /* Collapsible Category Tree */
-        categoriesToRender.map((cat) => {
-          const catServices = servicesByCategory.get(cat) || [];
-          const isCollapsed = !!collapsedCategories[cat];
-          const isHeaderTarget = targetCategoryHeader === cat;
-
-          return (
-            <div key={cat} className="select-none relative">
-              {/* Category Header Row (28px height, drop-target for services) */}
-              <div
-                onDragOver={(e) => handleCategoryHeaderDragOver(e, cat)}
-                onDragLeave={(e) => handleCategoryHeaderDragLeave(e, cat)}
-                onDrop={(e) => handleCategoryHeaderDrop(e, cat)}
-                style={{
-                  backgroundColor: isHeaderTarget && draggedServiceId
-                    ? 'rgba(255, 153, 0, 0.15)'
-                    : 'var(--aws-card-bg)',
+      {/* Tree Content */}
+      <div className="flex-1 overflow-y-auto divide-y divide-[var(--aws-border)] scrollbar-thin custom-scrollbar">
+        {filteredServices.length === 0 ? (
+          <div className="p-6 text-center text-[var(--aws-text-muted)]">
+            <p className="text-[13px] font-medium text-[var(--aws-text-primary)]">
+              {filter.favoritesOnly ? 'No favorite services found' : 'No services match filters'}
+            </p>
+            <p className="text-[11px] mt-1">
+              {filter.favoritesOnly
+                ? 'Star any service card to bookmark it and view it here.'
+                : 'Try adjusting the search query or status filter.'}
+            </p>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="mt-3 text-[11px] px-2.5 py-1 rounded-[4px] bg-[var(--aws-page-bg)] text-[var(--aws-interactive)] border border-[var(--aws-border)] transition-colors cursor-pointer"
+              >
+                Clear all filters
+              </button>
+            )}
+          </div>
+        ) : isSearching ? (
+          /* Flat list during active search */
+          <div className="py-1">
+            {filteredServices.map((svc, index) => (
+              <ServiceCard
+                key={svc.id}
+                service={svc}
+                isSelected={svc.id === selectedServiceId}
+                isDragging={draggedServiceId === svc.id}
+                dropPosition={targetCardId === svc.id ? targetCardDropPosition : null}
+                onSelect={() => setSelectedServiceId(svc.id)}
+                onDragStart={handleCardDragStart}
+                onDragOver={handleCardDragOver}
+                onDragLeave={handleCardDragLeave}
+                onDrop={handleCardDrop}
+                onDragEnd={handleCardDragEnd}
+                onMoveUp={() => {
+                  if (index > 0) {
+                    reorderService(svc.id, filteredServices[index - 1].id, 'before');
+                  }
                 }}
-                className={`group w - full ${isCompact ? 'h-6 px-1.5' : 'h-7 px-2'} flex items - center justify - between text - left transition - [background - color, box - shadow] duration - 150 relative ${isHeaderTarget && draggedServiceId
-                  ? 'ring-2 ring-[#FF9900] border-l-4 border-l-[#FF9900]'
-                  : 'hover:bg-[var(--aws-page-bg)]'
-                  }`}
-              >
-                {/* Category Header Left: Chevron + Label */}
-                <button
-                  type="button"
-                  onClick={() => toggleCategory(cat)}
-                  className="flex items-center gap-1.5 min-w-0 flex-1 text-left cursor-pointer focus:outline-none"
+                onMoveDown={() => {
+                  if (index < filteredServices.length - 1) {
+                    reorderService(svc.id, filteredServices[index + 1].id, 'after');
+                  }
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          /* Collapsible Category Tree */
+          categoriesToRender.map((cat) => {
+            const catServices = servicesByCategory.get(cat) || [];
+            const isCollapsed = !!collapsedCategories[cat];
+            const isHeaderTarget = targetCategoryHeader === cat;
+
+            return (
+              <div key={cat} className="select-none relative">
+                {/* Category Header Row (28px height, drop-target for services) */}
+                <div
+                  onDragOver={(e) => handleCategoryHeaderDragOver(e, cat)}
+                  onDragLeave={(e) => handleCategoryHeaderDragLeave(e, cat)}
+                  onDrop={(e) => handleCategoryHeaderDrop(e, cat)}
+                  style={{
+                    backgroundColor: isHeaderTarget && draggedServiceId
+                      ? 'rgba(255, 153, 0, 0.15)'
+                      : 'var(--aws-card-bg)',
+                  }}
+                  className={`group w - full ${isCompact ? 'h-6 px-1.5' : 'h-7 px-2'} flex items - center justify - between text - left transition - [background - color, box - shadow] duration - 150 relative ${isHeaderTarget && draggedServiceId
+                    ? 'ring-2 ring-[#FF9900] border-l-4 border-l-[#FF9900]'
+                    : 'hover:bg-[var(--aws-page-bg)]'
+                    }`}
                 >
-                  <AnimatedIcon iconKey={isCollapsed ? 'collapsed' : 'expanded'} size={14}>
-                    <ChevronRight
-                      className={`w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-150 shrink-0 ${isCollapsed ? '' : 'rotate-90'
-                        }`}
-                      strokeWidth={2}
-                    />
-                  </AnimatedIcon>
-                  <span className="text-[12px] font-semibold text-[var(--aws-text-primary)] truncate">
-                    {cat}
-                  </span>
-                </button>
-
-                {/* Category Header Right: Active Drop Badge or Count */}
-                {
-                  isHeaderTarget && draggedServiceId ? (
-                    <span className="text-[10px] font-bold text-[#FF9900] bg-[#FF9900]/20 px-1.5 py-0.5 rounded animate-pulse shrink-0">
-                      + Move to {cat}
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-mono text-[var(--aws-text-muted)] shrink-0">
-                      {catServices.length}
-                    </span>
-                  )
-                }
-              </div>
-
-              {/* Category Service Items (Animated CSS Grid Height) */}
-              <div
-                className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${!isCollapsed ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
-                  }`}
-              >
-                <div className="overflow-hidden">
-                  <div
-                    className="pl-2 relative"
-                    onDragOver={(e) => {
-                      if (draggedServiceId) {
-                        e.preventDefault();
-                        e.dataTransfer.dropEffect = 'move';
-                      }
-                    }}
-                    onDrop={async (e) => {
-                      if (e.target === e.currentTarget && draggedServiceId) {
-                        e.preventDefault();
-                        await moveServiceToCategory(draggedServiceId, cat, 'end');
-                        handleCardDragEnd();
-                      }
-                    }}
+                  {/* Category Header Left: Chevron + Label */}
+                  <button
+                    type="button"
+                    onClick={() => toggleCategory(cat)}
+                    className="flex items-center gap-1.5 min-w-0 flex-1 text-left cursor-pointer focus:outline-none"
                   >
-                    {catServices.length === 0 ? (
-                      <div
-                        onDragOver={(e) => {
+                    <AnimatedIcon iconKey={isCollapsed ? 'collapsed' : 'expanded'} size={14}>
+                      <ChevronRight
+                        className={`w-3.5 h-3.5 text-[var(--aws-text-muted)] transition-transform duration-150 shrink-0 ${isCollapsed ? '' : 'rotate-90'
+                          }`}
+                        strokeWidth={2}
+                      />
+                    </AnimatedIcon>
+                    <span className="text-[12px] font-semibold text-[var(--aws-text-primary)] truncate">
+                      {cat}
+                    </span>
+                  </button>
+
+                  {/* Category Header Right: Active Drop Badge or Count */}
+                  {
+                    isHeaderTarget && draggedServiceId ? (
+                      <span className="text-[10px] font-bold text-[#FF9900] bg-[#FF9900]/20 px-1.5 py-0.5 rounded animate-pulse shrink-0">
+                        + Move to {cat}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-mono text-[var(--aws-text-muted)] shrink-0">
+                        {catServices.length}
+                      </span>
+                    )
+                  }
+                </div>
+
+                {/* Category Service Items (Animated CSS Grid Height) */}
+                <div
+                  className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${!isCollapsed ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+                    }`}
+                >
+                  <div className="overflow-hidden">
+                    <div
+                      className="pl-2 relative"
+                      onDragOver={(e) => {
+                        if (draggedServiceId) {
                           e.preventDefault();
                           e.dataTransfer.dropEffect = 'move';
-                          setTargetCategoryHeader(cat);
-                        }}
-                        onDragLeave={() => setTargetCategoryHeader(null)}
-                        onDrop={async (e) => {
+                        }
+                      }}
+                      onDrop={async (e) => {
+                        if (e.target === e.currentTarget && draggedServiceId) {
                           e.preventDefault();
-                          const sourceId =
-                            e.dataTransfer.getData('application/aws-service-id') ||
-                            draggedServiceId;
-                          setTargetCategoryHeader(null);
-                          setDraggedServiceId(null);
-                          if (sourceId) {
-                            await moveServiceToCategory(sourceId, cat, 'start');
-                          }
-                        }}
-                        className="py-2 px-3 text-center border border-dashed border-[var(--aws-border)] rounded mx-2 my-1.5 text-[11px] text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)]/50 hover:border-[#FF9900] transition-colors"
-                      >
-                        Drop service here to move to {cat}
-                      </div>
-                    ) : (
-                      catServices.map((svc, index) => (
-                        <ServiceCard
-                          key={svc.id}
-                          service={svc}
-                          isSelected={svc.id === selectedServiceId}
-                          isDragging={draggedServiceId === svc.id}
-                          dropPosition={targetCardId === svc.id ? targetCardDropPosition : null}
-                          onSelect={() => setSelectedServiceId(svc.id)}
-                          onDragStart={handleCardDragStart}
-                          onDragOver={handleCardDragOver}
-                          onDragLeave={handleCardDragLeave}
-                          onDrop={handleCardDrop}
-                          onDragEnd={handleCardDragEnd}
-                          onMoveUp={() => {
-                            if (index > 0) {
-                              reorderService(svc.id, catServices[index - 1].id, 'before', cat);
+                          await moveServiceToCategory(draggedServiceId, cat, 'end');
+                          handleCardDragEnd();
+                        }
+                      }}
+                    >
+                      {catServices.length === 0 ? (
+                        <div
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                            setTargetCategoryHeader(cat);
+                          }}
+                          onDragLeave={() => setTargetCategoryHeader(null)}
+                          onDrop={async (e) => {
+                            e.preventDefault();
+                            const sourceId =
+                              e.dataTransfer.getData('application/aws-service-id') ||
+                              draggedServiceId;
+                            setTargetCategoryHeader(null);
+                            setDraggedServiceId(null);
+                            if (sourceId) {
+                              await moveServiceToCategory(sourceId, cat, 'start');
                             }
                           }}
-                          onMoveDown={() => {
-                            if (index < catServices.length - 1) {
-                              reorderService(svc.id, catServices[index + 1].id, 'after', cat);
-                            }
-                          }}
-                        />
-                      ))
-                    )}
+                          className="py-2 px-3 text-center border border-dashed border-[var(--aws-border)] rounded mx-2 my-1.5 text-[11px] text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)]/50 hover:border-[#FF9900] transition-colors"
+                        >
+                          Drop service here to move to {cat}
+                        </div>
+                      ) : (
+                        catServices.map((svc, index) => (
+                          <ServiceCard
+                            key={svc.id}
+                            service={svc}
+                            isSelected={svc.id === selectedServiceId}
+                            isDragging={draggedServiceId === svc.id}
+                            dropPosition={targetCardId === svc.id ? targetCardDropPosition : null}
+                            onSelect={() => setSelectedServiceId(svc.id)}
+                            onDragStart={handleCardDragStart}
+                            onDragOver={handleCardDragOver}
+                            onDragLeave={handleCardDragLeave}
+                            onDrop={handleCardDrop}
+                            onDragEnd={handleCardDragEnd}
+                            onMoveUp={() => {
+                              if (index > 0) {
+                                reorderService(svc.id, catServices[index - 1].id, 'before', cat);
+                              }
+                            }}
+                            onMoveDown={() => {
+                              if (index < catServices.length - 1) {
+                                reorderService(svc.id, catServices[index + 1].id, 'after', cat);
+                              }
+                            }}
+                          />
+                        ))
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          );
-        })
-      )}
-    </div >
-  </aside >
-);
-};
+            );
+          })
+        )}
+      </div >
+    </aside >
+  );
+});
 
 export default ServiceCatalog;

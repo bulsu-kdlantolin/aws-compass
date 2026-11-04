@@ -19,10 +19,10 @@ export interface TopNavbarProps {
   onOpenCommandPalette?: () => void;
 }
 
-export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenCommandPalette }) => {
+export const TopNavbar: React.FC<TopNavbarProps> = React.memo(({ onOpenCommandPalette }) => {
   const workspaceMode = useCompassStore((s) => s.workspaceMode);
   const setWorkspaceMode = useCompassStore((s) => s.setWorkspaceMode);
-  const services = useCompassStore((s) => s.services);
+  const favoritesCount = useCompassStore((s) => s.services.filter((svc) => svc.isFavorite).length);
   const filter = useCompassStore((s) => s.filter);
   const setFavoritesFilter = useCompassStore((s) => s.setFavoritesFilter);
   const theme = useCompassStore((s) => s.theme);
@@ -33,9 +33,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenCommandPalette }) =>
   const handleToggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
-
-  // Favorites metrics
-  const favoritesCount = services.filter((s) => s.isFavorite).length;
 
   return (
     <header
@@ -151,7 +148,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenCommandPalette }) =>
               ? 'text-[#EAEDED] hover:bg-white/8 hover:text-white border border-transparent'
               : 'text-[#879596] hover:bg-white/5 hover:text-[#EAEDED] border border-transparent'
             }`}
-          title={filter.favoritesOnly ? 'Showing favorites only (Click to show all)' : 'Filter by favorited services'}
+          title={filter.favoritesOnly ? 'Showing favorites only (Click to show all)' : 'Filter by favorite services'}
           aria-label="Favorites quick filter"
         >
           <AnimatedIcon
@@ -204,6 +201,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenCommandPalette }) =>
       </div >
     </header >
   );
-};
+});
 
 export default TopNavbar;
