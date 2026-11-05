@@ -393,6 +393,18 @@ body.canvas-global-panning *,
   background-color: transparent !important;
 }
 
+.mermaid-container .node {
+  transition: transform 0.15s ease-out, filter 0.15s ease-out;
+}
+
+.mermaid-container .node:hover {
+  filter: drop-shadow(0 2px 8px rgba(255, 153, 0, 0.3));
+}
+
+.mermaid-container foreignObject {
+  overflow: visible;
+}
+
 /* Technical Dossier Typography */
 .vault-prose h2 {
   font-size: 16px;

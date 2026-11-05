@@ -19,7 +19,6 @@ import {
   Maximize2,
   Minimize2,
   ChevronDown,
-  ChevronRight,
   Download,
   Check,
   ZoomIn,
@@ -79,8 +78,6 @@ const ArchitectureCanvasInner: React.FC = () => {
   const onConnect = useCanvasStore((s) => s.onConnect);
   const addServiceNode = useCanvasStore((s) => s.addServiceNode);
   const addBoundaryNode = useCanvasStore((s) => s.addBoundaryNode);
-  const isCanvasSidebarOpen = useCanvasStore((s) => s.isCanvasSidebarOpen);
-  const setIsCanvasSidebarOpen = useCanvasStore((s) => s.setIsCanvasSidebarOpen);
   const addExternalActor = useCanvasStore((s) => s.addExternalActor);
   const addAnnotationNode = useCanvasStore((s) => s.addAnnotationNode);
   const openNodeInspector = useCanvasStore((s) => s.openNodeInspector);
@@ -717,21 +714,8 @@ const ArchitectureCanvasInner: React.FC = () => {
           }}
           className="h-11 border-b px-4 flex items-center justify-between gap-3 shrink-0 relative z-40 bg-[var(--aws-card-bg)] select-none"
         >
-          {/* Left Cluster: Sidebar Expand (if collapsed), Blueprint Switcher, Single Save-As Action, and Auto-Save Status */}
+          {/* Left Cluster: Blueprint Switcher, Single Save-As Action, and Auto-Save Status */}
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 shrink-0">
-            {!isCanvasSidebarOpen && (
-              <button
-                type="button"
-                onClick={() => setIsCanvasSidebarOpen(true)}
-                className="h-8 px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#354150] bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] hover:border-[#FF9900] text-[var(--aws-text-muted)] hover:text-[#FF9900] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs shrink-0 group"
-                title="Open Stencils & Catalog Sidebar"
-                aria-label="Open Stencils & Catalog Sidebar"
-              >
-                <ChevronRight className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[#FF9900] transition-colors" />
-                <span className="text-[11px] font-semibold text-[var(--aws-text-primary)] group-hover:text-[#FF9900]">Stencils</span>
-              </button>
-            )}
-
             <BlueprintManagerDropdown />
 
             {/* Save As Custom Blueprint Button */}

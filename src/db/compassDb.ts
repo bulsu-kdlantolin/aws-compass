@@ -50,7 +50,7 @@ export async function initializeDatabase(): Promise<void> {
 
   for (const svc of existingServices) {
     const seed = seedMap.get(svc.id);
-    const canonicalDocsUrl = VERIFIED_AWS_DOCS[svc.id];
+    const canonicalDocsUrl = VERIFIED_AWS_DOCS[svc.id] || seed?.docsUrl;
     let needsUpdate = false;
     const updateData: { id: string } & Partial<AWSService> = { id: svc.id };
 

@@ -185,7 +185,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws autoscaling get-auto-scaling --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/auto-scaling/"
+    "docsUrl": "https://docs.aws.amazon.com/autoscaling/"
   },
   {
     "id": "lightsail",
@@ -363,7 +363,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws apprunner get-app-runner --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/app-runner/"
+    "docsUrl": "https://docs.aws.amazon.com/apprunner/latest/dg/what-is-apprunner.html"
   },
   {
     "id": "batch",
@@ -778,7 +778,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws simspaceweaver get-simspace-weaver --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/simspace-weaver/"
+    "docsUrl": "https://docs.aws.amazon.com/service-authorization/latest/reference/list_awssimspaceweaver.html"
   },
   {
     "id": "nimble-studio",
@@ -837,7 +837,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws nimblestudio get-nimble-studio --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/nimble-studio/"
+    "docsUrl": "https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonnimblestudio.html"
   },
   {
     "id": "ec2-image-builder",
@@ -896,7 +896,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws imagebuilder get-ec2-image-builder --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/ec2-image-builder/"
+    "docsUrl": "https://docs.aws.amazon.com/imagebuilder/latest/userguide/what-is-image-builder.html"
   },
   {
     "id": "serverless-repo",
@@ -955,7 +955,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws serverlessrepo get-serverless-repo --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/serverless-repo/"
+    "docsUrl": "https://docs.aws.amazon.com/serverlessrepo/latest/devguide/what-is-serverlessrepo.html"
   },
   {
     "id": "ecs",
@@ -1137,7 +1137,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws ecs get-fargate --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/fargate/"
+    "docsUrl": "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html"
   },
   {
     "id": "ecr",
@@ -1256,7 +1256,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws eks get-eks-anywhere --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/eks-anywhere/"
+    "docsUrl": "https://anywhere.eks.amazonaws.com/"
   },
   {
     "id": "ecs-anywhere",
@@ -1314,7 +1314,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws ecs get-ecs-anywhere --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/ecs-anywhere/"
+    "docsUrl": "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-anywhere.html"
   },
   {
     "id": "app2container",
@@ -1432,7 +1432,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws rosa get-red-hat-openshift --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/red-hat-openshift/"
+    "docsUrl": "https://docs.aws.amazon.com/rosa/latest/userguide/what-is-rosa.html"
   },
   {
     "id": "eks-distro",
@@ -1490,7 +1490,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws eks get-eks-distro --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/eks-distro/"
+    "docsUrl": "https://distro.eks.amazonaws.com/"
   },
   {
     "id": "step-functions",
@@ -1673,7 +1673,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws pipes get-eventbridge-pipes --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/eventbridge-pipes/"
+    "docsUrl": "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes.html"
   },
   {
     "id": "eventbridge-scheduler",
@@ -1733,7 +1733,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws scheduler get-eventbridge-scheduler --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/eventbridge-scheduler/"
+    "docsUrl": "https://docs.aws.amazon.com/scheduler/latest/UserGuide/what-is-scheduler.html"
   },
   {
     "id": "sam",
@@ -1792,7 +1792,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws sam get-sam --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/sam/"
+    "docsUrl": "https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html"
   },
   {
     "id": "appsync",
@@ -2149,7 +2149,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws storagegateway get-storage-gateway --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/storage-gateway/"
+    "docsUrl": "https://docs.aws.amazon.com/storagegateway/latest/userguide/WhatIsStorageGateway.html"
   },
   {
     "id": "backup",
@@ -2210,7 +2210,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws backup get-backup --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/backup/"
+    "docsUrl": "https://docs.aws.amazon.com/aws-backup/latest/devguide/whatisbackup.html"
   },
   {
     "id": "fsx-windows",
@@ -2269,7 +2269,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws fsx get-fsx-windows --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/fsx-windows/"
+    "docsUrl": "https://docs.aws.amazon.com/fsx/latest/WindowsGuide/what-is.html"
   },
   {
     "id": "fsx-lustre",
@@ -2328,7 +2328,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws fsx get-fsx-lustre --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/fsx-lustre/"
+    "docsUrl": "https://docs.aws.amazon.com/fsx/latest/LustreGuide/what-is.html"
   },
   {
     "id": "fsx-ontap",
@@ -2387,7 +2387,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws fsx get-fsx-ontap --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/fsx-ontap/"
+    "docsUrl": "https://docs.aws.amazon.com/fsx/latest/ONTAPGuide/what-is-fsx-ontap.html"
   },
   {
     "id": "fsx-openzfs",
@@ -2446,7 +2446,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws fsx get-fsx-openzfs --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/fsx-openzfs/"
+    "docsUrl": "https://docs.aws.amazon.com/fsx/latest/OpenZFSGuide/what-is-fsx-openzfs.html"
   },
   {
     "id": "snow-family",
@@ -2504,7 +2504,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws snow-device-management get-snow-family --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/snow-family/"
+    "docsUrl": "https://docs.aws.amazon.com/snowball/latest/developer-guide/whatisedge.html"
   },
   {
     "id": "datasync",
@@ -2624,7 +2624,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws transfer get-transfer-family --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/transfer-family/"
+    "docsUrl": "https://docs.aws.amazon.com/transfer/latest/userguide/what-is-aws-transfer-family.html"
   },
   {
     "id": "drs",
@@ -2799,7 +2799,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws s3control get-s3-object-lambda --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/s3-object-lambda/"
+    "docsUrl": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/transforming-objects.html"
   },
   {
     "id": "s3-mrap",
@@ -2857,7 +2857,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws s3control get-s3-mrap --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/s3-mrap/"
+    "docsUrl": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/MultiRegionAccessPoints.html"
   },
   {
     "id": "rds",
@@ -2979,7 +2979,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws rds get-aurora --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/aurora/"
+    "docsUrl": "https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html"
   },
   {
     "id": "dynamodb",
@@ -3515,7 +3515,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws rds get-rds-proxy --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/rds-proxy/"
+    "docsUrl": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-proxy.html"
   },
   {
     "id": "neptune-analytics",
@@ -3574,7 +3574,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws neptune-graph get-neptune-analytics --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/neptune-analytics/"
+    "docsUrl": "https://docs.aws.amazon.com/neptune-analytics/latest/userguide/what-is-neptune-analytics.html"
   },
   {
     "id": "redshift-serverless",
@@ -3632,7 +3632,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws redshift-serverless get-redshift-serverless --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/redshift-serverless/"
+    "docsUrl": "https://docs.aws.amazon.com/redshift/latest/mgmt/serverless-workgroup.html"
   },
   {
     "id": "elasticache-serverless",
@@ -3691,7 +3691,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws elasticache get-elasticache-serverless --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/elasticache-serverless/"
+    "docsUrl": "https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/ElastiCache-Serverless.html"
   },
   {
     "id": "qldb",
@@ -3749,7 +3749,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws qldb get-qldb --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/qldb/"
+    "docsUrl": "https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonqldb.html"
   },
   {
     "id": "database-activity-streams",
@@ -3808,7 +3808,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws rds get-database-activity-streams --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/database-activity-streams/"
+    "docsUrl": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/DBActivityStreams.html"
   },
   {
     "id": "vpc",
@@ -4050,7 +4050,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws apigateway get-api-gateway --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/api-gateway/"
+    "docsUrl": "https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html"
   },
   {
     "id": "alb",
@@ -4111,7 +4111,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws elbv2 get-alb --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/alb/"
+    "docsUrl": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html"
   },
   {
     "id": "nlb",
@@ -4170,7 +4170,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws elbv2 get-nlb --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/nlb/"
+    "docsUrl": "https://docs.aws.amazon.com/elasticloadbalancing/latest/network/introduction.html"
   },
   {
     "id": "nat-gateway",
@@ -4229,7 +4229,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws ec2 get-nat-gateway --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/nat-gateway/"
+    "docsUrl": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html"
   },
   {
     "id": "internet-gateway",
@@ -4288,7 +4288,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws ec2 get-internet-gateway --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/internet-gateway/"
+    "docsUrl": "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html"
   },
   {
     "id": "direct-connect",
@@ -4347,7 +4347,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws directconnect get-direct-connect --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/direct-connect/"
+    "docsUrl": "https://docs.aws.amazon.com/directconnect/latest/UserGuide/Welcome.html"
   },
   {
     "id": "transit-gateway",
@@ -4406,7 +4406,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws ec2 get-transit-gateway --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/transit-gateway/"
+    "docsUrl": "https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html"
   },
   {
     "id": "global-accelerator",
@@ -4525,7 +4525,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws ec2 get-site-to-site-vpn --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/site-to-site-vpn/"
+    "docsUrl": "https://docs.aws.amazon.com/vpn/latest/s2svpn/VPC_VPN.html"
   },
   {
     "id": "client-vpn",
@@ -4583,7 +4583,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws ec2 get-client-vpn --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/client-vpn/"
+    "docsUrl": "https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/what-is.html"
   },
   {
     "id": "privatelink",
@@ -4642,7 +4642,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws ec2 get-privatelink --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/privatelink/"
+    "docsUrl": "https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html"
   },
   {
     "id": "vpc-lattice",
@@ -4761,7 +4761,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws route53resolver get-route53-resolver --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/route53-resolver/"
+    "docsUrl": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolving-your-domain-names.html"
   },
   {
     "id": "network-firewall",
@@ -4996,7 +4996,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws ec2 get-traffic-mirroring --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/traffic-mirroring/"
+    "docsUrl": "https://docs.aws.amazon.com/vpc/latest/mirroring/what-is-traffic-mirroring.html"
   },
   {
     "id": "reachability-analyzer",
@@ -5054,7 +5054,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws ec2 get-reachability-analyzer --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/reachability-analyzer/"
+    "docsUrl": "https://docs.aws.amazon.com/vpc/latest/reachability/what-is-reachability-analyzer.html"
   },
   {
     "id": "network-access-analyzer",
@@ -5112,7 +5112,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws ec2 get-network-access-analyzer --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/network-access-analyzer/"
+    "docsUrl": "https://docs.aws.amazon.com/vpc/latest/network-access-analyzer/what-is-network-access-analyzer.html"
   },
   {
     "id": "ipam",
@@ -5170,7 +5170,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws ec2 get-ipam --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/ipam/"
+    "docsUrl": "https://docs.aws.amazon.com/vpc/latest/ipam/what-it-is-ipam.html"
   },
   {
     "id": "iam",
@@ -5289,7 +5289,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws sso-admin get-iam-identity-center --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/iam-identity-center/"
+    "docsUrl": "https://docs.aws.amazon.com/singlesignon/latest/userguide/what-is.html"
   },
   {
     "id": "cognito",
@@ -5590,7 +5590,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws secretsmanager get-secrets-manager --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/secrets-manager/"
+    "docsUrl": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html"
   },
   {
     "id": "acm",
@@ -5890,7 +5890,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws securityhub get-security-hub --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/security-hub/"
+    "docsUrl": "https://docs.aws.amazon.com/securityhub/latest/userguide/what-is-securityhub.html"
   },
   {
     "id": "detective",
@@ -6420,7 +6420,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws acm-pca get-private-ca --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/private-ca/"
+    "docsUrl": "https://docs.aws.amazon.com/privateca/latest/userguide/PcaWelcome.html"
   },
   {
     "id": "payment-cryptography",
@@ -6656,7 +6656,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws cognito-sync get-cognito-sync --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/cognito-sync/"
+    "docsUrl": "https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-sync.html"
   },
   {
     "id": "sqs",
@@ -7018,7 +7018,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws b2bi get-b2b-data-interchange --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/b2b-data-interchange/"
+    "docsUrl": "https://docs.aws.amazon.com/b2bi/latest/userguide/what-is-b2bi.html"
   },
   {
     "id": "chime-sdk",
@@ -7316,7 +7316,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws kinesis get-kinesis-streams --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/kinesis-streams/"
+    "docsUrl": "https://docs.aws.amazon.com/streams/latest/dev/introduction.html"
   },
   {
     "id": "data-firehose",
@@ -7377,7 +7377,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws firehose get-data-firehose --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/data-firehose/"
+    "docsUrl": "https://docs.aws.amazon.com/firehose/latest/dev/what-is-this-service.html"
   },
   {
     "id": "managed-flink",
@@ -7496,7 +7496,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws opensearch get-opensearch --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/opensearch/"
+    "docsUrl": "https://docs.aws.amazon.com/opensearch-service/latest/developerguide/what-is.html"
   },
   {
     "id": "quicksight",
@@ -8087,7 +8087,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws omics get-healthomics --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/healthomics/"
+    "docsUrl": "https://docs.aws.amazon.com/omics/latest/dev/what-is-aws-healthomics.html"
   },
   {
     "id": "bedrock",
@@ -8265,7 +8265,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws qdeveloper get-q-developer --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/q-developer/"
+    "docsUrl": "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/what-is.html"
   },
   {
     "id": "q-business",
@@ -8324,7 +8324,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws qbusiness get-q-business --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/q-business/"
+    "docsUrl": "https://docs.aws.amazon.com/amazonq/latest/business-use-dg/what-is.html"
   },
   {
     "id": "rekognition",
@@ -8968,7 +8968,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws frauddetector get-fraud-detector --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/fraud-detector/"
+    "docsUrl": "https://docs.aws.amazon.com/frauddetector/latest/ug/what-is-frauddetector.html"
   },
   {
     "id": "lookout-equipment",
@@ -9027,7 +9027,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws lookout-equipment get-lookout-equipment --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/lookout-equipment/"
+    "docsUrl": "https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonlookoutforequipment.html"
   },
   {
     "id": "lookout-metrics",
@@ -9088,7 +9088,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws lookoutmetrics get-lookout-metrics --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/lookout-metrics/"
+    "docsUrl": "https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonlookoutmetrics.html"
   },
   {
     "id": "lookout-vision",
@@ -9146,7 +9146,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws lookoutvision get-lookout-vision --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/lookout-vision/"
+    "docsUrl": "https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonlookoutforvision.html"
   },
   {
     "id": "a2i",
@@ -9205,7 +9205,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws sagemaker-a2i-runtime get-a2i --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/a2i/"
+    "docsUrl": "https://docs.aws.amazon.com/sagemaker/latest/dg/a2i-use-case.html"
   },
   {
     "id": "panorama",
@@ -9264,7 +9264,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws panorama get-panorama --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/panorama/"
+    "docsUrl": "https://docs.aws.amazon.com/service-authorization/latest/reference/list_awspanorama.html"
   },
   {
     "id": "deepracer",
@@ -9382,7 +9382,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws sagemaker get-sagemaker-hyperpod --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/sagemaker-hyperpod/"
+    "docsUrl": "https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-hyperpod.html"
   },
   {
     "id": "cloudwatch",
@@ -9809,7 +9809,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws controltower get-control-tower --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/control-tower/"
+    "docsUrl": "https://docs.aws.amazon.com/controltower/latest/userguide/what-is-control-tower.html"
   },
   {
     "id": "service-catalog",
@@ -9868,7 +9868,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws servicecatalog get-service-catalog --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/service-catalog/"
+    "docsUrl": "https://docs.aws.amazon.com/servicecatalog/latest/adminguide/introduction.html"
   },
   {
     "id": "trusted-advisor",
@@ -9926,7 +9926,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws support get-trusted-advisor --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/trusted-advisor/"
+    "docsUrl": "https://docs.aws.amazon.com/awssupport/latest/user/trusted-advisor.html"
   },
   {
     "id": "xray",
@@ -10046,7 +10046,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws grafana get-managed-grafana --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/managed-grafana/"
+    "docsUrl": "https://docs.aws.amazon.com/grafana/latest/userguide/what-is-amazon-managed-service-for-grafana.html"
   },
   {
     "id": "managed-prometheus",
@@ -10106,7 +10106,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws aps get-managed-prometheus --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/managed-prometheus/"
+    "docsUrl": "https://docs.aws.amazon.com/prometheus/latest/userguide/what-is-Amazon-Managed-Service-Prometheus.html"
   },
   {
     "id": "resilience-hub",
@@ -10223,7 +10223,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws wellarchitected get-well-architected-tool --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/well-architected-tool/"
+    "docsUrl": "https://docs.aws.amazon.com/wellarchitected/latest/userguide/intro.html"
   },
   {
     "id": "proton",
@@ -10341,7 +10341,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws opsworks get-opsworks --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/opsworks/"
+    "docsUrl": "https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsopsworks.html"
   },
   {
     "id": "fis",
@@ -10578,7 +10578,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws notifications get-user-notifications --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/user-notifications/"
+    "docsUrl": "https://docs.aws.amazon.com/notifications/latest/userguide/what-is-notifications.html"
   },
   {
     "id": "application-signals",
@@ -10637,7 +10637,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws cloudwatch get-application-signals --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/application-signals/"
+    "docsUrl": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Application-Signals.html"
   },
   {
     "id": "adot",
@@ -10697,7 +10697,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws cloudwatch get-adot --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/adot/"
+    "docsUrl": "https://aws-otel.github.io/docs/introduction"
   },
   {
     "id": "application-composer",
@@ -11288,7 +11288,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws ec2 get-fault-isolation-boundaries --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/fault-isolation-boundaries/"
+    "docsUrl": "https://docs.aws.amazon.com/whitepapers/latest/aws-fault-isolation-boundaries/aws-fault-isolation-boundaries.html"
   },
   {
     "id": "dms",
@@ -11467,7 +11467,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws m2 get-mainframe-modernization --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/mainframe-modernization/"
+    "docsUrl": "https://docs.aws.amazon.com/m2/latest/userguide/what-is-m2.html"
   },
   {
     "id": "migration-hub",
@@ -11526,7 +11526,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws migrationhub get-migration-hub --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/migration-hub/"
+    "docsUrl": "https://docs.aws.amazon.com/migrationhub/latest/ug/what-is-migration-hub.html"
   },
   {
     "id": "migration-evaluator",
@@ -11584,7 +11584,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws migration-evaluator get-migration-evaluator --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/migration-evaluator/"
+    "docsUrl": "https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsmigrationevaluator.html"
   },
   {
     "id": "sct",
@@ -11643,7 +11643,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws sct get-sct --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/sct/"
+    "docsUrl": "https://docs.aws.amazon.com/SchemaConversionTool/latest/userguide/CHAP_Welcome.html"
   },
   {
     "id": "amplify",
@@ -11761,7 +11761,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws location get-location-service --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/location-service/"
+    "docsUrl": "https://docs.aws.amazon.com/location/latest/developerguide/welcome.html"
   },
   {
     "id": "ses",
@@ -11937,7 +11937,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws devicefarm get-device-farm --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/device-farm/"
+    "docsUrl": "https://docs.aws.amazon.com/devicefarm/latest/developerguide/welcome.html"
   },
   {
     "id": "workspaces",
@@ -12112,7 +12112,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws appstream get-appstream --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/appstream/"
+    "docsUrl": "https://docs.aws.amazon.com/appstream2/latest/developerguide/what-is-appstream.html"
   },
   {
     "id": "worklink",
@@ -12170,7 +12170,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws worklink get-worklink --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/worklink/"
+    "docsUrl": "https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonworklink.html"
   },
   {
     "id": "iot-core",
@@ -12230,7 +12230,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws iot get-iot-core --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/iot-core/"
+    "docsUrl": "https://docs.aws.amazon.com/iot/latest/developerguide/what-is-aws-iot.html"
   },
   {
     "id": "iot-greengrass",
@@ -12288,7 +12288,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws greengrassv2 get-iot-greengrass --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/iot-greengrass/"
+    "docsUrl": "https://docs.aws.amazon.com/greengrass/v2/developerguide/what-is-iot-greengrass.html"
   },
   {
     "id": "iot-analytics",
@@ -12347,7 +12347,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws iotanalytics get-iot-analytics --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/iot-analytics/"
+    "docsUrl": "https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsiotanalytics.html"
   },
   {
     "id": "iot-sitewise",
@@ -12465,7 +12465,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws iotevents get-iot-events --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/iot-events/"
+    "docsUrl": "https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsiotevents.html"
   },
   {
     "id": "iot-twinmaker",
@@ -12817,7 +12817,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws robomaker get-robomaker --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/robomaker/"
+    "docsUrl": "https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsrobomaker.html"
   },
   {
     "id": "cost-explorer",
@@ -12875,7 +12875,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws ce get-cost-explorer --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/cost-explorer/"
+    "docsUrl": "https://docs.aws.amazon.com/cost-management/latest/userguide/ce-what-is.html"
   },
   {
     "id": "budgets",
@@ -12934,7 +12934,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws budgets get-budgets --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/budgets/"
+    "docsUrl": "https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-managing-costs.html"
   },
   {
     "id": "cur",
@@ -12994,7 +12994,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws cur get-cur --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/cur/"
+    "docsUrl": "https://docs.aws.amazon.com/cur/latest/userguide/what-is-cur.html"
   },
   {
     "id": "savings-plans",
@@ -13054,7 +13054,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws savingsplans get-savings-plans --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/savings-plans/"
+    "docsUrl": "https://docs.aws.amazon.com/savingsplans/latest/userguide/what-is-savings-plans.html"
   },
   {
     "id": "pricing-calculator",
@@ -13170,7 +13170,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws billingconductor get-billing-conductor --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/billing-conductor/"
+    "docsUrl": "https://docs.aws.amazon.com/billingconductor/latest/userguide/what-is-billing-conductor.html"
   },
   {
     "id": "marketplace",
@@ -13287,7 +13287,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws aws get-activate --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/activate/"
+    "docsUrl": "https://aws.amazon.com/activate/"
   },
   {
     "id": "support",
@@ -13345,7 +13345,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws support get-support --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/support/"
+    "docsUrl": "https://docs.aws.amazon.com/awssupport/latest/user/welcome.html"
   },
   {
     "id": "ground-station",
@@ -13696,7 +13696,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws mediastore get-mediastore --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/mediastore/"
+    "docsUrl": "https://docs.aws.amazon.com/service-authorization/latest/reference/list_awselementalmediastore.html"
   },
   {
     "id": "mediatailor",
@@ -13929,7 +13929,7 @@ export const AWS_CATALOG_DATA: AWSCatalogEntry[] = [
         "command": "aws supplychain get-supply-chain --id ${resourceName} --region ${region}"
       }
     ],
-    "docsUrl": "https://docs.aws.amazon.com/supply-chain/"
+    "docsUrl": "https://aws.amazon.com/aws-supply-chain/"
   }
 ];
 

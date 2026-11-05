@@ -116,7 +116,7 @@ function resolveBoundaryType(text: string): GroupBoundaryType {
 /**
  * Match a Mermaid node token or label to a catalog AWSService or External Actor
  */
-function matchServiceOrActor(
+export function matchServiceOrActor(
   rawId: string,
   label: string,
   allServices: AWSService[]

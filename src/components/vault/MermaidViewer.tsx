@@ -1,10 +1,11 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import mermaid from 'mermaid';
-import { AlertCircle, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, ExternalLink } from 'lucide-react';
+import { AlertCircle, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, ExternalLink, X } from 'lucide-react';
 import { useCompassStore } from '../../store/useCompassStore';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { saveDiagram as dbSaveDiagram } from '../../db/compassDb';
 import { parseMermaidToCanvas } from '../../utils/mermaidToDiagram';
+import { enrichMermaidWithIcons } from '../../utils/mermaidWithIcons';
 import type { AWSService, Diagram } from '../../types/aws';
 import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
 import { Trace } from '../ui/LoadingIndicators';
@@ -174,12 +175,25 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, service, cl
           .replace(/\\?`{3}\s*$/i, '')
           .trim();
 
+        // Enrich the flowchart nodes with official AWS architecture service icons
+        const enrichedChart = enrichMermaidWithIcons(cleanedChart, services);
+
         // Unique element ID for each render pass and theme change
         const renderId = `${diagramId}-${theme}-${Date.now()}`;
-        const { svg } = await mermaid.render(renderId, cleanedChart);
+        let finalSvg = '';
+
+        try {
+          const { svg } = await mermaid.render(renderId, enrichedChart);
+          finalSvg = svg;
+        } catch {
+          // If any custom diagram trips the enriched syntax, gracefully fall back to cleanedChart
+          const fallbackId = `${diagramId}-fallback-${Date.now()}`;
+          const { svg } = await mermaid.render(fallbackId, cleanedChart);
+          finalSvg = svg;
+        }
 
         if (!isCancelled) {
-          setSvgContent(svg);
+          setSvgContent(finalSvg);
           setIsRendering(false);
         }
       } catch (err: unknown) {
@@ -203,7 +217,7 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, service, cl
     return () => {
       isCancelled = true;
     };
-  }, [chart, diagramId, theme]);
+  }, [chart, diagramId, theme, services]);
 
   return (
     <div
@@ -358,61 +372,61 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, service, cl
               backgroundColor: 'var(--aws-card-bg)',
               borderBottomColor: 'var(--aws-border)',
             }}
-            className="h-12 px-4 sm:px-6 border-b flex items-center justify-between shrink-0 shadow-xs"
+            className="h-12 px-4 sm:px-6 border-b flex items-center justify-between shrink-0 shadow-xs z-10"
           >
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
               <span
                 style={{ color: 'var(--aws-text-primary)' }}
-                className="text-[14px] font-bold"
+                className="text-[14px] font-bold truncate"
               >
-                Architecture flow
+                Architecture flow {service ? `· ${service.name}` : ''}
               </span>
-              <span className="font-mono text-[11px] text-[var(--aws-text-muted)] hidden sm:inline">
+              <span className="font-mono text-[11px] text-[var(--aws-text-muted)] hidden md:inline">
                 Fullscreen view
               </span>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               {/* Zoom Controls */}
-              <div className="flex items-center gap-0.5">
+              <div className="flex items-center gap-0.5 bg-[var(--aws-page-bg)] p-0.5 rounded-[6px] border border-[var(--aws-border)]">
                 <button
                   type="button"
                   onClick={handleZoomOut}
                   disabled={zoom <= 0.4}
-                  className="p-1.5 rounded-[6px] hover:text-[var(--aws-text-primary)] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] text-[var(--aws-text-muted)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  className="p-1.5 rounded-[4px] hover:text-[var(--aws-text-primary)] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] text-[var(--aws-text-muted)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   title="Zoom out"
                   aria-label="Zoom out"
                 >
-                  <ZoomOut className="w-4 h-4" />
+                  <ZoomOut className="w-3.5 h-3.5" />
                 </button>
-                <span className="px-1.5 text-[11px] font-mono text-[var(--aws-text-muted)] tabular-nums select-none">
+                <span className="px-1.5 text-[11px] font-mono text-[var(--aws-text-muted)] tabular-nums select-none min-w-[38px] text-center">
                   {Math.round(zoom * 100)}%
                 </span>
                 <button
                   type="button"
                   onClick={handleZoomIn}
                   disabled={zoom >= 3.0}
-                  className="p-1.5 rounded-[6px] hover:text-[var(--aws-text-primary)] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] text-[var(--aws-text-muted)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  className="p-1.5 rounded-[4px] hover:text-[var(--aws-text-primary)] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] text-[var(--aws-text-muted)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   title="Zoom in"
                   aria-label="Zoom in"
                 >
-                  <ZoomIn className="w-4 h-4" />
+                  <ZoomIn className="w-3.5 h-3.5" />
                 </button>
                 <button
                   type="button"
                   onClick={handleZoomReset}
-                  className="px-2 py-1.5 rounded-[6px] text-[12px] hover:text-[var(--aws-text-primary)] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] text-[var(--aws-text-muted)] cursor-pointer transition-colors flex items-center gap-1 font-medium"
+                  className="px-2 py-1 rounded-[4px] text-[11px] hover:text-[var(--aws-text-primary)] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] text-[var(--aws-text-muted)] cursor-pointer transition-colors flex items-center gap-1 font-medium"
                   title="Reset zoom to 100%"
                   aria-label="Reset zoom to 100%"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
+                  <RotateCcw className="w-3 h-3" />
                   <span className="hidden sm:inline">Reset</span>
                 </button>
               </div>
 
               <div
                 style={{ backgroundColor: 'var(--aws-border)' }}
-                className="h-4 w-px mx-1"
+                className="h-4 w-px mx-0.5"
               />
 
               <button
@@ -424,17 +438,12 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, service, cl
                   borderColor: 'rgba(255, 153, 0, 0.4)',
                   color: '#FF9900',
                 }}
-                className="h-8 px-3 rounded-[6px] border text-[12px] font-semibold flex items-center gap-1.5 hover:bg-[#FF9900]/25 transition-all cursor-pointer shadow-2xs select-none disabled:opacity-60 disabled:cursor-not-allowed"
+                className="h-8 px-3 rounded-[6px] border text-[12px] font-semibold flex items-center gap-1.5 hover:bg-[#FF9900]/25 transition-all cursor-pointer shadow-2xs select-none disabled:opacity-60 disabled:cursor-not-allowed shrink-0"
                 title="Open flow directly in Architecture Canvas"
               >
                 <ExternalLink className="w-3.5 h-3.5 text-[#FF9900]" />
-                <span>{isOpenInSandboxLoading ? 'Opening in Sandbox…' : 'Open Flow in Sandbox ↗'}</span>
+                <span className="hidden sm:inline">{isOpenInSandboxLoading ? 'Opening…' : 'Open in Canvas ↗'}</span>
               </button>
-
-              <div
-                style={{ backgroundColor: 'var(--aws-border)' }}
-                className="h-4 w-px mx-1"
-              />
 
               <CloudscapeCopyButton
                 textToCopy={chart.trim()}
@@ -445,21 +454,21 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, service, cl
 
               <div
                 style={{ backgroundColor: 'var(--aws-border)' }}
-                className="h-4 w-px mx-1"
+                className="h-4 w-px mx-0.5"
               />
 
-              {/* Exit Fullscreen button */}
+              {/* Primary Header Exit Fullscreen button */}
               <button
                 type="button"
                 onClick={() => setIsFullscreen(false)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] text-[12px] font-medium text-[var(--aws-text-primary)] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] cursor-pointer transition-colors"
+                className="h-8 px-3.5 rounded-[6px] bg-[#0972D3] dark:bg-[#539FE5] text-white hover:bg-[#0759A6] dark:hover:bg-[#418BD1] font-semibold text-[12px] flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer select-none shrink-0"
                 title="Exit full screen (Esc)"
                 aria-label="Exit full screen"
               >
-                <Minimize2 className="w-3.5 h-3.5" />
+                <Minimize2 className="w-3.5 h-3.5 text-white" />
                 <span>Exit full screen</span>
                 <kbd
-                  className="text-[10px] font-mono px-1.5 py-0.5 rounded-[4px] bg-[#0F141A]/5 dark:bg-white/10 text-[var(--aws-text-muted)] ml-1 hidden sm:inline"
+                  className="text-[10px] font-mono px-1.5 py-0.5 rounded-[3px] bg-black/25 text-white ml-0.5 hidden sm:inline"
                 >
                   ESC
                 </kbd>
@@ -468,7 +477,28 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, service, cl
           </div>
 
           {/* Fullscreen Body Viewport */}
-          <div className="flex-1 overflow-auto custom-scrollbar p-6 sm:p-12 flex items-center justify-center">
+          <div className="flex-1 overflow-auto custom-scrollbar p-6 sm:p-12 flex items-center justify-center relative">
+            {/* Floating Top-Right Exit Fullscreen Pill */}
+            <div className="absolute top-4 right-6 z-20">
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(false)}
+                style={{
+                  backgroundColor: 'var(--aws-card-bg)',
+                  borderColor: 'var(--aws-border)',
+                }}
+                className="h-8 pl-2.5 pr-3 rounded-full border shadow-md hover:border-[#FF9900] text-[var(--aws-text-primary)] hover:text-[#FF9900] flex items-center gap-1.5 text-[11px] font-semibold backdrop-blur-md transition-all cursor-pointer group"
+                title="Exit full screen (Esc)"
+                aria-label="Exit full screen"
+              >
+                <X className="w-3.5 h-3.5 text-[var(--aws-text-muted)] group-hover:text-[#FF9900] transition-colors" />
+                <span>Exit full screen</span>
+                <kbd className="text-[9px] font-mono px-1 rounded bg-[var(--aws-page-bg)] border border-[var(--aws-border)] text-[var(--aws-text-muted)]">
+                  ESC
+                </kbd>
+              </button>
+            </div>
+
             <div
               style={{
                 transform: `scale(${zoom})`,
