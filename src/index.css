@@ -131,6 +131,13 @@
     --aws-scrollbar-track: transparent;
     --aws-scrollbar-track-hover: rgba(22, 30, 45, 0.4);
 
+    /* Code Blocks & Shell CLI Tokens (Dark Mode) */
+    --aws-code-bg: #0F141A;
+    --aws-code-header-bg: #161E2D;
+    --aws-code-border: #242F3D;
+    --aws-code-text: #EAEDED;
+    --aws-code-muted: #879596;
+
     color-scheme: dark;
   }
 
@@ -185,6 +192,13 @@
     --aws-scrollbar-thumb-active: #0972D3;
     --aws-scrollbar-track: transparent;
     --aws-scrollbar-track-hover: rgba(0, 0, 0, 0.04);
+
+    /* Code Blocks & Shell CLI Tokens (Light Mode) */
+    --aws-code-bg: #F8F9FA;
+    --aws-code-header-bg: #EAEDED;
+    --aws-code-border: #D5DBDB;
+    --aws-code-text: #16191F;
+    --aws-code-muted: #545B64;
 
     color-scheme: light;
   }
@@ -354,9 +368,17 @@
   display: none;
 }
 
-/* React Flow custom node resets */
+/* React Flow custom node resets & hardware acceleration */
 .react-flow__node {
   font-family: var(--font-sans);
+  will-change: transform;
+}
+
+.react-flow__node.dragging,
+.react-flow__node.dragging * {
+  cursor: grabbing !important;
+  user-select: none !important;
+  transition: none !important;
 }
 
 /* React Flow Canvas Cursor Management (Moving & Panning around Canvas) */
@@ -476,11 +498,11 @@ body.canvas-global-panning *,
 .vault-prose pre code {
   display: block;
   padding: 12px;
-  background-color: #0F141A;
-  border: 1px solid var(--aws-border);
+  background-color: var(--aws-code-bg);
+  border: 1px solid var(--aws-code-border);
   border-radius: 4px;
   overflow-x: auto;
-  color: #EAEDED;
+  color: var(--aws-code-text);
   font-size: 12px;
   line-height: 18px;
 }

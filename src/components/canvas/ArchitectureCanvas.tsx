@@ -644,7 +644,12 @@ const ArchitectureCanvasInner: React.FC = () => {
     }, 1200);
   };
 
+  const snapGrid = useMemo<[number, number]>(() => [snapGridSize, snapGridSize], [snapGridSize]);
+  const panOnDrag = useMemo<[number, number]>(() => [1, 2], []);
+  const multiSelectionKeyCode = useMemo(() => ['Shift', 'Meta', 'Control'], []);
+
   const markdownSpec = useMemo(() => {
+    if (!isExportOpen) return '';
     const serviceNodes = nodes.filter((n) => !n.data.isBoundary && !n.data.isAnnotation);
     const boundaryNodes = nodes.filter((n) => n.data.isBoundary);
 
@@ -666,7 +671,7 @@ const ArchitectureCanvasInner: React.FC = () => {
         return `- ${src} --[${e.data?.customLabel || e.protocol || 'HTTPS/REST'}]--> ${tgt}`;
       }),
     ].join('\n');
-  }, [nodes, edges, activeDiagramName]);
+  }, [isExportOpen, nodes, edges, activeDiagramName]);
 
   const miniMapNodeColor = useCallback(
     (node: { data?: unknown }) => {
@@ -1002,9 +1007,9 @@ const ArchitectureCanvasInner: React.FC = () => {
               onDragOver={onDragOver}
               onDrop={onDrop}
               selectionOnDrag={true}
-              panOnDrag={[1, 2]}
+              panOnDrag={panOnDrag}
               selectionMode={SelectionMode.Partial}
-              multiSelectionKeyCode={['Shift', 'Meta', 'Control']}
+              multiSelectionKeyCode={multiSelectionKeyCode}
               onNodeDragStop={handleNodeDragStop}
               onMoveStart={(event) => {
                 if (event && ('button' in event || 'buttons' in event)) {
@@ -1032,7 +1037,7 @@ const ArchitectureCanvasInner: React.FC = () => {
               defaultEdgeOptions={flowEdgeOptions}
               connectionMode={ConnectionMode.Loose}
               snapToGrid={snapToGrid}
-              snapGrid={[snapGridSize, snapGridSize]}
+              snapGrid={snapGrid}
               onNodeClick={(_, node) => {
                 openNodeInspector(node.id);
               }}

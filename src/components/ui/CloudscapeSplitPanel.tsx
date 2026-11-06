@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, PanelRight, PanelBottom } from 'lucide-react';
+import { X } from 'lucide-react';
 import { AnimatePresence, m } from 'motion/react';
 import { SPRING_SNAPPY } from '../../utils/motionTokens';
 
@@ -24,7 +24,7 @@ export const CloudscapeSplitPanel: React.FC<CloudscapeSplitPanelProps> = ({
   initialWidth = 440,
   initialHeight = 320,
 }) => {
-  const [position, setPosition] = useState<'side' | 'bottom'>(defaultPosition);
+  const position = defaultPosition;
   const [panelWidth, setPanelWidth] = useState(initialWidth);
   const [panelHeight, setPanelHeight] = useState(initialHeight);
   const [isDragging, setIsDragging] = useState(false);
@@ -131,21 +131,6 @@ export const CloudscapeSplitPanel: React.FC<CloudscapeSplitPanelProps> = ({
 
                   <div className="flex items-center gap-1 shrink-0">
                     {headerActions}
-
-                    {/* Toggle Dock Position Button */}
-                    <button
-                      type="button"
-                      onClick={() => setPosition((p) => (p === 'side' ? 'bottom' : 'side'))}
-                      style={{ color: 'var(--aws-text-muted)' }}
-                      className="p-1 rounded-[4px] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)] transition-colors cursor-pointer"
-                      title={position === 'side' ? 'Dock to bottom' : 'Dock to right'}
-                    >
-                      {position === 'side' ? (
-                        <PanelBottom className="w-4 h-4" />
-                      ) : (
-                        <PanelRight className="w-4 h-4" />
-                      )}
-                    </button>
 
                 {/* Close Button */}
                 <button

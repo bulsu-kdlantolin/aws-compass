@@ -24,7 +24,6 @@ import {
   type CanvasGridVariant,
   type SnapGridSize,
   type DefaultEdgeStyle,
-  type InspectorDockPosition,
   type AWSRegion,
   type StudyTierFilter,
 } from '../../store/useSettingsStore';
@@ -53,7 +52,6 @@ export const SettingsModal: React.FC = () => {
   const defaultEdgeStyle = useSettingsStore((s) => s.defaultEdgeStyle);
   const animateEdgesByDefault = useSettingsStore((s) => s.animateEdgesByDefault);
   const showMiniMap = useSettingsStore((s) => s.showMiniMap);
-  const inspectorDockPosition = useSettingsStore((s) => s.inspectorDockPosition);
   const defaultAwsRegion = useSettingsStore((s) => s.defaultAwsRegion);
   const autoExpandMermaid = useSettingsStore((s) => s.autoExpandMermaid);
 
@@ -67,7 +65,6 @@ export const SettingsModal: React.FC = () => {
   const setDefaultEdgeStyle = useSettingsStore((s) => s.setDefaultEdgeStyle);
   const setAnimateEdgesByDefault = useSettingsStore((s) => s.setAnimateEdgesByDefault);
   const setShowMiniMap = useSettingsStore((s) => s.setShowMiniMap);
-  const setInspectorDockPosition = useSettingsStore((s) => s.setInspectorDockPosition);
   const setDefaultAwsRegion = useSettingsStore((s) => s.setDefaultAwsRegion);
   const setAutoExpandMermaid = useSettingsStore((s) => s.setAutoExpandMermaid);
 
@@ -461,22 +458,6 @@ export const SettingsModal: React.FC = () => {
                       ariaLabel="Show canvas minimap"
                       checked={showMiniMap}
                       onChange={setShowMiniMap}
-                    />
-                  }
-                />
-
-                <SettingsRow
-                  title="Inspector dock position"
-                  description="Default dock edge for the dual-tab Sandbox Inspector."
-                  control={
-                    <SegmentedControl<InspectorDockPosition>
-                      ariaLabel="Inspector dock position"
-                      value={inspectorDockPosition}
-                      onChange={setInspectorDockPosition}
-                      options={[
-                        { value: 'right', label: 'Right' },
-                        { value: 'bottom', label: 'Bottom' },
-                      ]}
                     />
                   }
                 />

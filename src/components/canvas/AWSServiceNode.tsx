@@ -4,8 +4,6 @@ import { X, Check } from 'lucide-react';
 import type { CanvasNodeData } from '../../types/aws';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { AWSServiceIcon } from '../icons/AWSServiceIcon';
-import { m } from 'motion/react';
-import { SPRING_SNAPPY } from '../../utils/motionTokens';
 
 export const AWSServiceNode = memo((props: NodeProps) => {
   const nodeData = props.data as unknown as CanvasNodeData;
@@ -79,12 +77,7 @@ export const AWSServiceNode = memo((props: NodeProps) => {
       style={{ width: '144px' }}
       title={`${nodeData.customTitle || nodeData.label} - Click to inspect, double-click text to edit`}
     >
-      <m.div
-        initial={false}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={SPRING_SNAPPY}
-        className="flex flex-col items-center w-full"
-      >
+      <div className="flex flex-col items-center w-full">
         {/* Delete button (hover only) */}
         <button
           type="button"
@@ -272,8 +265,8 @@ export const AWSServiceNode = memo((props: NodeProps) => {
             </div>
           )
         }
-      </m.div >
-    </div >
+      </div>
+    </div>
   );
 });
 

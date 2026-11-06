@@ -4,8 +4,6 @@ import { X, StickyNote, Check } from 'lucide-react';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { useCompassStore } from '../../store/useCompassStore';
 import type { CanvasNodeData } from '../../types/aws';
-import { m } from 'motion/react';
-import { SPRING_SNAPPY } from '../../utils/motionTokens';
 
 interface ColorTheme {
   borderLight: string;
@@ -146,12 +144,7 @@ export const AnnotationNode = memo((props: NodeProps) => {
           : 'hover:bg-[var(--aws-card-bg)]/60'
           }`}
       >
-        <m.div
-          initial={false}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={SPRING_SNAPPY}
-          className="w-full h-full flex items-center"
-        >
+        <div className="w-full h-full flex items-center">
           <NodeResizer
             minWidth={120}
             minHeight={32}
@@ -204,7 +197,7 @@ export const AnnotationNode = memo((props: NodeProps) => {
               {nodeData.annotationTitle || nodeData.label || 'Architecture Section Header'}
             </div>
           )}
-        </m.div>
+        </div>
       </div>
     );
   }
@@ -222,12 +215,7 @@ export const AnnotationNode = memo((props: NodeProps) => {
       className={`relative rounded-[8px] border shadow-xs transition-shadow group flex flex-col overflow-hidden select-none cursor-pointer ${selected ? 'ring-2 ring-[var(--aws-brand)] shadow-md' : 'hover:shadow-sm'
         }`}
     >
-      <m.div
-        initial={false}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={SPRING_SNAPPY}
-        className="w-full h-full flex flex-col"
-      >
+      <div className="w-full h-full flex flex-col">
         {/* Node Resizer */}
         <NodeResizer
           minWidth={160}
@@ -319,8 +307,8 @@ export const AnnotationNode = memo((props: NodeProps) => {
             </p>
           )}
         </div>
-      </m.div >
-    </div >
+      </div>
+    </div>
   );
 });
 

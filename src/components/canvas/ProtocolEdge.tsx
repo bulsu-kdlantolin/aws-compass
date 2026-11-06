@@ -93,8 +93,7 @@ export const ProtocolEdge = memo((props: EdgeProps) => {
   const openContextMenu = useCanvasStore((s) => s.openContextMenu);
   const theme = useCompassStore((s) => s.theme);
 
-  const edgeInStore = useCanvasStore((s) => s.edges.find((e) => e.id === id));
-  const protocol = (edgeInStore?.protocol || edgeData?.protocol || 'HTTPS/REST') as EdgeProtocol;
+  const protocol = (edgeData?.protocol || 'HTTPS/REST') as EdgeProtocol;
   const isEdgeSelected = useCanvasStore((s) => s.selectedEdgeId === id);
 
   const activePopoverId = usePopoverStore((s) => s.activePopoverId);

@@ -58,9 +58,12 @@ function takeSnapshot(nodes: CanvasNodeItem[], edges: CanvasEdgeItem[], activeDi
 function scheduleDebouncedAutoSave(
   nodes: CanvasNodeItem[],
   edges: CanvasEdgeItem[],
-  set: (state: Partial<CanvasState> | ((prev: CanvasState) => Partial<CanvasState>)) => void
+  set: (state: Partial<CanvasState> | ((prev: CanvasState) => Partial<CanvasState>)) => void,
+  currentSaveStatus?: CanvasSaveStatus
 ) {
-  set({ saveStatus: 'saving' });
+  if (currentSaveStatus !== 'saving') {
+    set({ saveStatus: 'saving' });
+  }
 
   if (debounceSaveTimer) {
     clearTimeout(debounceSaveTimer);
@@ -370,35 +373,50 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   onNodesChange: (changes: NodeChange<CanvasNodeItem>[]) => {
     set((state) => {
       const updatedNodes = applyNodeChanges(changes, state.nodes);
-      const hasPositionChange = changes.some((c) => c.type === 'position');
+      const positionChanges = changes.filter((c) => c.type === 'position');
       let updatedEdges = state.edges;
 
-      if (hasPositionChange) {
+      if (positionChanges.length > 0) {
+        const movedNodeIds = new Set(positionChanges.map((c) => c.id));
+        let hasHandleChanged = false;
         const nodeMap = new Map(updatedNodes.map((n) => [n.id, n]));
-        updatedEdges = state.edges.map((e) => {
+
+        const nextEdges = state.edges.map((e) => {
+          if (!movedNodeIds.has(e.source) && !movedNodeIds.has(e.target)) {
+            return e;
+          }
           const src = nodeMap.get(e.source);
           const tgt = nodeMap.get(e.target);
           if (src && tgt && !src.data?.isBoundary && !tgt.data?.isBoundary) {
             const optimal = resolveOptimalHandles(src, tgt, updatedNodes);
-            return {
-              ...e,
-              sourceHandle: optimal.sourceHandle,
-              targetHandle: optimal.targetHandle,
-            };
+            if (e.sourceHandle !== optimal.sourceHandle || e.targetHandle !== optimal.targetHandle) {
+              hasHandleChanged = true;
+              return {
+                ...e,
+                sourceHandle: optimal.sourceHandle,
+                targetHandle: optimal.targetHandle,
+              };
+            }
           }
           return e;
         });
+
+        if (hasHandleChanged) {
+          updatedEdges = nextEdges;
+        }
       }
 
-      scheduleDebouncedAutoSave(updatedNodes, updatedEdges, set);
-      return { nodes: updatedNodes, edges: updatedEdges };
+      scheduleDebouncedAutoSave(updatedNodes, updatedEdges, set, state.saveStatus);
+      return updatedEdges === state.edges
+        ? { nodes: updatedNodes }
+        : { nodes: updatedNodes, edges: updatedEdges };
     });
   },
 
   onEdgesChange: (changes: EdgeChange<CanvasEdgeItem>[]) => {
     set((state) => {
       const updatedEdges = applyEdgeChanges(changes, state.edges);
-      scheduleDebouncedAutoSave(state.nodes, updatedEdges, set);
+      scheduleDebouncedAutoSave(state.nodes, updatedEdges, set, state.saveStatus);
       return { edges: updatedEdges };
     });
   },

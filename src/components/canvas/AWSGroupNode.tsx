@@ -5,8 +5,6 @@ import { useCanvasStore } from '../../store/useCanvasStore';
 import { useCompassStore } from '../../store/useCompassStore';
 import type { CanvasNodeData } from '../../types/aws';
 import { AWSServiceIcon } from '../icons/AWSServiceIcon';
-import { m } from 'motion/react';
-import { SPRING_SNAPPY } from '../../utils/motionTokens';
 
 interface BoundaryStyleRule {
   label: string;
@@ -215,10 +213,7 @@ export const AWSGroupNode = memo((props: NodeProps) => {
       </div>
 
       {/* Flush Top-Left Official Group Badge */}
-      <m.div
-        initial={false}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={SPRING_SNAPPY}
+      <div
         onClick={handleHeaderClick}
         style={{
           borderBottomColor: borderColor,
@@ -283,8 +278,8 @@ export const AWSGroupNode = memo((props: NodeProps) => {
         >
           <X className="w-3.5 h-3.5" />
         </button>
-      </m.div>
-    </div >
+      </div>
+    </div>
   );
 });
 
