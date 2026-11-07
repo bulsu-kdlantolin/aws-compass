@@ -46,6 +46,7 @@ import { DiagramExportPopover } from './DiagramExportPopover';
 import { CanvasBomPopover } from './CanvasBomPopover';
 import { QuickConnectPopover } from './QuickConnectPopover';
 import { getAWSCategoryColor } from '../../utils/awsCategoryColors';
+import { estimateArchitectureCost } from '../../utils/costEstimator';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { Pulse } from '../ui/LoadingIndicators';
 import { CompassLoader } from '../ui/CompassBootScreen';
@@ -95,6 +96,7 @@ const ArchitectureCanvasInner: React.FC = () => {
   const activeDiagramName = useCanvasStore((s) => s.activeDiagramName);
   const saveCurrentAsBlueprint = useCanvasStore((s) => s.saveCurrentAsBlueprint);
   const saveStatus = useCanvasStore((s) => s.saveStatus);
+  const canvasWorkloadTier = useCanvasStore((s) => s.canvasWorkloadTier);
   const initializeCanvas = useCanvasStore((s) => s.initializeCanvas);
   const autoLayout = useCanvasStore((s) => s.autoLayout);
   const openContextMenu = useCanvasStore((s) => s.openContextMenu);
@@ -673,6 +675,14 @@ const ArchitectureCanvasInner: React.FC = () => {
     ].join('\n');
   }, [isExportOpen, nodes, edges, activeDiagramName]);
 
+  const serviceNodesCount = useMemo(() => {
+    return nodes.filter((n) => !n.data?.isBoundary && !n.data?.isAnnotation).length;
+  }, [nodes]);
+
+  const costEstimate = useMemo(() => {
+    return estimateArchitectureCost(nodes, edges, canvasWorkloadTier);
+  }, [nodes, edges, canvasWorkloadTier]);
+
   const miniMapNodeColor = useCallback(
     (node: { data?: unknown }) => {
       const data = node.data as { category?: string; isBoundary?: boolean; isAnnotation?: boolean };
@@ -893,13 +903,17 @@ const ArchitectureCanvasInner: React.FC = () => {
                   ? 'bg-[#EAEDED] dark:bg-white/[0.1] text-[#16191F] dark:text-[#EAEDED]'
                   : 'text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
                   }`}
-                title="Open Architecture Bill of Materials (BOM)"
-                aria-label="Open Bill of Materials"
+                title="Open Architecture Bill of Materials (BOM) & FinOps Cost Estimator"
+                aria-label="Open Bill of Materials and Cost Estimator"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-[#FF9900]" />
                 <span className="hidden sm:inline">BOM ·</span>
                 <span className="font-mono text-[11px] tabular-nums text-[#545B64] dark:text-[#879596]">
-                  {nodes.length}
+                  {serviceNodesCount}
+                </span>
+                <span className="text-[#879596] font-mono text-[11px]">·</span>
+                <span className="font-mono text-[11px] font-semibold tabular-nums text-[#FF9900]">
+                  ~${costEstimate.totalMonthlyCost.toLocaleString()}/mo
                 </span>
               </button>
 

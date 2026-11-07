@@ -115,6 +115,7 @@ export interface CanvasNodeData {
   env?: NodeEnvironment;
   az?: string;
   metadataPill?: string;
+  capacityTier?: 'S' | 'M' | 'L' | 'Free';
 
   // Group boundary properties
   isBoundary?: boolean;

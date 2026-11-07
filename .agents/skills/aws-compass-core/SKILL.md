@@ -288,6 +288,25 @@ To eliminate abrupt mounts, static tab switching, and instantaneous layout jumps
 - During automated Dagre layout calculations, `withAutoLayoutGlide` injects `.react-flow__node { transition: transform 260ms cubic-bezier(0.2, 0, 0, 1) !important; }` for the exact layout calculation period, gliding all nodes into their new coordinates.
 - The style tag is immediately removed after 260ms so that manual user node dragging remains completely 0ms lag-free without CSS transition overhead.
 
+---
 
+## 17. Architecture FinOps & Rough Monthly Cost Estimator (`costEstimator.ts`)
 
+### 17.1. Deterministic T-Shirt Sizing Engine
+- Provides real-time On-Demand `us-east-1` monthly baseline estimates across 4 T-shirt tiers:
+  - `small` (`Dev / Prototype`): ~100K req/mo, single small compute instances, minimal storage.
+  - `medium` (`Production / Startup` — Default): ~5M req/mo, standard production instances, 100GB–500GB storage.
+  - `large` (`High-Scale Enterprise`): ~50M req/mo, scaled clusters, multi-TB storage & high network egress.
+  - `custom` (`Per-Node Override`): Per-node capacity tier override (`S`, `M`, `L`, `Free/0`) set in Node Inspector.
+- **Fixed Baseline vs. Usage-Based Split**:
+  - Fixed: NAT Gateway, ALB/NLB, EC2, ECS, Fargate, RDS, Aurora, ElastiCache, MSK, EKS.
+  - Usage: Lambda, API Gateway, SQS, SNS, EventBridge, Step Functions, S3, DynamoDB.
+  - Free Constructs ($0/mo): VPC, Subnets, Security Groups, IAM Roles, Internet Gateway, Auto Scaling Group.
+- **Multi-AZ & ASG 2x Multiplier**: Automatically doubles compute and database instance/storage costs if `az` contains `"Multi-AZ"` or node is contained inside an Auto Scaling Group.
+- **FinOps Optimization Insights**: Detects NAT Gateway data processing (>20% of cost) and recommends Gateway Endpoints ($0/mo); flags Multi-AZ in Dev workloads; flags EKS fixed $73/mo overhead on small container clusters.
+
+### 17.2. BOM & Cost Popover (`CanvasBomPopover.tsx`) & Inspector Integration
+- **Canvas Header BOM Trigger**: Renders `BOM · X · ~$XXX/mo` with real-time reactive calculation and clean middle-dot separation.
+- **Unified Popover**: Features a top global workload tier segmented switcher, total cost readout, 6px stacked fixed vs. usage bar, itemized resource list with monthly cost and % of total, and executive Markdown export.
+- **Node Inspector (`NodeInspectorDrawer.tsx`)**: Flush capacity tier segmented control (`S`, `M`, `L`, `Free/0`) with live cost readout under `Cloud Attributes`.
 

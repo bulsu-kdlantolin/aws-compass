@@ -23,6 +23,7 @@ import {
   getDiagramById as dbGetDiagramById,
   saveDiagram as dbSaveDiagram,
 } from '../db/compassDb';
+import type { WorkloadTier } from '../utils/costEstimator';
 import { ARCHITECTURE_TEMPLATES } from '../components/canvas/canvasTemplates';
 import { SEED_BLUEPRINTS } from '../db/seedBlueprints';
 import { getLayoutedElements, resolveOptimalHandles } from '../utils/canvasAutoLayout';
@@ -114,6 +115,8 @@ export interface CanvasState {
   activeDiagramName: string;
   savedDiagrams: Diagram[];
   saveStatus: CanvasSaveStatus;
+  canvasWorkloadTier: WorkloadTier;
+  setCanvasWorkloadTier: (tier: WorkloadTier) => void;
 
   // History & Undo/Redo Stacks
   past: CanvasHistorySnapshot[];
@@ -226,6 +229,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   activeDiagramName: 'Serverless Microservice',
   savedDiagrams: [],
   saveStatus: 'idle',
+  canvasWorkloadTier: 'medium',
+  setCanvasWorkloadTier: (canvasWorkloadTier: WorkloadTier) => set({ canvasWorkloadTier }),
   clipboard: null,
   isCanvasInitialized: false,
 

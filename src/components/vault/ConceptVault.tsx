@@ -16,9 +16,11 @@ import {
   Plus,
   Layers,
   Boxes,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { useCompassStore } from '../../store/useCompassStore';
 import { useCanvasStore } from '../../store/useCanvasStore';
+import { useCompareStore } from '../../store/useCompareStore';
 import type { AWSService } from '../../types/aws';
 import { MermaidViewer } from './MermaidViewer';
 import { SEED_SERVICES } from '../../db/seedServices';
@@ -39,6 +41,8 @@ import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { getAWSCategoryColor } from '../../utils/awsCategoryColors';
 import { getVerifiedAWSDocsUrl } from '../../utils/awsDocs';
+import { CompareFloatingTray } from './CompareFloatingTray';
+import { ServiceComparisonModal } from './ServiceComparisonModal';
 
 /* -------------------------------------------------------------------------- */
 /*                           CLOUDSCAPE RESOURCE TABLE                        */
@@ -56,6 +60,10 @@ const ConceptVaultTable: React.FC<{
   const setFavoritesFilter = useCompassStore((s) => s.setFavoritesFilter);
   const uiDensity = useSettingsStore((s) => s.uiDensity);
   const isCompact = uiDensity === 'compact';
+
+  const comparedServiceIds = useCompareStore((s) => s.comparedServiceIds);
+  const toggleCompareService = useCompareStore((s) => s.toggleCompareService);
+
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [sortKey, setSortKey] = useState<SortKey>('tier');
@@ -250,7 +258,7 @@ const ConceptVaultTable: React.FC<{
                   <th
                     scope="col"
                     onClick={() => handleSort('favorite')}
-                    className={`w-10 px-2 ${headPad} text-center cursor-pointer hover:text-[var(--aws-text-primary)] transition-colors`}
+                    className={`w-14 px-1.5 ${headPad} text-center cursor-pointer hover:text-[var(--aws-text-primary)] transition-colors`}
                     title="Sort by favorites"
                   >
                     <Star className={`w-3.5 h-3.5 mx-auto ${sortKey === 'favorite' ? 'text-[#FF9900] fill-[#FF9900]' : 'opacity-60'}`} />
@@ -323,34 +331,67 @@ const ConceptVaultTable: React.FC<{
                     </td>
                   </tr>
                 ) : (
-                  filteredAndSortedServices.map((svc) => (
-                    <tr
-                      key={svc.id}
-                      onClick={() => onSelectService(svc.id)}
-                      className={`hover:bg-[var(--aws-page-bg)] cursor-pointer transition-colors ${rowPad}`}
-                    >
-                      {/* Favorite button */}
-                      <td
-                        className={`w-10 px-2 ${rowPad} text-center`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFavorite(svc.id);
-                        }}
+                  filteredAndSortedServices.map((svc) => {
+                    const isCompared = comparedServiceIds.includes(svc.id);
+                    return (
+                      <tr
+                        key={svc.id}
+                        onClick={() => onSelectService(svc.id)}
+                        className={`group hover:bg-[var(--aws-page-bg)] cursor-pointer transition-colors ${rowPad}`}
                       >
-                        <button
-                          type="button"
-                          className="p-1 rounded-[4px] hover:bg-[var(--aws-card-bg)] text-[var(--aws-text-muted)] hover:text-[#FF9900] transition-colors cursor-pointer enabled:active:scale-[0.96]"
-                          title={svc.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                          aria-label={svc.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                        {/* Favorite & Compare toggle buttons */}
+                        <td
+                          className={`w-14 px-1.5 ${rowPad} text-center`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                          }}
                         >
-                          <AnimatedIcon iconKey={svc.isFavorite ? 'fav' : 'unfav'} size={16}>
-                            <Star
-                              className={`w-4 h-4 transition-transform active:scale-90 ${svc.isFavorite ? 'fill-[#FF9900] text-[#FF9900]' : 'text-[var(--aws-text-muted)] hover:text-[#FF9900]'
-                                }`}
-                            />
-                          </AnimatedIcon>
-                        </button>
-                      </td>
+                          <div className="flex items-center justify-center gap-0.5">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFavorite(svc.id);
+                              }}
+                              className="p-1 rounded-[4px] hover:bg-[var(--aws-card-bg)] text-[var(--aws-text-muted)] hover:text-[#FF9900] transition-colors cursor-pointer enabled:active:scale-[0.96]"
+                              title={svc.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                              aria-label={svc.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                            >
+                              <AnimatedIcon iconKey={svc.isFavorite ? 'fav' : 'unfav'} size={15}>
+                                <Star
+                                  className={`w-3.5 h-3.5 transition-transform active:scale-90 ${
+                                    svc.isFavorite
+                                      ? 'fill-[#FF9900] text-[#FF9900]'
+                                      : 'text-[var(--aws-text-muted)] hover:text-[#FF9900]'
+                                  }`}
+                                />
+                              </AnimatedIcon>
+                            </button>
+
+                            {/* Subtle borderless Compare icon toggle on row hover */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleCompareService(svc.id);
+                              }}
+                              className={`p-1 rounded-[4px] transition-all cursor-pointer enabled:active:scale-[0.96] ${
+                                isCompared
+                                  ? 'text-[#0972D3] dark:text-[#539FE5] bg-[#0972D3]/15 dark:bg-[#539FE5]/20 opacity-100'
+                                  : 'text-[var(--aws-text-muted)] hover:text-[#0972D3] dark:hover:text-[#539FE5] hover:bg-[var(--aws-card-bg)] opacity-0 group-hover:opacity-100'
+                              }`}
+                              title={
+                                isCompared
+                                  ? `Remove ${svc.shortName || svc.name} from comparison`
+                                  : `Compare ${svc.shortName || svc.name} (max 3)`
+                              }
+                              aria-label={isCompared ? `Remove ${svc.name} from comparison` : `Compare ${svc.name}`}
+                              aria-pressed={isCompared}
+                            >
+                              <ArrowLeftRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                            </button>
+                          </div>
+                        </td>
 
                       {/* Service column with AWSServiceIcon */}
                       <td className={`px-4 ${rowPad}`}>
@@ -413,7 +454,8 @@ const ConceptVaultTable: React.FC<{
                         {svc.summary}
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -442,6 +484,9 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = memo(({
   const isSidebarOpen = useCompassStore((s) => s.isSidebarOpen);
   const toggleFavorite = useCompassStore((s) => s.toggleFavorite);
   const setWorkspaceMode = useCompassStore((s) => s.setWorkspaceMode);
+
+  const addCompareService = useCompareStore((s) => s.addCompareService);
+  const openCompareModal = useCompareStore((s) => s.openCompareModal);
 
   const savedDiagrams = useCanvasStore((s) => s.savedDiagrams);
   const loadTemplate = useCanvasStore((s) => s.loadTemplate);
@@ -676,6 +721,21 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = memo(({
           >
             <Plus className="w-3.5 h-3.5 text-[#FF9900]" strokeWidth={2.5} />
             <span>Add to Canvas</span>
+          </button>
+
+          {/* Compare with... Ghost Button */}
+          <button
+            type="button"
+            onClick={() => {
+              addCompareService(service.id);
+              openCompareModal();
+            }}
+            className="flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1 h-8 rounded-[6px] text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#0972D3] dark:hover:text-[#539FE5] active:scale-[0.98] transition-all duration-150 cursor-pointer select-none"
+            title={`Compare ${service.shortName || service.name} with other AWS services`}
+            aria-label={`Compare ${service.name} with other services`}
+          >
+            <ArrowLeftRight className="w-3.5 h-3.5 text-[#0972D3] dark:text-[#539FE5]" strokeWidth={2} />
+            <span>Compare with…</span>
           </button>
 
           {/* External AWS Docs Ghost Button */}
@@ -1228,6 +1288,12 @@ export const ConceptVault: React.FC = memo(() => {
             />
           )}
         </m.div>
+
+        {/* Morphing Floating Compare Dock */}
+        <CompareFloatingTray />
+
+        {/* Side-by-Side Trade-Off Matrix Modal */}
+        <ServiceComparisonModal />
       </div>
     </div>
   );

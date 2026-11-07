@@ -30,9 +30,10 @@ import { CloudscapeCopyButton } from '../ui/CloudscapeCopyButton';
 import { CloudscapeSelect, type CloudscapeSelectOption } from '../ui/CloudscapeSelect';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { m } from 'motion/react';
-import { SegmentedControl } from '../ui/SegmentedControl';
+import { SegmentedControl, type SegmentedControlOption } from '../ui/SegmentedControl';
 import { ToggleSwitch } from '../ui/ToggleSwitch';
 import { getVerifiedAWSDocsUrl } from '../../utils/awsDocs';
+import { estimateSingleNodeCost, type NodeCapacityTier } from '../../utils/costEstimator';
 import type {
   EdgeProtocol,
   EdgeLineStyle,
@@ -95,6 +96,13 @@ const ENV_OPTIONS: CloudscapeSelectOption<NodeEnvironment>[] = [
   { value: 'Dev', label: 'Development (Dev)' },
 ];
 
+const CAPACITY_TIER_OPTIONS: SegmentedControlOption<NodeCapacityTier>[] = [
+  { value: 'S', label: 'S (Dev)', ariaLabel: 'Small Dev / Prototype' },
+  { value: 'M', label: 'M (Prod)', ariaLabel: 'Medium Production' },
+  { value: 'L', label: 'L (Scale)', ariaLabel: 'Large High Scale Enterprise' },
+  { value: 'Free', label: 'Free/0', ariaLabel: 'Free or Zero Capacity' },
+];
+
 const COLOR_PRESETS = [
   { label: 'Blue', color: '#539FE5' },
   { label: 'Purple', color: '#8C4FFF' },
@@ -144,6 +152,7 @@ export const NodeInspectorDrawer: React.FC = () => {
   const removeNode = useCanvasStore((s) => s.removeNode);
   const removeEdge = useCanvasStore((s) => s.removeEdge);
   const duplicateNode = useCanvasStore((s) => s.duplicateNode);
+  const canvasWorkloadTier = useCanvasStore((s) => s.canvasWorkloadTier);
 
   const services = useCompassStore((s) => s.services);
   const toggleFavorite = useCompassStore((s) => s.toggleFavorite);
@@ -155,6 +164,12 @@ export const NodeInspectorDrawer: React.FC = () => {
   const currentNode = nodes.find((n) => n.id === selectedNodeId);
   const currentEdge = edges.find((e) => e.id === selectedEdgeId);
   const service = services.find((s) => s.id === currentNode?.data.serviceId);
+
+  // Real-time FinOps cost estimate for the selected node
+  const currentNodeCost = useMemo(
+    () => (currentNode ? estimateSingleNodeCost(currentNode, nodes, canvasWorkloadTier) : null),
+    [currentNode, nodes, canvasWorkloadTier]
+  );
 
   // Group boundaries currently on the canvas for parent assignment
   const groupBoundaries = useMemo(
@@ -392,6 +407,42 @@ export const NodeInspectorDrawer: React.FC = () => {
                       placeholder="e.g. Multi-AZ or us-east-1a"
                       className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
                     />
+                  </div>
+
+                  {/* Capacity tier (T-Shirt Sizing) & FinOps cost readout */}
+                  <div className="grid grid-cols-[110px_1fr] items-start gap-2.5 py-1">
+                    <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596] pt-1">
+                      Capacity tier
+                    </label>
+                    <div className="space-y-1.5 min-w-0">
+                      <SegmentedControl<NodeCapacityTier>
+                        value={
+                          (currentNode.data?.capacityTier as NodeCapacityTier) ||
+                          (canvasWorkloadTier === 'small' ? 'S' : canvasWorkloadTier === 'large' ? 'L' : 'M')
+                        }
+                        options={CAPACITY_TIER_OPTIONS}
+                        onChange={(val) => updateNodeProperties(currentNode.id, { capacityTier: val })}
+                        size="sm"
+                        groupId={`node-capacity-${currentNode.id}`}
+                        ariaLabel="Capacity tier sizing"
+                      />
+                      {currentNodeCost && (
+                        <div className="text-[11px] font-mono tabular-nums flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-[#FF9900]">
+                            Est. ~${currentNodeCost.monthlyCost}/mo
+                          </span>
+                          <span className="text-[#879596]">·</span>
+                          <span className="text-[#545B64] dark:text-[#879596]">
+                            {currentNodeCost.billingModel}
+                            {currentNodeCost.isMultiAz
+                              ? ' (2x Multi-AZ)'
+                              : currentNodeCost.isInsideAsg
+                              ? ' (2x ASG)'
+                              : ''}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
