@@ -809,6 +809,42 @@ export const AWS_SERVICE_VECTORS: Record<string, AWSIconVectorDef> = {
 
 // Group Vectors (20x20 boundary badges)
 export const AWS_GROUP_VECTORS: Record<string, { label: string; paths: React.ReactNode }> = {
+  'aws-organization': {
+    label: 'AWS Organization',
+    paths: (
+      <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="9" y="3" width="6" height="5" rx="1" />
+        <rect x="3" y="15" width="5" height="5" rx="1" />
+        <rect x="10" y="15" width="5" height="5" rx="1" />
+        <rect x="17" y="15" width="5" height="5" rx="1" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="5.5" y1="12" x2="19.5" y2="12" />
+        <line x1="5.5" y1="12" x2="5.5" y2="15" />
+        <line x1="12.5" y1="12" x2="12.5" y2="15" />
+        <line x1="19.5" y1="12" x2="19.5" y2="15" />
+      </g>
+    ),
+  },
+  'aws-account': {
+    label: 'AWS Account',
+    paths: (
+      <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <circle cx="12" cy="11" r="2.5" />
+        <path d="M8 17C8 15 10 14 12 14C14 14 16 15 16 17" />
+      </g>
+    ),
+  },
+  'availability-zone': {
+    label: 'Availability Zone',
+    paths: (
+      <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="16" rx="2" strokeDasharray="3 2" />
+        <line x1="9" y1="4" x2="9" y2="20" />
+        <line x1="15" y1="4" x2="15" y2="20" />
+      </g>
+    ),
+  },
   'aws-cloud': {
     label: 'AWS Cloud',
     paths: (
@@ -961,6 +997,130 @@ export const AWS_ACTOR_VECTORS: Record<
         <circle cx="23" cy="23" r="3" />
         <path d="M11.5 14.5L20.5 10.5" />
         <path d="M11.5 17.5L20.5 21.5" />
+      </g>
+    ),
+  },
+  'iam-admin': {
+    label: 'Developer / IAM Admin',
+    stroke: '#00A1C9',
+    bg: '#00A1C9',
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="16" cy="11" r="4.5" />
+        <path d="M7 25C7 20 11 18 16 18C21 18 25 20 25 25" />
+        <rect x="20" y="5" width="8" height="6" rx="1" fill="#FFFFFF" fillOpacity="0.2" stroke="#FFFFFF" strokeWidth="1.5" />
+        <line x1="22" y1="8" x2="26" y2="8" strokeWidth="1.5" />
+      </g>
+    ),
+  },
+  'cicd-pipeline': {
+    label: 'GitHub / GitLab CI/CD Pipeline',
+    stroke: '#ED7100',
+    bg: '#ED7100',
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="9" cy="9" r="3" />
+        <circle cx="9" cy="23" r="3" />
+        <circle cx="23" cy="16" r="3" />
+        <path d="M9 12V20" />
+        <path d="M9 12C9 16 20 12 20 16" />
+      </g>
+    ),
+  },
+  'idp-auth': {
+    label: 'External IdP (Okta / Entra ID)',
+    stroke: '#6366F1',
+    bg: '#6366F1',
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="5" />
+        <path d="M16 15.5L26 25.5" />
+        <line x1="22" y1="21.5" x2="25" y2="18.5" />
+        <line x1="24" y1="23.5" x2="27" y2="20.5" />
+      </g>
+    ),
+  },
+  'saas-webhook': {
+    label: 'Observability & Webhook SaaS',
+    stroke: '#E7157B',
+    bg: '#E7157B',
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 16L11 9L17 18L26 6" />
+        <polyline points="20 6 26 6 26 12" />
+        <circle cx="6" cy="16" r="1.5" fill="#FFFFFF" />
+        <circle cx="11" cy="9" r="1.5" fill="#FFFFFF" />
+        <circle cx="17" cy="18" r="1.5" fill="#FFFFFF" />
+      </g>
+    ),
+  },
+  'vpc-gateway-endpoint': {
+    label: 'VPC Gateway Endpoint',
+    stroke: '#8C4FFF',
+    bg: '#8C4FFF',
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="5" y="7" width="22" height="18" rx="3" strokeDasharray="3 2" />
+        <path d="M11 16H21" />
+        <polyline points="18 13 21 16 18 19" />
+        <polyline points="14 13 11 16 14 19" />
+        <line x1="16" y1="10" x2="16" y2="22" strokeWidth="1" strokeDasharray="2 2" opacity="0.6" />
+      </g>
+    ),
+  },
+  'vpc-interface-endpoint': {
+    label: 'VPC Interface Endpoint (PrivateLink)',
+    stroke: '#8C4FFF',
+    bg: '#8C4FFF',
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="5" y="6" width="22" height="20" rx="3" />
+        <circle cx="11" cy="16" r="3" fill="#FFFFFF" />
+        <line x1="14" y1="16" x2="22" y2="16" />
+        <polyline points="19 13 22 16 19 19" />
+      </g>
+    ),
+  },
+  'route-table': {
+    label: 'Route Table',
+    stroke: '#0073BB',
+    bg: '#0073BB',
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="5" y="5" width="22" height="22" rx="2" />
+        <line x1="5" y1="12" x2="27" y2="12" />
+        <line x1="5" y1="19" x2="27" y2="19" />
+        <line x1="14" y1="5" x2="14" y2="27" />
+        <polyline points="8 9 11 9" strokeWidth="1.5" />
+        <polyline points="17 9 23 9" strokeWidth="1.5" />
+        <polyline points="8 16 11 16" strokeWidth="1.5" />
+        <polyline points="17 16 23 16" strokeWidth="1.5" />
+      </g>
+    ),
+  },
+  'network-acl': {
+    label: 'Network ACL (NACL)',
+    stroke: '#DD344C',
+    bg: '#DD344C',
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 4L26 8V16C26 22 21 26 16 28C11 26 6 22 6 16V8L16 4Z" />
+        <polyline points="11 16 14.5 19.5 21 13" strokeWidth="2" />
+      </g>
+    ),
+  },
+  'customer-gateway': {
+    label: 'Customer Gateway (CGW)',
+    stroke: '#ED7100',
+    bg: '#ED7100',
+    paths: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="5" y="8" width="22" height="16" rx="2" />
+        <circle cx="10" cy="16" r="1.5" fill="#FFFFFF" />
+        <circle cx="16" cy="16" r="1.5" fill="#FFFFFF" />
+        <circle cx="22" cy="16" r="1.5" fill="#FFFFFF" />
+        <line x1="16" y1="4" x2="16" y2="8" strokeWidth="2" />
+        <circle cx="16" cy="4" r="1.5" fill="#FFFFFF" />
       </g>
     ),
   },

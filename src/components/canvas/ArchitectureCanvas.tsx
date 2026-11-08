@@ -35,6 +35,8 @@ import { usePopoverStore } from '../../store/usePopoverStore';
 import { AnimatedPopover } from '../ui/AnimatedPopover';
 import { AWSServiceNode } from './AWSServiceNode';
 import { AWSGroupNode } from './AWSGroupNode';
+import { ActorNode } from './ActorNode';
+import { StepBadgeNode } from './StepBadgeNode';
 import { AnnotationNode } from './AnnotationNode';
 import { ProtocolEdge } from './ProtocolEdge';
 import { NodeInspectorDrawer } from './NodeInspectorDrawer';
@@ -59,6 +61,9 @@ const nodeTypes: NodeTypes = {
   awsService: AWSServiceNode,
   awsGroup: AWSGroupNode,
   architectureGroup: AWSGroupNode,
+  actorNode: ActorNode,
+  actor: ActorNode,
+  stepBadgeNode: StepBadgeNode,
   annotationNode: AnnotationNode,
 };
 
@@ -80,6 +85,7 @@ const ArchitectureCanvasInner: React.FC = () => {
   const addServiceNode = useCanvasStore((s) => s.addServiceNode);
   const addBoundaryNode = useCanvasStore((s) => s.addBoundaryNode);
   const addExternalActor = useCanvasStore((s) => s.addExternalActor);
+  const addStepBadgeNode = useCanvasStore((s) => s.addStepBadgeNode);
   const addAnnotationNode = useCanvasStore((s) => s.addAnnotationNode);
   const openNodeInspector = useCanvasStore((s) => s.openNodeInspector);
   const openEdgeInspector = useCanvasStore((s) => s.openEdgeInspector);
@@ -319,6 +325,65 @@ const ArchitectureCanvasInner: React.FC = () => {
     };
   }, [isCanvasPanning]);
 
+  // Sync global body class and active cursor for uninterrupted node resizing without cursor flickering to grab
+  useEffect(() => {
+    let activeCursor = 'nwse-resize';
+
+    const handlePointerDownCapture = (e: PointerEvent | MouseEvent) => {
+      // Left click only
+      if (e.button !== 0) return;
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      const control = target.closest('.react-flow__resize-control') as HTMLElement | null;
+      if (control) {
+        const cl = control.classList;
+        if ((cl.contains('left') && cl.contains('top')) || (cl.contains('right') && cl.contains('bottom'))) {
+          activeCursor = 'nwse-resize';
+        } else if ((cl.contains('right') && cl.contains('top')) || (cl.contains('left') && cl.contains('bottom'))) {
+          activeCursor = 'nesw-resize';
+        } else if (cl.contains('left') || cl.contains('right')) {
+          activeCursor = 'ew-resize';
+        } else if (cl.contains('top') || cl.contains('bottom')) {
+          activeCursor = 'ns-resize';
+        } else {
+          const comp = window.getComputedStyle(control).cursor;
+          if (comp && comp.includes('resize')) {
+            activeCursor = comp;
+          } else {
+            activeCursor = 'nwse-resize';
+          }
+        }
+
+        document.body.classList.add('canvas-global-resizing');
+        document.body.style.setProperty('--canvas-active-resize-cursor', activeCursor);
+      }
+    };
+
+    const handlePointerUpCapture = () => {
+      if (document.body.classList.contains('canvas-global-resizing')) {
+        document.body.classList.remove('canvas-global-resizing');
+        document.body.style.removeProperty('--canvas-active-resize-cursor');
+      }
+    };
+
+    window.addEventListener('pointerdown', handlePointerDownCapture, true);
+    window.addEventListener('pointerup', handlePointerUpCapture, true);
+    window.addEventListener('pointercancel', handlePointerUpCapture, true);
+    window.addEventListener('mouseup', handlePointerUpCapture, true);
+    window.addEventListener('blur', handlePointerUpCapture);
+
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDownCapture, true);
+      window.removeEventListener('pointerup', handlePointerUpCapture, true);
+      window.removeEventListener('pointercancel', handlePointerUpCapture, true);
+      window.removeEventListener('mouseup', handlePointerUpCapture, true);
+      window.removeEventListener('blur', handlePointerUpCapture);
+      document.body.classList.remove('canvas-global-resizing');
+      document.body.style.removeProperty('--canvas-active-resize-cursor');
+    };
+  }, []);
+
   const isFirstFullscreenMountRef = useRef(true);
   useEffect(() => {
     if (isFirstFullscreenMountRef.current) {
@@ -517,6 +582,27 @@ const ArchitectureCanvasInner: React.FC = () => {
             } else if (stencil.type === 'actor' && stencil.actorType) {
               addExternalActor(stencil.actorType, stencil.label, position);
               return;
+            } else if (stencil.type === 'step-badge' && stencil.stepType) {
+              addStepBadgeNode(stencil.stepType, stencil.caption, position);
+              return;
+            } else if (stencil.type === 'spec-stamp') {
+              addAnnotationNode(
+                stencil.title || 'System Architecture Spec',
+                '',
+                position,
+                {
+                  isSpecStamp: true,
+                  specSystemName: stencil.title || 'System Architecture Spec',
+                  specRevision: 'v1.0 · Prod',
+                  specTargetSla: '99.99%',
+                  specRpoRto: 'RPO < 5m · RTO < 15m',
+                  specCompliance: 'SOC2 · HIPAA',
+                  specClassification: 'Confidential (PII)',
+                  width: 320,
+                  height: 180,
+                }
+              );
+              return;
             } else if (stencil.type === 'annotation') {
               addAnnotationNode(stencil.title || 'Architecture Note', '', position);
               return;
@@ -549,7 +635,7 @@ const ArchitectureCanvasInner: React.FC = () => {
         }
       }
     },
-    [reactFlowInstance, addServiceNode, addBoundaryNode, addExternalActor, addAnnotationNode]
+    [reactFlowInstance, addServiceNode, addBoundaryNode, addExternalActor, addStepBadgeNode, addAnnotationNode]
   );
 
   // Dynamic Group Nesting when node is dragged into boundary container
@@ -1164,12 +1250,12 @@ const ArchitectureCanvasInner: React.FC = () => {
   );
 };
 
-  export const ArchitectureCanvas: React.FC = memo(() => {
-    return (
-      <ReactFlowProvider>
-        <ArchitectureCanvasInner />
-      </ReactFlowProvider>
-    );
+export const ArchitectureCanvas: React.FC = memo(() => {
+  return (
+    <ReactFlowProvider>
+      <ArchitectureCanvasInner />
+    </ReactFlowProvider>
+  );
 });
 
 export default ArchitectureCanvas;

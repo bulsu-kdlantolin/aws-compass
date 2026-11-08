@@ -19,6 +19,39 @@ interface BoundaryStyleRule {
 }
 
 const BOUNDARY_RULES: Record<string, BoundaryStyleRule> = {
+  'aws-organization': {
+    label: 'AWS Organization / Root',
+    groupId: 'aws-organization',
+    dashed: true,
+    borderLight: '#879596',
+    borderDark: '#879596',
+    bgLight: 'rgba(135, 149, 150, 0.02)',
+    bgDark: 'rgba(135, 149, 150, 0.04)',
+    textLight: '#545B64',
+    textDark: '#879596',
+  },
+  'aws-account': {
+    label: 'AWS Account',
+    groupId: 'aws-account',
+    dashed: false,
+    borderLight: '#FF9900',
+    borderDark: '#FF9900',
+    bgLight: 'rgba(255, 153, 0, 0.03)',
+    bgDark: 'rgba(255, 153, 0, 0.05)',
+    textLight: '#ED7100',
+    textDark: '#FF9900',
+  },
+  'availability-zone': {
+    label: 'Availability Zone Lane',
+    groupId: 'availability-zone',
+    dashed: true,
+    borderLight: '#00A1C9',
+    borderDark: '#00A1C9',
+    bgLight: 'rgba(0, 161, 201, 0.03)',
+    bgDark: 'rgba(0, 161, 201, 0.05)',
+    textLight: '#00A1C9',
+    textDark: '#00A1C9',
+  },
   'aws-cloud': {
     label: 'AWS Cloud',
     groupId: 'aws-cloud',
@@ -261,12 +294,28 @@ export const AWSGroupNode = memo((props: NodeProps) => {
           </span>
         )}
 
-        {/* CIDR / Region tag badge in top-left tab */}
-        {nodeData.cidr && (
+          {/* Context metadata badge pill in top-left tab */ }
+        {rawType === 'aws-account' ? (
+          <span className="font-mono text-[10px] text-[var(--aws-text-muted)] bg-[var(--aws-page-bg)] border border-[var(--aws-border)] px-1.5 py-0.2 rounded shrink-0">
+            Account: {nodeData.accountId || nodeData.cidr || '1234-5678-9012'}
+          </span>
+        ) : rawType === 'availability-zone' ? (
+          <span className="font-mono text-[10px] text-[#00A1C9] bg-[#00A1C9]/10 border border-[#00A1C9]/30 px-1.5 py-0.2 rounded shrink-0">
+            AZ: {nodeData.azName || nodeData.cidr || 'us-east-1a'}
+          </span>
+        ) : rawType === 'auto-scaling-group' ? (
+          <span className="font-mono text-[10px] text-[#ED7100] bg-[#ED7100]/10 border border-[#ED7100]/30 px-1.5 py-0.2 rounded shrink-0">
+            Min: {nodeData.asgMin ?? 2} · Desired: {nodeData.asgDesired ?? 4} · Max: {nodeData.asgMax ?? 10}
+          </span>
+        ) : rawType === 'security-group' && (nodeData.securityGroupPorts || nodeData.cidr) ? (
+          <span className="font-mono text-[10px] text-[#DD344C] bg-[#DD344C]/10 border border-[#DD344C]/30 px-1.5 py-0.2 rounded shrink-0">
+            {nodeData.securityGroupPorts || nodeData.cidr}
+          </span>
+        ) : nodeData.cidr ? (
           <span className="font-mono text-[10px] text-[var(--aws-text-muted)] bg-[var(--aws-page-bg)] border border-[var(--aws-border)] px-1.5 py-0.2 rounded shrink-0">
             {nodeData.cidr}
           </span>
-        )}
+        ) : null}
 
         {/* Delete Group Button */}
         <button

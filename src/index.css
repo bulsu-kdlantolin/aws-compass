@@ -374,8 +374,56 @@
   will-change: transform;
 }
 
+/* Ensure resize controls always maintain proper resize cursor and generous hitbox */
+.react-flow__resize-control {
+  z-index: 50 !important;
+  pointer-events: auto !important;
+}
+
+.react-flow__resize-control.handle {
+  z-index: 51 !important;
+}
+
+.react-flow__resize-control.handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  cursor: inherit !important;
+  pointer-events: auto;
+}
+
+.react-flow__resize-control.line.top::after,
+.react-flow__resize-control.line.bottom::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 100%;
+  height: 14px;
+  cursor: inherit !important;
+  pointer-events: auto;
+}
+
+.react-flow__resize-control.line.left::after,
+.react-flow__resize-control.line.right::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  height: 100%;
+  width: 14px;
+  cursor: inherit !important;
+  pointer-events: auto;
+}
+
 .react-flow__node.dragging,
-.react-flow__node.dragging * {
+.react-flow__node.dragging *:not(.react-flow__resize-control):not(.react-flow__resize-control *) {
   cursor: grabbing !important;
   user-select: none !important;
   transition: none !important;
@@ -404,6 +452,23 @@ body.canvas-global-panning *,
 .is-canvas-panning .react-flow__edge-text,
 .is-canvas-panning .react-flow__handle {
   cursor: grabbing !important;
+  user-select: none !important;
+}
+
+/* Active Canvas Node Resizing Cursor Lock (Prevents flickering between resize and grab/grabbing) */
+body.canvas-global-resizing,
+body.canvas-global-resizing *,
+body.canvas-global-resizing .react-flow__pane,
+body.canvas-global-resizing .react-flow__pane *,
+body.canvas-global-resizing .react-flow__node,
+body.canvas-global-resizing .react-flow__node *,
+body.canvas-global-resizing .react-flow__node.draggable,
+body.canvas-global-resizing .react-flow__node.draggable *,
+body.canvas-global-resizing .react-flow__node.dragging,
+body.canvas-global-resizing .react-flow__node.dragging *,
+body.canvas-global-resizing .react-flow__resize-control,
+body.canvas-global-resizing .react-flow__resize-control * {
+  cursor: var(--canvas-active-resize-cursor, nwse-resize) !important;
   user-select: none !important;
 }
 

@@ -23,18 +23,14 @@ export const App: React.FC = () => {
   const setIsCanvasFullscreen = useCanvasStore((s) => s.setIsCanvasFullscreen);
   const openSettings = useSettingsStore((s) => s.openSettings);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [isMinBootPassed, setIsMinBootPassed] = useState(false);
+  const [isBootFinished, setIsBootFinished] = useState(false);
 
   useEffect(() => {
     initialize();
     useCanvasStore.getState().initializeCanvas();
-    const timer = setTimeout(() => {
-      setIsMinBootPassed(true);
-    }, 450);
-    return () => clearTimeout(timer);
   }, [initialize]);
 
-  const isBooting = !isDbLoaded || !isMinBootPassed;
+  const isBooting = !isBootFinished;
 
   // Dynamic Tab Title Sync (better-accessibility 2.4.2 SPA rules)
   useEffect(() => {
@@ -57,84 +53,88 @@ export const App: React.FC = () => {
         document.title = 'Concept Vault · AWS Compass';
       }
     }
-}, [isDbLoaded, workspaceMode, selectedServiceId, activeDiagramName]);
+  }, [isDbLoaded, workspaceMode, selectedServiceId, activeDiagramName]);
 
-// Global Keyboard Shortcuts (Ctrl+K Command Palette, Ctrl+, Settings, Shift+F Fullscreen)
-useEffect(() => {
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-      e.preventDefault();
-      setIsCommandPaletteOpen((prev) => !prev);
-    } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {
-      e.preventDefault();
-      openSettings();
-    } else if (e.shiftKey && e.key.toLowerCase() === 'f' && workspaceMode === 'canvas') {
-      e.preventDefault();
-      useCanvasStore.getState().toggleCanvasFullscreen();
+  // Global Keyboard Shortcuts (Ctrl+K Command Palette, Ctrl+, Settings, Shift+F Fullscreen)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+        e.preventDefault();
+        openSettings();
+      } else if (e.shiftKey && e.key.toLowerCase() === 'f' && workspaceMode === 'canvas') {
+        e.preventDefault();
+        useCanvasStore.getState().toggleCanvasFullscreen();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [openSettings, workspaceMode]);
+
+  // Sync browser fullscreen API
+  useEffect(() => {
+    if (workspaceMode !== 'canvas') return;
+
+    if (isCanvasFullscreen) {
+      if (typeof document !== 'undefined' && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.().catch(() => { });
+      }
+    } else {
+      if (typeof document !== 'undefined' && document.fullscreenElement) {
+        document.exitFullscreen?.().catch(() => { });
+      }
     }
-  };
-  window.addEventListener('keydown', handleKeyDown);
-  return () => window.removeEventListener('keydown', handleKeyDown);
-}, [openSettings, workspaceMode]);
 
-// Sync browser fullscreen API
-useEffect(() => {
-  if (workspaceMode !== 'canvas') return;
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement && isCanvasFullscreen) {
+        setIsCanvasFullscreen(false);
+      }
+    };
 
-  if (isCanvasFullscreen) {
-    if (typeof document !== 'undefined' && !document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.().catch(() => { });
-    }
-  } else {
-    if (typeof document !== 'undefined' && document.fullscreenElement) {
-      document.exitFullscreen?.().catch(() => { });
-    }
-  }
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, [isCanvasFullscreen, setIsCanvasFullscreen, workspaceMode]);
 
-  const handleFullscreenChange = () => {
-    if (!document.fullscreenElement && isCanvasFullscreen) {
-      setIsCanvasFullscreen(false);
-    }
-  };
+  const handleOpenCommandPalette = useCallback(() => {
+    setIsCommandPaletteOpen(true);
+  }, []);
 
-  document.addEventListener('fullscreenchange', handleFullscreenChange);
-  return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-}, [isCanvasFullscreen, setIsCanvasFullscreen, workspaceMode]);
-
-const handleOpenCommandPalette = useCallback(() => {
-  setIsCommandPaletteOpen(true);
-}, []);
-
-return (
-  <MotionProvider>
-    <DisableThemeTransitions />
-    <AnimatePresence mode="wait">
-      {isBooting ? (
-        <CompassBootScreen key="boot-screen" />
-      ) : (
-        <m.div
-          key="workspace-shell"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.24, ease: [0.2, 0, 0, 1] }}
-          style={{
-            backgroundColor: 'var(--aws-page-bg)',
-            color: 'var(--aws-text-primary)',
-          }}
-          className="flex flex-col w-screen h-screen overflow-hidden font-sans"
-        >
-          {/* Top Application Bar (Hidden in Canvas Fullscreen / Zen Mode) */}
-          {(!isCanvasFullscreen || workspaceMode !== 'canvas') && (
+  return (
+    <MotionProvider>
+      <DisableThemeTransitions />
+      <AnimatePresence mode="wait">
+        {isBooting ? (
+        <CompassBootScreen
+          key="boot-screen"
+          isReady={isDbLoaded}
+          onFinish={() => setIsBootFinished(true)}
+        />
+        ) : (
+          <m.div
+            key="workspace-shell"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.24, ease: [0.2, 0, 0, 1] }}
+            style={{
+              backgroundColor: 'var(--aws-page-bg)',
+              color: 'var(--aws-text-primary)',
+            }}
+            className="flex flex-col w-screen h-screen overflow-hidden font-sans"
+          >
+            {/* Top Application Bar (Hidden in Canvas Fullscreen / Zen Mode) */}
+            {(!isCanvasFullscreen || workspaceMode !== 'canvas') && (
               <Navbar onOpenCommandPalette={handleOpenCommandPalette} />
-          )}
+            )}
 
             {/* Main Workspace Area (GPU-accelerated, zero-layout-shift view transition) */}
             <main className="flex-1 h-full w-full overflow-hidden relative">
               {/* Concept Vault Workspace */}
               <div
                 className={`absolute inset-0 w-full h-full transition-[opacity,visibility] duration-200 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-none will-change-[opacity] ${workspaceMode === 'vault'
-                    ? 'opacity-100 visible z-10 pointer-events-auto'
-                    : 'opacity-0 invisible -z-10 pointer-events-none'
+                  ? 'opacity-100 visible z-10 pointer-events-auto'
+                  : 'opacity-0 invisible -z-10 pointer-events-none'
                   }`}
                 aria-hidden={workspaceMode !== 'vault'}
               >
@@ -143,24 +143,24 @@ return (
 
               {/* Architecture Canvas Workspace */}
               <div
-                  className={`absolute inset-0 w-full h-full transition-[opacity,visibility] duration-200 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-none will-change-[opacity] ${workspaceMode === 'canvas'
-                      ? 'opacity-100 visible z-10 pointer-events-auto'
-                      : 'opacity-0 invisible -z-10 pointer-events-none'
-                    }`}
-              aria-hidden={workspaceMode !== 'canvas'}
+                className={`absolute inset-0 w-full h-full transition-[opacity,visibility] duration-200 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-none will-change-[opacity] ${workspaceMode === 'canvas'
+                  ? 'opacity-100 visible z-10 pointer-events-auto'
+                  : 'opacity-0 invisible -z-10 pointer-events-none'
+                  }`}
+                aria-hidden={workspaceMode !== 'canvas'}
               >
-              <ArchitectureCanvas />
-          </div>
-        </main>
+                <ArchitectureCanvas />
+              </div>
+            </main>
 
-      {/* Global Command Palette (Ctrl+K) */}
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-      />
+            {/* Global Command Palette (Ctrl+K) */}
+            <CommandPalette
+              isOpen={isCommandPaletteOpen}
+              onClose={() => setIsCommandPaletteOpen(false)}
+            />
 
-  {/* Global Settings Modal (Ctrl+,) */ }
-  < SettingsModal />
+            {/* Global Settings Modal (Ctrl+,) */}
+            < SettingsModal />
           </m.div >
         )}
       </AnimatePresence >

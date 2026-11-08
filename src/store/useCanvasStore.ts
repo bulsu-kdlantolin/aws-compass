@@ -16,6 +16,7 @@ import type {
   EdgeProtocol,
   GroupBoundaryType,
   ExternalActorType,
+  StepBadgeType,
 } from '../types/aws';
 import {
   deleteDiagram as dbDeleteDiagram,
@@ -159,6 +160,11 @@ export interface CanvasState {
   addServiceNode: (service: AWSService, position: { x: number; y: number }) => void;
   addBoundaryNode: (type: GroupBoundaryType, label?: string, position?: { x: number; y: number }) => void;
   addExternalActor: (type: ExternalActorType, label?: string, position?: { x: number; y: number }) => void;
+  addStepBadgeNode: (
+    stepType: StepBadgeType,
+    caption?: string,
+    position?: { x: number; y: number }
+  ) => void;
   addAnnotationNode: (
     title?: string,
     content?: string,
@@ -518,16 +524,19 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   addBoundaryNode: (type: GroupBoundaryType, label?: string, position?: { x: number; y: number }) => {
     get().recordSnapshot();
     const defaultLabels: Record<GroupBoundaryType, string> = {
-      'aws-cloud': 'AWS Cloud Region (us-east-1)',
-      region: 'Region Boundary (us-east-1)',
-      vpc: 'VPC (10.0.0.0/16)',
+      'aws-organization': 'AWS Organization / Root',
+      'aws-account': 'AWS Account (1234-5678-9012)',
+      'region': 'Region (us-east-1)',
+      'availability-zone': 'Availability Zone (us-east-1a)',
+      'vpc': 'VPC (10.0.0.0/16)',
       'public-subnet': 'Public Subnet (10.0.1.0/24)',
-      'private-subnet': 'Application Private Subnet (10.0.2.0/24)',
+      'private-subnet': 'Private Subnet (10.0.2.0/24)',
       'data-subnet': 'Database Isolated Subnet (10.0.3.0/24)',
-      'security-group': 'Security Group (sg-app-tier)',
-      'auto-scaling-group': 'Auto Scaling Group Cluster',
+      'security-group': 'Security Group (sg-app)',
+      'auto-scaling-group': 'Auto Scaling Group',
       serverless: 'Managed Serverless Boundary',
       'corporate-datacenter': 'Corporate On-Premises Data Center',
+      'aws-cloud': 'AWS Cloud',
     };
 
     const newGroupNode: CanvasNodeItem = {
@@ -543,9 +552,40 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         isBoundary: true,
         boundaryType: type,
         boundaryLabel: label || defaultLabels[type] || 'Boundary Group',
-        cidr: type === 'vpc' ? '10.0.0.0/16' : type.includes('subnet') ? '10.0.1.0/24' : undefined,
-        width: type === 'aws-cloud' ? 900 : 540,
-        height: type === 'aws-cloud' ? 520 : 340,
+        cidr:
+          type === 'vpc'
+            ? '10.0.0.0/16'
+            : type.includes('subnet')
+              ? '10.0.1.0/24'
+              : type === 'region'
+                ? 'us-east-1'
+                : undefined,
+        accountId: type === 'aws-account' ? '1234-5678-9012' : undefined,
+        azName: type === 'availability-zone' ? 'us-east-1a' : undefined,
+        asgMin: type === 'auto-scaling-group' ? 2 : undefined,
+        asgDesired: type === 'auto-scaling-group' ? 4 : undefined,
+        asgMax: type === 'auto-scaling-group' ? 10 : undefined,
+        securityGroupPorts: type === 'security-group' ? 'TCP 443, 80' : undefined,
+        width:
+          type === 'aws-organization'
+            ? 960
+            : type === 'aws-cloud' || type === 'aws-account'
+              ? 860
+              : type === 'region'
+                ? 740
+                : type === 'availability-zone'
+                  ? 620
+                  : 540,
+        height:
+          type === 'aws-organization'
+            ? 600
+            : type === 'aws-cloud' || type === 'aws-account'
+              ? 520
+              : type === 'region'
+                ? 440
+                : type === 'availability-zone'
+                  ? 380
+                  : 340,
       },
     };
 
@@ -565,19 +605,28 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   addExternalActor: (type: ExternalActorType, label?: string, position?: { x: number; y: number }) => {
     get().recordSnapshot();
     const actorLabels: Record<ExternalActorType, { label: string; role: string }> = {
-      'user-browser': { label: 'User / Web Client', role: 'HTTPS / Web Traffic Ingress' },
-      'mobile-client': { label: 'Mobile App Client', role: 'REST / WebSocket Device Client' },
-      'corporate-datacenter': { label: 'Corporate On-Premises Data Center', role: 'Direct Connect / Dedicated Link' },
+      'user-browser': { label: 'Web Browser / End User', role: 'HTTPS / Public Ingress' },
+      'mobile-client': { label: 'Mobile / IoT Client', role: 'REST / WebSocket Device Client' },
+      'corporate-datacenter': { label: 'Corporate Data Center', role: 'Direct Connect / Dedicated Link' },
       'branch-office': { label: 'Branch Office', role: 'Site-to-Site VPN / SD-WAN' },
       'third-party-api': { label: 'Third-Party SaaS API', role: 'Partner REST / Webhook Ingress' },
-      'external-webhook': { label: 'External Webhook / API', role: '3rd-Party Partner Payload Ingress' },
+      'external-webhook': { label: 'External Webhook / API', role: '3rd-Party Payload Ingress' },
+      'iam-admin': { label: 'Developer / IAM Admin', role: 'SSM Session Manager & CLI Operator' },
+      'cicd-pipeline': { label: 'GitHub / GitLab CI/CD Pipeline', role: 'OIDC Deployment Automation' },
+      'idp-auth': { label: 'External IdP (Okta / Entra ID)', role: 'SAML 2.0 / OIDC Federation' },
+      'saas-webhook': { label: 'Observability & Webhook SaaS', role: 'Datadog / Slack / PagerDuty' },
+      'vpc-gateway-endpoint': { label: 'VPC Gateway Endpoint', role: 'S3 & DynamoDB Prefix List Router' },
+      'vpc-interface-endpoint': { label: 'VPC Interface Endpoint', role: 'AWS PrivateLink (ENI Endpoint)' },
+      'route-table': { label: 'Route Table', role: 'Subnet CIDR Target Router' },
+      'network-acl': { label: 'Network ACL (NACL)', role: 'Stateless Subnet Firewall' },
+      'customer-gateway': { label: 'Customer Gateway (CGW)', role: 'On-Premises VPN Concentrator' },
     };
 
     const meta = actorLabels[type] || { label: 'External Actor', role: 'External Traffic Source' };
 
     const newActorNode: CanvasNodeItem = {
       id: `actor-${type}-${Date.now()}`,
-      type: 'awsService',
+      type: 'actorNode',
       position: position || { x: 100, y: 160 },
       data: {
         serviceId: `actor-${type}`,
@@ -599,6 +648,55 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       return {
         nodes: updatedNodes,
         selectedNodeId: newActorNode.id,
+        selectedEdgeId: null,
+        isInspectorOpen: true,
+        inspectorActiveTab: 'properties',
+      };
+    });
+  },
+
+  addStepBadgeNode: (
+    stepType: StepBadgeType,
+    caption?: string,
+    position?: { x: number; y: number }
+  ) => {
+    get().recordSnapshot();
+    const existingSteps = get().nodes.filter(
+      (n) => n.data.isStepBadge && n.data.stepType === 'flow-step'
+    );
+    const stepNumber = existingSteps.length + 1;
+
+    const defaultCaptions: Record<StepBadgeType, string> = {
+      'flow-step': '',
+      'tls-badge': 'TLS 1.3 / mTLS',
+      'risk-pin': 'SPOF Risk',
+    };
+
+    const initialCaption = caption !== undefined ? caption : defaultCaptions[stepType];
+
+    const newStepNode: CanvasNodeItem = {
+      id: `step-${stepType}-${Date.now()}`,
+      type: 'stepBadgeNode',
+      position: position || { x: 200, y: 160 },
+      data: {
+        serviceId: `step-${stepType}`,
+        label: stepType === 'flow-step' ? `Step ${stepNumber}` : initialCaption || 'Step Marker',
+        category: 'Serverless',
+        tier: 1,
+        isStepBadge: true,
+        stepType,
+        stepNumber,
+        stepColor: 'orange',
+        stepCaption: initialCaption,
+      },
+    };
+
+    set((state) => {
+      const updatedNodes = [...state.nodes, newStepNode];
+      scheduleDebouncedAutoSave(updatedNodes, state.edges, set);
+      return {
+        nodes: updatedNodes,
+        selectedNodeId: newStepNode.id,
         selectedEdgeId: null,
         isInspectorOpen: true,
         inspectorActiveTab: 'properties',
@@ -773,733 +871,733 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     });
   },
 
-    copySelection: () => {
-      const { nodes, edges, selectedNodeId } = get();
-      let selectedNodes = nodes.filter((n) => n.selected);
-      if (selectedNodes.length === 0 && selectedNodeId) {
-        const single = nodes.find((n) => n.id === selectedNodeId);
-        if (single) selectedNodes = [single];
-      }
-      if (selectedNodes.length === 0) return;
+  copySelection: () => {
+    const { nodes, edges, selectedNodeId } = get();
+    let selectedNodes = nodes.filter((n) => n.selected);
+    if (selectedNodes.length === 0 && selectedNodeId) {
+      const single = nodes.find((n) => n.id === selectedNodeId);
+      if (single) selectedNodes = [single];
+    }
+    if (selectedNodes.length === 0) return;
 
-      const selectedNodeIds = new Set(selectedNodes.map((n) => n.id));
-      const internalEdges = edges.filter(
-        (e) => selectedNodeIds.has(e.source) && selectedNodeIds.has(e.target)
+    const selectedNodeIds = new Set(selectedNodes.map((n) => n.id));
+    const internalEdges = edges.filter(
+      (e) => selectedNodeIds.has(e.source) && selectedNodeIds.has(e.target)
+    );
+
+    const clipboardData: CanvasClipboardData = {
+      nodes: JSON.parse(JSON.stringify(selectedNodes)),
+      edges: JSON.parse(JSON.stringify(internalEdges)),
+      pasteCount: 0,
+    };
+
+    set({ clipboard: clipboardData });
+  },
+
+  cutSelection: () => {
+    get().copySelection();
+    get().recordSnapshot();
+    const { nodes, edges, selectedNodeId } = get();
+    let selectedNodes = nodes.filter((n) => n.selected);
+    if (selectedNodes.length === 0 && selectedNodeId) {
+      const single = nodes.find((n) => n.id === selectedNodeId);
+      if (single) selectedNodes = [single];
+    }
+    if (selectedNodes.length === 0) return;
+
+    const idsToRemove = new Set(selectedNodes.map((n) => n.id));
+    const updatedNodes = nodes.filter((n) => !idsToRemove.has(n.id));
+    const updatedEdges = edges.filter(
+      (e) => !idsToRemove.has(e.source) && !idsToRemove.has(e.target)
+    );
+
+    scheduleDebouncedAutoSave(updatedNodes, updatedEdges, set);
+    set({
+      nodes: updatedNodes,
+      edges: updatedEdges,
+      selectedNodeId: null,
+      selectedEdgeId: null,
+    });
+  },
+
+  pasteSelection: (targetPosition?: { x: number; y: number }) => {
+    const { clipboard, nodes, edges } = get();
+    if (!clipboard || clipboard.nodes.length === 0) return;
+
+    get().recordSnapshot();
+    const timestamp = Date.now();
+    const pasteCount = clipboard.pasteCount + 1;
+
+    let offsetX = 36 * pasteCount;
+    let offsetY = 36 * pasteCount;
+
+    if (targetPosition) {
+      const minX = Math.min(...clipboard.nodes.map((n) => n.position.x));
+      const minY = Math.min(...clipboard.nodes.map((n) => n.position.y));
+      offsetX = targetPosition.x - minX;
+      offsetY = targetPosition.y - minY;
+    }
+
+    const selectedOldNodeIds = new Set(clipboard.nodes.map((n) => n.id));
+    const idMap = new Map<string, string>();
+
+    clipboard.nodes.forEach((origNode, idx) => {
+      const baseId = origNode.data?.serviceId || origNode.type || 'node';
+      const uniqueSuffix = Math.random().toString(36).slice(2, 6);
+      const newId = `${baseId}-${timestamp}-${idx}-${uniqueSuffix}`;
+      idMap.set(origNode.id, newId);
+    });
+
+    const newNodes: CanvasNodeItem[] = clipboard.nodes.map((origNode) => {
+      const newId = idMap.get(origNode.id)!;
+      let newParentId = origNode.parentId;
+      if (origNode.parentId) {
+        if (selectedOldNodeIds.has(origNode.parentId)) {
+          newParentId = idMap.get(origNode.parentId);
+        } else {
+          const parentExists = nodes.some((n) => n.id === origNode.parentId);
+          newParentId = parentExists ? origNode.parentId : undefined;
+        }
+      }
+
+      return {
+        ...origNode,
+        id: newId,
+        parentId: newParentId,
+        position: {
+          x: Math.round(origNode.position.x + offsetX),
+          y: Math.round(origNode.position.y + offsetY),
+        },
+        selected: true,
+        data: {
+          ...origNode.data,
+          label: origNode.data.label,
+          customTitle: origNode.data.customTitle,
+        },
+      };
+    });
+
+    const newEdges: CanvasEdgeItem[] = clipboard.edges.map((origEdge, idx) => {
+      const newSource = idMap.get(origEdge.source) || origEdge.source;
+      const newTarget = idMap.get(origEdge.target) || origEdge.target;
+      const newEdgeId = `edge-${newSource}-${newTarget}-${timestamp}-${idx}`;
+
+      return {
+        ...origEdge,
+        id: newEdgeId,
+        source: newSource,
+        target: newTarget,
+        selected: false,
+      };
+    });
+
+    const unselectedExistingNodes = nodes.map((n) =>
+      n.selected ? { ...n, selected: false } : n
+    );
+    const unselectedExistingEdges = edges.map((e) =>
+      e.selected ? { ...e, selected: false } : e
+    );
+
+    const mergedNodes = [...unselectedExistingNodes, ...newNodes];
+    const mergedEdges = [...unselectedExistingEdges, ...newEdges];
+
+    scheduleDebouncedAutoSave(mergedNodes, mergedEdges, set);
+
+    set({
+      nodes: mergedNodes,
+      edges: mergedEdges,
+      selectedNodeId: newNodes.length === 1 ? newNodes[0].id : null,
+      selectedEdgeId: null,
+      clipboard: {
+        ...clipboard,
+        pasteCount: targetPosition ? clipboard.pasteCount : pasteCount,
+      },
+    });
+  },
+
+  selectAllNodes: () => {
+    set((state) => ({
+      nodes: state.nodes.map((n) => ({ ...n, selected: true })),
+      selectedNodeId: state.nodes[0]?.id || null,
+    }));
+  },
+
+  duplicateNode: (nodeId: string) => {
+    const { nodes } = get();
+    const hasSelection = nodes.some((n) => n.selected);
+    if (!hasSelection) {
+      set({
+        nodes: nodes.map((n) => (n.id === nodeId ? { ...n, selected: true } : n)),
+        selectedNodeId: nodeId,
+      });
+    }
+    get().copySelection();
+    get().pasteSelection();
+  },
+
+  reorderNodeZ: (nodeId: string, direction: 'front' | 'back') => {
+    get().recordSnapshot();
+    set((state) => {
+      const nodeIndex = state.nodes.findIndex((n) => n.id === nodeId);
+      if (nodeIndex === -1) return state;
+      const targetNode = state.nodes[nodeIndex];
+      const remainingNodes = state.nodes.filter((n) => n.id !== nodeId);
+
+      const updatedNodes =
+        direction === 'front'
+          ? [...remainingNodes, targetNode]
+          : [targetNode, ...remainingNodes];
+
+      scheduleDebouncedAutoSave(updatedNodes, state.edges, set);
+      return { nodes: updatedNodes };
+    });
+  },
+
+  alignSelectedNodes: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
+    const { nodes } = get();
+    const selected = nodes.filter((n) => n.selected);
+    if (selected.length < 2) return;
+
+    get().recordSnapshot();
+
+    const getNodeWidth = (n: CanvasNodeItem) => (n.data?.width as number) || (n.data?.isBoundary ? 540 : 144);
+    const getNodeHeight = (n: CanvasNodeItem) => (n.data?.height as number) || (n.data?.isBoundary ? 340 : 80);
+
+    let targetVal = 0;
+    if (alignment === 'left') {
+      targetVal = Math.min(...selected.map((n) => n.position.x));
+    } else if (alignment === 'center') {
+      const minX = Math.min(...selected.map((n) => n.position.x));
+      const maxX = Math.max(...selected.map((n) => n.position.x + getNodeWidth(n)));
+      targetVal = (minX + maxX) / 2;
+    } else if (alignment === 'right') {
+      targetVal = Math.max(...selected.map((n) => n.position.x + getNodeWidth(n)));
+    } else if (alignment === 'top') {
+      targetVal = Math.min(...selected.map((n) => n.position.y));
+    } else if (alignment === 'middle') {
+      const minY = Math.min(...selected.map((n) => n.position.y));
+      const maxY = Math.max(...selected.map((n) => n.position.y + getNodeHeight(n)));
+      targetVal = (minY + maxY) / 2;
+    } else if (alignment === 'bottom') {
+      targetVal = Math.max(...selected.map((n) => n.position.y + getNodeHeight(n)));
+    }
+
+    const updatedNodes = nodes.map((node) => {
+      if (!node.selected) return node;
+      const w = getNodeWidth(node);
+      const h = getNodeHeight(node);
+      const newPos = { ...node.position };
+
+      if (alignment === 'left') newPos.x = targetVal;
+      else if (alignment === 'center') newPos.x = Math.round(targetVal - w / 2);
+      else if (alignment === 'right') newPos.x = targetVal - w;
+      else if (alignment === 'top') newPos.y = targetVal;
+      else if (alignment === 'middle') newPos.y = Math.round(targetVal - h / 2);
+      else if (alignment === 'bottom') newPos.y = targetVal - h;
+
+      newPos.x = Math.round(newPos.x / 16) * 16;
+      newPos.y = Math.round(newPos.y / 16) * 16;
+
+      return { ...node, position: newPos };
+    });
+
+    set({ nodes: updatedNodes });
+    scheduleDebouncedAutoSave(updatedNodes, get().edges, set);
+  },
+
+  distributeSelectedNodes: (axis: 'horizontal' | 'vertical') => {
+    const { nodes } = get();
+    const selected = nodes.filter((n) => n.selected);
+    if (selected.length < 3) return;
+
+    get().recordSnapshot();
+
+    const getNodeWidth = (n: CanvasNodeItem) => (n.data?.width as number) || (n.data?.isBoundary ? 540 : 144);
+    const getNodeHeight = (n: CanvasNodeItem) => (n.data?.height as number) || (n.data?.isBoundary ? 340 : 80);
+
+    if (axis === 'horizontal') {
+      const sorted = [...selected].sort((a, b) => a.position.x - b.position.x);
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+      const totalDistance = last.position.x + getNodeWidth(last) - first.position.x;
+      const totalNodesWidth = sorted.reduce((sum, n) => sum + getNodeWidth(n), 0);
+      const gap = Math.max(16, (totalDistance - totalNodesWidth) / (sorted.length - 1));
+
+      let currentX = first.position.x;
+      const posMap = new Map<string, number>();
+      sorted.forEach((n) => {
+        posMap.set(n.id, Math.round(currentX / 16) * 16);
+        currentX += getNodeWidth(n) + gap;
+      });
+
+      const updatedNodes = nodes.map((node) => {
+        if (posMap.has(node.id)) {
+          return { ...node, position: { ...node.position, x: posMap.get(node.id)! } };
+        }
+        return node;
+      });
+
+      set({ nodes: updatedNodes });
+      scheduleDebouncedAutoSave(updatedNodes, get().edges, set);
+    } else {
+      const sorted = [...selected].sort((a, b) => a.position.y - b.position.y);
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+      const totalDistance = last.position.y + getNodeHeight(last) - first.position.y;
+      const totalNodesHeight = sorted.reduce((sum, n) => sum + getNodeHeight(n), 0);
+      const gap = Math.max(16, (totalDistance - totalNodesHeight) / (sorted.length - 1));
+
+      let currentY = first.position.y;
+      const posMap = new Map<string, number>();
+      sorted.forEach((n) => {
+        posMap.set(n.id, Math.round(currentY / 16) * 16);
+        currentY += getNodeHeight(n) + gap;
+      });
+
+      const updatedNodes = nodes.map((node) => {
+        if (posMap.has(node.id)) {
+          return { ...node, position: { ...node.position, y: posMap.get(node.id)! } };
+        }
+        return node;
+      });
+
+      set({ nodes: updatedNodes });
+      scheduleDebouncedAutoSave(updatedNodes, get().edges, set);
+    }
+  },
+
+  groupSelectedNodes: (boundaryType: GroupBoundaryType, label?: string) => {
+    const { nodes } = get();
+    const selected = nodes.filter((n) => n.selected);
+    if (selected.length === 0) return;
+
+    get().recordSnapshot();
+
+    const getNodeWidth = (n: CanvasNodeItem) => (n.data?.width as number) || (n.data?.isBoundary ? 540 : 144);
+    const getNodeHeight = (n: CanvasNodeItem) => (n.data?.height as number) || (n.data?.isBoundary ? 340 : 80);
+
+    const minX = Math.min(...selected.map((n) => n.position.x));
+    const minY = Math.min(...selected.map((n) => n.position.y));
+    const maxX = Math.max(...selected.map((n) => n.position.x + getNodeWidth(n)));
+    const maxY = Math.max(...selected.map((n) => n.position.y + getNodeHeight(n)));
+
+    const padX = 48;
+    const padTop = 64;
+    const padBottom = 48;
+
+    const boundX = Math.max(0, Math.round((minX - padX) / 16) * 16);
+    const boundY = Math.max(0, Math.round((minY - padTop) / 16) * 16);
+    const boundW = Math.max(240, Math.round((maxX - minX + padX * 2) / 16) * 16);
+    const boundH = Math.max(160, Math.round((maxY - minY + padTop + padBottom) / 16) * 16);
+
+    const boundaryId = `group-${boundaryType}-${Date.now()}`;
+    const boundaryLabel =
+      label ||
+      (boundaryType === 'vpc'
+        ? 'VPC (10.0.0.0/16)'
+        : boundaryType === 'public-subnet'
+          ? 'Public Subnet (10.0.1.0/24)'
+          : boundaryType === 'private-subnet'
+            ? 'Private Subnet (10.0.2.0/24)'
+            : boundaryType.replace(/-/g, ' ').toUpperCase());
+
+    const boundaryNode: CanvasNodeItem = {
+      id: boundaryId,
+      type: 'awsGroup',
+      position: { x: boundX, y: boundY },
+      zIndex: -1,
+      data: {
+        serviceId: `bound-${boundaryType}`,
+        label: boundaryLabel,
+        category: 'Networking',
+        tier: 1,
+        isBoundary: true,
+        boundaryType,
+        boundaryLabel,
+        width: boundW,
+        height: boundH,
+        cidr: boundaryType === 'vpc' ? '10.0.0.0/16' : boundaryType.includes('subnet') ? '10.0.1.0/24' : undefined,
+      },
+    };
+
+    const updatedNodes = nodes.map((node) => {
+      if (node.selected) {
+        return {
+          ...node,
+          parentId: boundaryId,
+          extent: 'parent' as const,
+          position: {
+            x: Math.round((node.position.x - boundX) / 16) * 16,
+            y: Math.round((node.position.y - boundY) / 16) * 16,
+          },
+        };
+      }
+      return node;
+    });
+
+    const finalNodes = [boundaryNode, ...updatedNodes];
+    set({ nodes: finalNodes });
+    scheduleDebouncedAutoSave(finalNodes, get().edges, set);
+  },
+
+  removeNode: (nodeId: string) => {
+    get().recordSnapshot();
+    set((state) => {
+      const updatedNodes = state.nodes.filter((n) => n.id !== nodeId);
+      const updatedEdges = state.edges.filter(
+        (e) => e.source !== nodeId && e.target !== nodeId
+      );
+      scheduleDebouncedAutoSave(updatedNodes, updatedEdges, set);
+      return {
+        nodes: updatedNodes,
+        edges: updatedEdges,
+        selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
+        isInspectorOpen: state.selectedNodeId === nodeId ? false : state.isInspectorOpen,
+      };
+    });
+  },
+
+  removeEdge: (edgeId: string) => {
+    get().recordSnapshot();
+    set((state) => {
+      const updatedEdges = state.edges.filter((e) => e.id !== edgeId);
+      scheduleDebouncedAutoSave(state.nodes, updatedEdges, set);
+      return {
+        edges: updatedEdges,
+        selectedEdgeId: state.selectedEdgeId === edgeId ? null : state.selectedEdgeId,
+        isInspectorOpen: state.selectedEdgeId === edgeId ? false : state.isInspectorOpen,
+      };
+    });
+  },
+
+  clearCanvas: () => {
+    get().recordSnapshot();
+    set({
+      nodes: [],
+      edges: [],
+      selectedNodeId: null,
+      selectedEdgeId: null,
+      isInspectorOpen: false,
+    });
+    scheduleDebouncedAutoSave([], [], set);
+  },
+
+  createBlankBlueprint: () => {
+    get().recordSnapshot();
+    const id = `custom-blueprint-${Date.now()}`;
+    const name = 'Untitled Blueprint';
+    set({
+      nodes: [],
+      edges: [],
+      activeDiagramId: id,
+      activeDiagramName: name,
+      selectedNodeId: null,
+      selectedEdgeId: null,
+      isInspectorOpen: false,
+    });
+    scheduleDebouncedAutoSave([], [], set);
+  },
+
+  forkCurrentBlueprint: async (customName?: string) => {
+    const currentNodes = get().nodes;
+    const currentEdges = get().edges;
+    const timestamp = Date.now();
+    const name = customName?.trim() || `${get().activeDiagramName} (Custom)`;
+    const id = `custom-blueprint-${timestamp}`;
+
+    const newDiagram: Diagram = {
+      id,
+      name,
+      description: `Custom architecture blueprint created by user.`,
+      nodes: currentNodes,
+      edges: currentEdges,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    await dbSaveDiagram(newDiagram);
+    const all = await dbGetAllDiagrams();
+    const userSaved = all.filter((d) => d.id !== 'active-canvas-diagram');
+
+    set({
+      savedDiagrams: userSaved,
+      activeDiagramId: id,
+      activeDiagramName: name,
+    });
+
+    return id;
+  },
+
+  renameBlueprint: async (id: string, newName: string) => {
+    const target = await dbGetDiagramById(id);
+    if (target) {
+      target.name = newName;
+      target.updatedAt = Date.now();
+      await dbSaveDiagram(target);
+    }
+    const all = await dbGetAllDiagrams();
+    const userSaved = all.filter((d) => d.id !== 'active-canvas-diagram');
+
+    set((state) => ({
+      savedDiagrams: userSaved,
+      activeDiagramName: state.activeDiagramId === id ? newName : state.activeDiagramName,
+    }));
+  },
+
+  duplicateBlueprint: async (id: string) => {
+    let sourceDiagram: Diagram | undefined = await dbGetDiagramById(id);
+    if (!sourceDiagram) {
+      // Check seed blueprints
+      const seed = Object.values(SEED_BLUEPRINTS).find((b) => b.id === id);
+      if (seed) {
+        sourceDiagram = {
+          id: seed.id,
+          name: seed.name,
+          description: seed.description,
+          nodes: seed.nodes,
+          edges: seed.edges,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+      }
+    }
+
+    if (!sourceDiagram) return;
+
+    const timestamp = Date.now();
+    const duplicatedId = `custom-blueprint-${timestamp}`;
+    const duplicatedName = `${sourceDiagram.name} (Copy)`;
+    const thumbnail = sourceDiagram.thumbnail || generateDiagramThumbnail(sourceDiagram.nodes, sourceDiagram.edges);
+
+    const newDiagram: Diagram = {
+      id: duplicatedId,
+      name: duplicatedName,
+      description: sourceDiagram.description,
+      nodes: JSON.parse(JSON.stringify(sourceDiagram.nodes)),
+      edges: JSON.parse(JSON.stringify(sourceDiagram.edges)),
+      thumbnail,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    await dbSaveDiagram(newDiagram);
+    const all = await dbGetAllDiagrams();
+    const userSaved = all.filter((d) => d.id !== 'active-canvas-diagram');
+
+    set({
+      savedDiagrams: userSaved,
+      nodes: newDiagram.nodes,
+      edges: newDiagram.edges,
+      activeDiagramId: duplicatedId,
+      activeDiagramName: duplicatedName,
+      selectedNodeId: null,
+      selectedEdgeId: null,
+      isInspectorOpen: false,
+    });
+    scheduleDebouncedAutoSave(newDiagram.nodes, newDiagram.edges, set);
+  },
+
+  deleteBlueprint: async (id: string) => {
+    await dbDeleteDiagram(id);
+    const all = await dbGetAllDiagrams();
+    const userSaved = all.filter((d) => d.id !== 'active-canvas-diagram');
+
+    // If currently active diagram was deleted, switch back to reference default
+    if (get().activeDiagramId === id) {
+      const defaultBp = SEED_BLUEPRINTS['serverless-microservice'];
+      set({
+        savedDiagrams: userSaved,
+        nodes: defaultBp.nodes,
+        edges: defaultBp.edges,
+        activeDiagramId: defaultBp.id,
+        activeDiagramName: defaultBp.name,
+        selectedNodeId: null,
+        selectedEdgeId: null,
+        isInspectorOpen: false,
+      });
+      scheduleDebouncedAutoSave(defaultBp.nodes, defaultBp.edges, set);
+    } else {
+      set({ savedDiagrams: userSaved });
+    }
+  },
+
+  saveCurrentAsBlueprint: async (name: string) => {
+    const currentNodes = get().nodes;
+    const currentEdges = get().edges;
+    const timestamp = Date.now();
+    const id = get().activeDiagramId.startsWith('custom-blueprint-')
+      ? get().activeDiagramId
+      : `custom-blueprint-${timestamp}`;
+
+    const thumbnail = generateDiagramThumbnail(currentNodes, currentEdges);
+
+    const newDiagram: Diagram = {
+      id,
+      name: name.trim() || 'Untitled Blueprint',
+      description: `Custom architecture blueprint with ${currentNodes.length} nodes and ${currentEdges.length} connections.`,
+      nodes: currentNodes,
+      edges: currentEdges,
+      thumbnail,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    await dbSaveDiagram(newDiagram);
+    const all = await dbGetAllDiagrams();
+    const userSaved = all.filter((d) => d.id !== 'active-canvas-diagram');
+
+    set({
+      savedDiagrams: userSaved,
+      activeDiagramId: id,
+      activeDiagramName: newDiagram.name,
+    });
+  },
+
+  exportBlueprintJson: async (blueprintId?: string) => {
+    const id = blueprintId || get().activeDiagramId;
+    let target = await dbGetDiagramById(id);
+    if (!target) {
+      const seed = Object.values(SEED_BLUEPRINTS).find((b) => b.id === id);
+      if (seed) {
+        target = {
+          id: seed.id,
+          name: seed.name,
+          description: seed.description,
+          nodes: seed.nodes,
+          edges: seed.edges,
+          thumbnail: (seed as any).thumbnail || generateDiagramThumbnail(seed.nodes, seed.edges),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+      } else {
+        target = {
+          id: get().activeDiagramId,
+          name: get().activeDiagramName,
+          description: 'Active workspace canvas architecture manifest',
+          nodes: get().nodes,
+          edges: get().edges,
+          thumbnail: generateDiagramThumbnail(get().nodes, get().edges),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+      }
+    }
+
+    const jsonStr =
+      'data:text/json;charset=utf-8,' +
+      encodeURIComponent(
+        JSON.stringify(
+          {
+            version: '1.0',
+            schema: 'aws-compass-blueprint',
+            blueprint: target,
+            exportedAt: new Date().toISOString(),
+          },
+          null,
+          2
+        )
       );
 
-      const clipboardData: CanvasClipboardData = {
-        nodes: JSON.parse(JSON.stringify(selectedNodes)),
-        edges: JSON.parse(JSON.stringify(internalEdges)),
-        pasteCount: 0,
-      };
-
-      set({ clipboard: clipboardData });
-    },
-
-      cutSelection: () => {
-        get().copySelection();
-        get().recordSnapshot();
-        const { nodes, edges, selectedNodeId } = get();
-        let selectedNodes = nodes.filter((n) => n.selected);
-        if (selectedNodes.length === 0 && selectedNodeId) {
-          const single = nodes.find((n) => n.id === selectedNodeId);
-          if (single) selectedNodes = [single];
-        }
-        if (selectedNodes.length === 0) return;
-
-        const idsToRemove = new Set(selectedNodes.map((n) => n.id));
-        const updatedNodes = nodes.filter((n) => !idsToRemove.has(n.id));
-        const updatedEdges = edges.filter(
-          (e) => !idsToRemove.has(e.source) && !idsToRemove.has(e.target)
-        );
-
-        scheduleDebouncedAutoSave(updatedNodes, updatedEdges, set);
-        set({
-          nodes: updatedNodes,
-          edges: updatedEdges,
-          selectedNodeId: null,
-          selectedEdgeId: null,
-        });
-      },
-
-        pasteSelection: (targetPosition?: { x: number; y: number }) => {
-          const { clipboard, nodes, edges } = get();
-          if (!clipboard || clipboard.nodes.length === 0) return;
-
-          get().recordSnapshot();
-          const timestamp = Date.now();
-          const pasteCount = clipboard.pasteCount + 1;
-
-            let offsetX = 36 * pasteCount;
-            let offsetY = 36 * pasteCount;
-
-            if (targetPosition) {
-              const minX = Math.min(...clipboard.nodes.map((n) => n.position.x));
-              const minY = Math.min(...clipboard.nodes.map((n) => n.position.y));
-              offsetX = targetPosition.x - minX;
-              offsetY = targetPosition.y - minY;
-            }
-
-            const selectedOldNodeIds = new Set(clipboard.nodes.map((n) => n.id));
-            const idMap = new Map<string, string>();
-
-            clipboard.nodes.forEach((origNode, idx) => {
-              const baseId = origNode.data?.serviceId || origNode.type || 'node';
-              const uniqueSuffix = Math.random().toString(36).slice(2, 6);
-              const newId = `${baseId}-${timestamp}-${idx}-${uniqueSuffix}`;
-              idMap.set(origNode.id, newId);
-            });
-
-            const newNodes: CanvasNodeItem[] = clipboard.nodes.map((origNode) => {
-              const newId = idMap.get(origNode.id)!;
-              let newParentId = origNode.parentId;
-              if (origNode.parentId) {
-                if (selectedOldNodeIds.has(origNode.parentId)) {
-                  newParentId = idMap.get(origNode.parentId);
-                } else {
-                  const parentExists = nodes.some((n) => n.id === origNode.parentId);
-                  newParentId = parentExists ? origNode.parentId : undefined;
-                }
-              }
-
-              return {
-                ...origNode,
-                id: newId,
-                parentId: newParentId,
-                position: {
-                  x: Math.round(origNode.position.x + offsetX),
-                  y: Math.round(origNode.position.y + offsetY),
-                },
-                selected: true,
-                data: {
-                  ...origNode.data,
-                  label: origNode.data.label,
-                  customTitle: origNode.data.customTitle,
-                },
-              };
-            });
-
-            const newEdges: CanvasEdgeItem[] = clipboard.edges.map((origEdge, idx) => {
-              const newSource = idMap.get(origEdge.source) || origEdge.source;
-              const newTarget = idMap.get(origEdge.target) || origEdge.target;
-              const newEdgeId = `edge-${newSource}-${newTarget}-${timestamp}-${idx}`;
-
-              return {
-                ...origEdge,
-                id: newEdgeId,
-                source: newSource,
-                target: newTarget,
-                selected: false,
-              };
-            });
-
-            const unselectedExistingNodes = nodes.map((n) =>
-              n.selected ? { ...n, selected: false } : n
-            );
-            const unselectedExistingEdges = edges.map((e) =>
-              e.selected ? { ...e, selected: false } : e
-            );
-
-            const mergedNodes = [...unselectedExistingNodes, ...newNodes];
-            const mergedEdges = [...unselectedExistingEdges, ...newEdges];
-
-            scheduleDebouncedAutoSave(mergedNodes, mergedEdges, set);
-
-            set({
-              nodes: mergedNodes,
-              edges: mergedEdges,
-              selectedNodeId: newNodes.length === 1 ? newNodes[0].id : null,
-              selectedEdgeId: null,
-              clipboard: {
-                ...clipboard,
-                pasteCount: targetPosition ? clipboard.pasteCount : pasteCount,
-              },
-            });
-          },
-
-            selectAllNodes: () => {
-              set((state) => ({
-                nodes: state.nodes.map((n) => ({ ...n, selected: true })),
-                selectedNodeId: state.nodes[0]?.id || null,
-              }));
-            },
-
-            duplicateNode: (nodeId: string) => {
-              const { nodes } = get();
-              const hasSelection = nodes.some((n) => n.selected);
-              if (!hasSelection) {
-                set({
-                  nodes: nodes.map((n) => (n.id === nodeId ? { ...n, selected: true } : n)),
-                  selectedNodeId: nodeId,
-                });
-              }
-              get().copySelection();
-              get().pasteSelection();
-            },
-
-            reorderNodeZ: (nodeId: string, direction: 'front' | 'back') => {
-              get().recordSnapshot();
-              set((state) => {
-                const nodeIndex = state.nodes.findIndex((n) => n.id === nodeId);
-                if (nodeIndex === -1) return state;
-                const targetNode = state.nodes[nodeIndex];
-                const remainingNodes = state.nodes.filter((n) => n.id !== nodeId);
-
-                const updatedNodes =
-                  direction === 'front'
-                    ? [...remainingNodes, targetNode]
-                    : [targetNode, ...remainingNodes];
-
-                scheduleDebouncedAutoSave(updatedNodes, state.edges, set);
-                return { nodes: updatedNodes };
-              });
-            },
-
-            alignSelectedNodes: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
-              const { nodes } = get();
-              const selected = nodes.filter((n) => n.selected);
-              if (selected.length < 2) return;
-
-              get().recordSnapshot();
-
-              const getNodeWidth = (n: CanvasNodeItem) => (n.data?.width as number) || (n.data?.isBoundary ? 540 : 144);
-              const getNodeHeight = (n: CanvasNodeItem) => (n.data?.height as number) || (n.data?.isBoundary ? 340 : 80);
-
-              let targetVal = 0;
-              if (alignment === 'left') {
-                targetVal = Math.min(...selected.map((n) => n.position.x));
-              } else if (alignment === 'center') {
-                const minX = Math.min(...selected.map((n) => n.position.x));
-                const maxX = Math.max(...selected.map((n) => n.position.x + getNodeWidth(n)));
-                targetVal = (minX + maxX) / 2;
-              } else if (alignment === 'right') {
-                targetVal = Math.max(...selected.map((n) => n.position.x + getNodeWidth(n)));
-              } else if (alignment === 'top') {
-                targetVal = Math.min(...selected.map((n) => n.position.y));
-              } else if (alignment === 'middle') {
-                const minY = Math.min(...selected.map((n) => n.position.y));
-                const maxY = Math.max(...selected.map((n) => n.position.y + getNodeHeight(n)));
-                targetVal = (minY + maxY) / 2;
-              } else if (alignment === 'bottom') {
-                targetVal = Math.max(...selected.map((n) => n.position.y + getNodeHeight(n)));
-              }
-
-              const updatedNodes = nodes.map((node) => {
-                if (!node.selected) return node;
-                const w = getNodeWidth(node);
-                const h = getNodeHeight(node);
-                const newPos = { ...node.position };
-
-                if (alignment === 'left') newPos.x = targetVal;
-                else if (alignment === 'center') newPos.x = Math.round(targetVal - w / 2);
-                else if (alignment === 'right') newPos.x = targetVal - w;
-                else if (alignment === 'top') newPos.y = targetVal;
-                else if (alignment === 'middle') newPos.y = Math.round(targetVal - h / 2);
-                else if (alignment === 'bottom') newPos.y = targetVal - h;
-
-                newPos.x = Math.round(newPos.x / 16) * 16;
-                newPos.y = Math.round(newPos.y / 16) * 16;
-
-                return { ...node, position: newPos };
-              });
-
-              set({ nodes: updatedNodes });
-              scheduleDebouncedAutoSave(updatedNodes, get().edges, set);
-            },
-
-            distributeSelectedNodes: (axis: 'horizontal' | 'vertical') => {
-              const { nodes } = get();
-              const selected = nodes.filter((n) => n.selected);
-              if (selected.length < 3) return;
-
-              get().recordSnapshot();
-
-              const getNodeWidth = (n: CanvasNodeItem) => (n.data?.width as number) || (n.data?.isBoundary ? 540 : 144);
-              const getNodeHeight = (n: CanvasNodeItem) => (n.data?.height as number) || (n.data?.isBoundary ? 340 : 80);
-
-              if (axis === 'horizontal') {
-                const sorted = [...selected].sort((a, b) => a.position.x - b.position.x);
-                const first = sorted[0];
-                const last = sorted[sorted.length - 1];
-                const totalDistance = last.position.x + getNodeWidth(last) - first.position.x;
-                const totalNodesWidth = sorted.reduce((sum, n) => sum + getNodeWidth(n), 0);
-                const gap = Math.max(16, (totalDistance - totalNodesWidth) / (sorted.length - 1));
-
-                let currentX = first.position.x;
-                const posMap = new Map<string, number>();
-                sorted.forEach((n) => {
-                  posMap.set(n.id, Math.round(currentX / 16) * 16);
-                  currentX += getNodeWidth(n) + gap;
-                });
-
-                const updatedNodes = nodes.map((node) => {
-                  if (posMap.has(node.id)) {
-                    return { ...node, position: { ...node.position, x: posMap.get(node.id)! } };
-                  }
-                  return node;
-                });
-
-                set({ nodes: updatedNodes });
-                scheduleDebouncedAutoSave(updatedNodes, get().edges, set);
-              } else {
-                const sorted = [...selected].sort((a, b) => a.position.y - b.position.y);
-                const first = sorted[0];
-                const last = sorted[sorted.length - 1];
-                const totalDistance = last.position.y + getNodeHeight(last) - first.position.y;
-                const totalNodesHeight = sorted.reduce((sum, n) => sum + getNodeHeight(n), 0);
-                const gap = Math.max(16, (totalDistance - totalNodesHeight) / (sorted.length - 1));
-
-                let currentY = first.position.y;
-                const posMap = new Map<string, number>();
-                sorted.forEach((n) => {
-                  posMap.set(n.id, Math.round(currentY / 16) * 16);
-                  currentY += getNodeHeight(n) + gap;
-                });
-
-                const updatedNodes = nodes.map((node) => {
-                  if (posMap.has(node.id)) {
-                    return { ...node, position: { ...node.position, y: posMap.get(node.id)! } };
-                  }
-                  return node;
-                });
-
-                set({ nodes: updatedNodes });
-                scheduleDebouncedAutoSave(updatedNodes, get().edges, set);
-              }
-            },
-
-            groupSelectedNodes: (boundaryType: GroupBoundaryType, label?: string) => {
-              const { nodes } = get();
-              const selected = nodes.filter((n) => n.selected);
-              if (selected.length === 0) return;
-
-              get().recordSnapshot();
-
-              const getNodeWidth = (n: CanvasNodeItem) => (n.data?.width as number) || (n.data?.isBoundary ? 540 : 144);
-              const getNodeHeight = (n: CanvasNodeItem) => (n.data?.height as number) || (n.data?.isBoundary ? 340 : 80);
-
-              const minX = Math.min(...selected.map((n) => n.position.x));
-              const minY = Math.min(...selected.map((n) => n.position.y));
-              const maxX = Math.max(...selected.map((n) => n.position.x + getNodeWidth(n)));
-              const maxY = Math.max(...selected.map((n) => n.position.y + getNodeHeight(n)));
-
-              const padX = 48;
-              const padTop = 64;
-              const padBottom = 48;
-
-              const boundX = Math.max(0, Math.round((minX - padX) / 16) * 16);
-              const boundY = Math.max(0, Math.round((minY - padTop) / 16) * 16);
-              const boundW = Math.max(240, Math.round((maxX - minX + padX * 2) / 16) * 16);
-              const boundH = Math.max(160, Math.round((maxY - minY + padTop + padBottom) / 16) * 16);
-
-              const boundaryId = `group-${boundaryType}-${Date.now()}`;
-              const boundaryLabel =
-                label ||
-                (boundaryType === 'vpc'
-                  ? 'VPC (10.0.0.0/16)'
-                  : boundaryType === 'public-subnet'
-                    ? 'Public Subnet (10.0.1.0/24)'
-                    : boundaryType === 'private-subnet'
-                      ? 'Private Subnet (10.0.2.0/24)'
-                      : boundaryType.replace(/-/g, ' ').toUpperCase());
-
-              const boundaryNode: CanvasNodeItem = {
-                id: boundaryId,
-                type: 'awsGroup',
-                position: { x: boundX, y: boundY },
-                zIndex: -1,
-                data: {
-                  serviceId: `bound-${boundaryType}`,
-                  label: boundaryLabel,
-                  category: 'Networking',
-                  tier: 1,
-                  isBoundary: true,
-                  boundaryType,
-                  boundaryLabel,
-                  width: boundW,
-                  height: boundH,
-                  cidr: boundaryType === 'vpc' ? '10.0.0.0/16' : boundaryType.includes('subnet') ? '10.0.1.0/24' : undefined,
-                },
-              };
-
-              const updatedNodes = nodes.map((node) => {
-                if (node.selected) {
-                  return {
-                    ...node,
-                    parentId: boundaryId,
-                    extent: 'parent' as const,
-                    position: {
-                      x: Math.round((node.position.x - boundX) / 16) * 16,
-                      y: Math.round((node.position.y - boundY) / 16) * 16,
-                    },
-                  };
-                }
-                return node;
-              });
-
-              const finalNodes = [boundaryNode, ...updatedNodes];
-              set({ nodes: finalNodes });
-              scheduleDebouncedAutoSave(finalNodes, get().edges, set);
-            },
-
-            removeNode: (nodeId: string) => {
-              get().recordSnapshot();
-              set((state) => {
-                const updatedNodes = state.nodes.filter((n) => n.id !== nodeId);
-                const updatedEdges = state.edges.filter(
-                  (e) => e.source !== nodeId && e.target !== nodeId
-                );
-                scheduleDebouncedAutoSave(updatedNodes, updatedEdges, set);
-                return {
-                  nodes: updatedNodes,
-                  edges: updatedEdges,
-                  selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
-                  isInspectorOpen: state.selectedNodeId === nodeId ? false : state.isInspectorOpen,
-                };
-              });
-            },
-
-            removeEdge: (edgeId: string) => {
-              get().recordSnapshot();
-              set((state) => {
-                const updatedEdges = state.edges.filter((e) => e.id !== edgeId);
-                scheduleDebouncedAutoSave(state.nodes, updatedEdges, set);
-                return {
-                  edges: updatedEdges,
-                  selectedEdgeId: state.selectedEdgeId === edgeId ? null : state.selectedEdgeId,
-                  isInspectorOpen: state.selectedEdgeId === edgeId ? false : state.isInspectorOpen,
-                };
-              });
-            },
-
-            clearCanvas: () => {
-              get().recordSnapshot();
-              set({
-                nodes: [],
-                edges: [],
-                selectedNodeId: null,
-                selectedEdgeId: null,
-                isInspectorOpen: false,
-              });
-              scheduleDebouncedAutoSave([], [], set);
-            },
-
-            createBlankBlueprint: () => {
-              get().recordSnapshot();
-              const id = `custom-blueprint-${Date.now()}`;
-              const name = 'Untitled Blueprint';
-              set({
-                nodes: [],
-                edges: [],
-                activeDiagramId: id,
-                activeDiagramName: name,
-                selectedNodeId: null,
-                selectedEdgeId: null,
-                isInspectorOpen: false,
-              });
-              scheduleDebouncedAutoSave([], [], set);
-            },
-
-            forkCurrentBlueprint: async (customName?: string) => {
-              const currentNodes = get().nodes;
-              const currentEdges = get().edges;
-              const timestamp = Date.now();
-              const name = customName?.trim() || `${get().activeDiagramName} (Custom)`;
-              const id = `custom-blueprint-${timestamp}`;
-
-              const newDiagram: Diagram = {
-                id,
-                name,
-                description: `Custom architecture blueprint created by user.`,
-                nodes: currentNodes,
-                edges: currentEdges,
-                createdAt: timestamp,
-                updatedAt: timestamp,
-              };
-
-              await dbSaveDiagram(newDiagram);
-              const all = await dbGetAllDiagrams();
-              const userSaved = all.filter((d) => d.id !== 'active-canvas-diagram');
-
-              set({
-                savedDiagrams: userSaved,
-                activeDiagramId: id,
-                activeDiagramName: name,
-              });
-
-              return id;
-            },
-
-            renameBlueprint: async (id: string, newName: string) => {
-              const target = await dbGetDiagramById(id);
-              if (target) {
-                target.name = newName;
-                target.updatedAt = Date.now();
-                await dbSaveDiagram(target);
-              }
-              const all = await dbGetAllDiagrams();
-              const userSaved = all.filter((d) => d.id !== 'active-canvas-diagram');
-
-              set((state) => ({
-                savedDiagrams: userSaved,
-                activeDiagramName: state.activeDiagramId === id ? newName : state.activeDiagramName,
-              }));
-            },
-
-            duplicateBlueprint: async (id: string) => {
-              let sourceDiagram: Diagram | undefined = await dbGetDiagramById(id);
-              if (!sourceDiagram) {
-                // Check seed blueprints
-                const seed = Object.values(SEED_BLUEPRINTS).find((b) => b.id === id);
-                if (seed) {
-                  sourceDiagram = {
-                    id: seed.id,
-                    name: seed.name,
-                    description: seed.description,
-                    nodes: seed.nodes,
-                    edges: seed.edges,
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                  };
-                }
-              }
-
-              if (!sourceDiagram) return;
-
-              const timestamp = Date.now();
-              const duplicatedId = `custom-blueprint-${timestamp}`;
-              const duplicatedName = `${sourceDiagram.name} (Copy)`;
-              const thumbnail = sourceDiagram.thumbnail || generateDiagramThumbnail(sourceDiagram.nodes, sourceDiagram.edges);
-
-              const newDiagram: Diagram = {
-                id: duplicatedId,
-                name: duplicatedName,
-                description: sourceDiagram.description,
-                nodes: JSON.parse(JSON.stringify(sourceDiagram.nodes)),
-                edges: JSON.parse(JSON.stringify(sourceDiagram.edges)),
-                thumbnail,
-                createdAt: timestamp,
-                updatedAt: timestamp,
-              };
-
-              await dbSaveDiagram(newDiagram);
-              const all = await dbGetAllDiagrams();
-              const userSaved = all.filter((d) => d.id !== 'active-canvas-diagram');
-
-              set({
-                savedDiagrams: userSaved,
-                nodes: newDiagram.nodes,
-                edges: newDiagram.edges,
-                activeDiagramId: duplicatedId,
-                activeDiagramName: duplicatedName,
-                selectedNodeId: null,
-                selectedEdgeId: null,
-                isInspectorOpen: false,
-              });
-              scheduleDebouncedAutoSave(newDiagram.nodes, newDiagram.edges, set);
-            },
-
-            deleteBlueprint: async (id: string) => {
-              await dbDeleteDiagram(id);
-              const all = await dbGetAllDiagrams();
-              const userSaved = all.filter((d) => d.id !== 'active-canvas-diagram');
-
-              // If currently active diagram was deleted, switch back to reference default
-              if (get().activeDiagramId === id) {
-                const defaultBp = SEED_BLUEPRINTS['serverless-microservice'];
-                set({
-                  savedDiagrams: userSaved,
-                  nodes: defaultBp.nodes,
-                  edges: defaultBp.edges,
-                  activeDiagramId: defaultBp.id,
-                  activeDiagramName: defaultBp.name,
-                  selectedNodeId: null,
-                  selectedEdgeId: null,
-                  isInspectorOpen: false,
-                });
-                scheduleDebouncedAutoSave(defaultBp.nodes, defaultBp.edges, set);
-              } else {
-                set({ savedDiagrams: userSaved });
-              }
-            },
-
-            saveCurrentAsBlueprint: async (name: string) => {
-              const currentNodes = get().nodes;
-              const currentEdges = get().edges;
-              const timestamp = Date.now();
-              const id = get().activeDiagramId.startsWith('custom-blueprint-')
-                ? get().activeDiagramId
-                : `custom-blueprint-${timestamp}`;
-
-              const thumbnail = generateDiagramThumbnail(currentNodes, currentEdges);
-
-              const newDiagram: Diagram = {
-                id,
-                name: name.trim() || 'Untitled Blueprint',
-                description: `Custom architecture blueprint with ${currentNodes.length} nodes and ${currentEdges.length} connections.`,
-                nodes: currentNodes,
-                edges: currentEdges,
-                thumbnail,
-                createdAt: timestamp,
-                updatedAt: timestamp,
-              };
-
-              await dbSaveDiagram(newDiagram);
-              const all = await dbGetAllDiagrams();
-              const userSaved = all.filter((d) => d.id !== 'active-canvas-diagram');
-
-              set({
-                savedDiagrams: userSaved,
-                activeDiagramId: id,
-                activeDiagramName: newDiagram.name,
-              });
-            },
-
-            exportBlueprintJson: async (blueprintId?: string) => {
-              const id = blueprintId || get().activeDiagramId;
-              let target = await dbGetDiagramById(id);
-              if (!target) {
-                const seed = Object.values(SEED_BLUEPRINTS).find((b) => b.id === id);
-                if (seed) {
-                  target = {
-                    id: seed.id,
-                    name: seed.name,
-                    description: seed.description,
-                    nodes: seed.nodes,
-                    edges: seed.edges,
-                    thumbnail: (seed as any).thumbnail || generateDiagramThumbnail(seed.nodes, seed.edges),
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                  };
-                } else {
-                  target = {
-                    id: get().activeDiagramId,
-                    name: get().activeDiagramName,
-                    description: 'Active workspace canvas architecture manifest',
-                    nodes: get().nodes,
-                    edges: get().edges,
-                    thumbnail: generateDiagramThumbnail(get().nodes, get().edges),
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                  };
-                }
-              }
-
-              const jsonStr =
-                'data:text/json;charset=utf-8,' +
-                encodeURIComponent(
-                  JSON.stringify(
-                    {
-                      version: '1.0',
-                      schema: 'aws-compass-blueprint',
-                      blueprint: target,
-                      exportedAt: new Date().toISOString(),
-                    },
-                    null,
-                    2
-                  )
-                );
-
-              const a = document.createElement('a');
-              a.href = jsonStr;
-              const safeName = target.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
-              a.download = `aws-blueprint-${safeName}-${Date.now()}.json`;
-              document.body.appendChild(a);
-              a.click();
-              a.remove();
-            },
-
-            loadTemplate: (templateId: string) => {
-              get().recordSnapshot();
-              const canonicalMap: Record<string, string> = {
-                'serverless-api': 'serverless-microservice',
-                'three-tier-web': '3-tier-vpc',
-                'event-pipeline': 'event-driven-pipeline',
-                'container-fargate': 'containerized-fargate',
-              };
-              const resolvedId = canonicalMap[templateId] || templateId;
-              const blueprint =
-                SEED_BLUEPRINTS[resolvedId] ||
-                SEED_BLUEPRINTS[templateId] ||
-                ARCHITECTURE_TEMPLATES[templateId];
-
-              if (blueprint) {
-                set({
-                  nodes: blueprint.nodes,
-                  edges: blueprint.edges,
-                  activeDiagramId: blueprint.id,
-                  activeDiagramName: blueprint.name,
-                  selectedNodeId: null,
-                  selectedEdgeId: null,
-                  isInspectorOpen: false,
-                });
-                scheduleDebouncedAutoSave(blueprint.nodes, blueprint.edges, set);
-              }
-            },
-
-            saveSnapshot: async (customName?: string) => {
-              await get().saveCurrentAsBlueprint(customName || `Snapshot ${new Date().toLocaleTimeString()}`);
-            },
-
-            loadSnapshot: async (diagramId: string) => {
-              const diagram = await dbGetDiagramById(diagramId);
-              if (diagram) {
-                get().recordSnapshot();
-                set({
-                  nodes: diagram.nodes,
-                  edges: diagram.edges,
-                  activeDiagramId: diagram.id,
-                  activeDiagramName: diagram.name,
-                  selectedNodeId: null,
-                  selectedEdgeId: null,
-                  isInspectorOpen: false,
-                });
-                scheduleDebouncedAutoSave(diagram.nodes, diagram.edges, set);
-              }
-            },
-
-            deleteSnapshot: async (diagramId: string) => {
-              await get().deleteBlueprint(diagramId);
-            },
-
-            refreshSavedDiagrams: async () => {
-              const all = await dbGetAllDiagrams();
-              const userSaved = all.filter((d) => d.id !== 'active-canvas-diagram');
-              set({ savedDiagrams: userSaved });
-            },
-
-            openInspector: (nodeId: string) => {
-              set({
-                selectedNodeId: nodeId,
-                selectedEdgeId: null,
-                isInspectorOpen: true,
-                inspectorActiveTab: 'properties',
-              });
-            },
-
-            openNodeInspector: (nodeId: string, tab: 'properties' | 'dossier' = 'properties') => {
-              set({
-                selectedNodeId: nodeId,
-                selectedEdgeId: null,
-                isInspectorOpen: true,
-                inspectorActiveTab: tab,
-              });
-            },
-
-            openEdgeInspector: (edgeId: string) => {
-              set({
-                selectedEdgeId: edgeId,
-                selectedNodeId: null,
-                isInspectorOpen: true,
-                inspectorActiveTab: 'properties',
-              });
-            },
-
-            closeInspector: () => {
-              set({ isInspectorOpen: false });
-            },
-
-            setInspectorActiveTab: (tab: 'properties' | 'dossier') => {
-              set({ inspectorActiveTab: tab });
-            },
+    const a = document.createElement('a');
+    a.href = jsonStr;
+    const safeName = target.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    a.download = `aws-blueprint-${safeName}-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  },
+
+  loadTemplate: (templateId: string) => {
+    get().recordSnapshot();
+    const canonicalMap: Record<string, string> = {
+      'serverless-api': 'serverless-microservice',
+      'three-tier-web': '3-tier-vpc',
+      'event-pipeline': 'event-driven-pipeline',
+      'container-fargate': 'containerized-fargate',
+    };
+    const resolvedId = canonicalMap[templateId] || templateId;
+    const blueprint =
+      SEED_BLUEPRINTS[resolvedId] ||
+      SEED_BLUEPRINTS[templateId] ||
+      ARCHITECTURE_TEMPLATES[templateId];
+
+    if (blueprint) {
+      set({
+        nodes: blueprint.nodes,
+        edges: blueprint.edges,
+        activeDiagramId: blueprint.id,
+        activeDiagramName: blueprint.name,
+        selectedNodeId: null,
+        selectedEdgeId: null,
+        isInspectorOpen: false,
+      });
+      scheduleDebouncedAutoSave(blueprint.nodes, blueprint.edges, set);
+    }
+  },
+
+  saveSnapshot: async (customName?: string) => {
+    await get().saveCurrentAsBlueprint(customName || `Snapshot ${new Date().toLocaleTimeString()}`);
+  },
+
+  loadSnapshot: async (diagramId: string) => {
+    const diagram = await dbGetDiagramById(diagramId);
+    if (diagram) {
+      get().recordSnapshot();
+      set({
+        nodes: diagram.nodes,
+        edges: diagram.edges,
+        activeDiagramId: diagram.id,
+        activeDiagramName: diagram.name,
+        selectedNodeId: null,
+        selectedEdgeId: null,
+        isInspectorOpen: false,
+      });
+      scheduleDebouncedAutoSave(diagram.nodes, diagram.edges, set);
+    }
+  },
+
+  deleteSnapshot: async (diagramId: string) => {
+    await get().deleteBlueprint(diagramId);
+  },
+
+  refreshSavedDiagrams: async () => {
+    const all = await dbGetAllDiagrams();
+    const userSaved = all.filter((d) => d.id !== 'active-canvas-diagram');
+    set({ savedDiagrams: userSaved });
+  },
+
+  openInspector: (nodeId: string) => {
+    set({
+      selectedNodeId: nodeId,
+      selectedEdgeId: null,
+      isInspectorOpen: true,
+      inspectorActiveTab: 'properties',
+    });
+  },
+
+  openNodeInspector: (nodeId: string, tab: 'properties' | 'dossier' = 'properties') => {
+    set({
+      selectedNodeId: nodeId,
+      selectedEdgeId: null,
+      isInspectorOpen: true,
+      inspectorActiveTab: tab,
+    });
+  },
+
+  openEdgeInspector: (edgeId: string) => {
+    set({
+      selectedEdgeId: edgeId,
+      selectedNodeId: null,
+      isInspectorOpen: true,
+      inspectorActiveTab: 'properties',
+    });
+  },
+
+  closeInspector: () => {
+    set({ isInspectorOpen: false });
+  },
+
+  setInspectorActiveTab: (tab: 'properties' | 'dossier') => {
+    set({ inspectorActiveTab: tab });
+  },
 }));

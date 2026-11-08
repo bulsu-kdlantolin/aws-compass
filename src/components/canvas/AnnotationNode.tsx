@@ -1,6 +1,6 @@
 import React, { memo, useState } from 'react';
 import { type NodeProps, NodeResizer } from '@xyflow/react';
-import { X, StickyNote, Check } from 'lucide-react';
+import { X, StickyNote, Check, ShieldCheck } from 'lucide-react';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { useCompassStore } from '../../store/useCompassStore';
 import type { CanvasNodeData } from '../../types/aws';
@@ -197,6 +197,111 @@ export const AnnotationNode = memo((props: NodeProps) => {
               {nodeData.annotationTitle || nodeData.label || 'Architecture Section Header'}
             </div>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  // 2. SLA & DR Spec Stamp (Title Block)
+  if (nodeData.isSpecStamp) {
+    const systemName = nodeData.specSystemName || nodeData.label || 'System Architecture Blueprint';
+    const revision = nodeData.specRevision || 'v1.0 · Prod';
+    const targetSla = nodeData.specTargetSla || '99.99%';
+    const rpoRto = nodeData.specRpoRto || 'RPO < 5m · RTO < 15m';
+    const compliance = nodeData.specCompliance || 'SOC2 · HIPAA';
+    const classification = nodeData.specClassification || 'Confidential (PII)';
+
+    return (
+      <div
+        onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
+        style={{
+          width: `${Math.max(280, width)}px`,
+          height: `${Math.max(140, height)}px`,
+          backgroundColor: 'var(--aws-card-bg)',
+        }}
+        className={`relative rounded-[8px] border border-[#D5DBDB] dark:border-[#354150] shadow-sm flex flex-col overflow-hidden select-none cursor-pointer transition-shadow ${selected ? 'ring-2 ring-[var(--aws-brand)] shadow-md' : 'hover:shadow-sm'
+          }`}
+      >
+        <NodeResizer
+          minWidth={260}
+          minHeight={130}
+          isVisible={selected}
+          lineClassName="!border-[var(--aws-brand)]"
+          handleClassName="!w-2.5 !h-2.5 !bg-[var(--aws-brand)] !border-none !rounded-none"
+        />
+
+        {/* Delete button on hover */}
+        <button
+          type="button"
+          onClick={handleDelete}
+          style={{ color: 'var(--aws-text-muted)' }}
+          className="absolute top-1.5 right-1.5 p-0.5 rounded-full hover:text-[#DD344C] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+          title="Delete spec stamp"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Top Header: System Name & Revision */}
+        <div className="px-3 py-2 border-b border-[#D5DBDB] dark:border-[#354150] bg-[#F8F9FA] dark:bg-[#192534] flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-1.5 min-w-0 pr-6">
+            <ShieldCheck className="size-3.5 text-[#FF9900] shrink-0" />
+            <span className="font-bold text-[12px] text-[var(--aws-text-primary)] truncate">
+              {systemName}
+            </span>
+          </div>
+          <span className="font-mono text-[10px] text-[var(--aws-text-muted)] bg-[var(--aws-page-bg)] px-1.5 py-0.5 rounded border border-[#D5DBDB] dark:border-[#354150] shrink-0">
+            {revision}
+          </span>
+        </div>
+
+        {/* 2x2 Hairline Grid without Inner Box Clutter */}
+        <div className="grid grid-cols-2 grid-rows-2 flex-1 divide-x divide-y divide-[#D5DBDB] dark:divide-[#354150]">
+          {/* Cell 1: Target SLA */}
+          <div className="p-2.5 flex flex-col justify-center">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--aws-text-muted)]">
+              Target SLA
+            </span>
+            <span className="font-mono font-bold text-[12px] text-[#1D8102] dark:text-[#2EA043] truncate">
+              {targetSla}
+            </span>
+          </div>
+
+          {/* Cell 2: RPO / RTO */}
+          <div className="p-2.5 flex flex-col justify-center">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--aws-text-muted)]">
+              RPO / RTO
+            </span>
+            <span className="font-mono font-medium text-[11px] text-[var(--aws-text-primary)] truncate">
+              {rpoRto}
+            </span>
+          </div>
+
+          {/* Cell 3: Compliance */}
+          <div className="p-2.5 flex flex-col justify-center">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--aws-text-muted)]">
+              Compliance
+            </span>
+            <span className="font-mono font-semibold text-[11px] text-[#0972D3] dark:text-[#539FE5] truncate">
+              {compliance}
+            </span>
+          </div>
+
+          {/* Cell 4: Data Scope */}
+          <div className="p-2.5 flex flex-col justify-center">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--aws-text-muted)]">
+              Data Scope
+            </span>
+            <span className="font-mono font-medium text-[11px] text-[var(--aws-text-primary)] truncate">
+              {classification}
+            </span>
+          </div>
+        </div>
+
+        {/* Footer Bar */}
+        <div className="px-3 py-1 bg-[#F8F9FA]/60 dark:bg-[#192534]/60 border-t border-[#D5DBDB] dark:border-[#354150] flex items-center justify-between text-[10px] font-mono text-[var(--aws-text-muted)] shrink-0">
+          <span>AWS Architecture Blueprint</span>
+          <span className="text-[#1D8102] dark:text-[#2EA043]">● Well-Architected</span>
         </div>
       </div>
     );

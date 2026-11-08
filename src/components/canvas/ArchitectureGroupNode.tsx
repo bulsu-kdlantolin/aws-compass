@@ -14,6 +14,22 @@ interface BoundaryStyle {
 }
 
 const BOUNDARY_CONFIGS: Record<GroupBoundaryType, BoundaryStyle> = {
+  'aws-organization': {
+    border: 'border-slate-500/40 border-dashed',
+    bg: 'bg-slate-950/20',
+    headerBg: 'bg-slate-900/90 border-slate-700',
+    text: 'text-slate-300',
+    badge: 'AWS ORGANIZATION',
+    icon: <Cloud className="w-3.5 h-3.5 text-slate-400" />,
+  },
+  'aws-account': {
+    border: 'border-amber-500/50 border-solid',
+    bg: 'bg-amber-950/10',
+    headerBg: 'bg-amber-950/80 border-amber-800/80',
+    text: 'text-amber-300',
+    badge: 'AWS ACCOUNT',
+    icon: <Shield className="w-3.5 h-3.5 text-amber-400" />,
+  },
   'aws-cloud': {
     border: 'border-slate-700/80 border-dashed',
     bg: 'bg-slate-950/25',
@@ -21,6 +37,14 @@ const BOUNDARY_CONFIGS: Record<GroupBoundaryType, BoundaryStyle> = {
     text: 'text-slate-300',
     badge: 'AWS CLOUD',
     icon: <Cloud className="w-3.5 h-3.5 text-sky-400" />,
+  },
+  'availability-zone': {
+    border: 'border-cyan-500/40 border-dashed',
+    bg: 'bg-cyan-950/10',
+    headerBg: 'bg-cyan-950/80 border-cyan-800/80',
+    text: 'text-cyan-300',
+    badge: 'AVAILABILITY ZONE',
+    icon: <Layers className="w-3.5 h-3.5 text-cyan-400" />,
   },
   vpc: {
     border: 'border-purple-600/40 border-dashed',

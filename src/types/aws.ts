@@ -3,7 +3,7 @@
  * Strictly typed interfaces for AWS services, canvas nodes, and diagramming.
  */
 
-  export type CanonicalAWSCategory =
+export type CanonicalAWSCategory =
   | 'Compute'
   | 'Containers'
   | 'Serverless'
@@ -79,8 +79,10 @@ export interface AWSService {
 }
 
 export type GroupBoundaryType =
-  | 'aws-cloud'
+  | 'aws-organization'
+  | 'aws-account'
   | 'region'
+  | 'availability-zone'
   | 'vpc'
   | 'public-subnet'
   | 'private-subnet'
@@ -88,7 +90,8 @@ export type GroupBoundaryType =
   | 'security-group'
   | 'auto-scaling-group'
   | 'serverless'
-  | 'corporate-datacenter';
+  | 'corporate-datacenter'
+  | 'aws-cloud';
 
 export type ExternalActorType =
   | 'user-browser'
@@ -96,7 +99,19 @@ export type ExternalActorType =
   | 'corporate-datacenter'
   | 'branch-office'
   | 'third-party-api'
-  | 'external-webhook';
+  | 'external-webhook'
+  | 'iam-admin'
+  | 'cicd-pipeline'
+  | 'idp-auth'
+  | 'saas-webhook'
+  | 'vpc-gateway-endpoint'
+  | 'vpc-interface-endpoint'
+  | 'route-table'
+  | 'network-acl'
+  | 'customer-gateway';
+
+export type StepBadgeType = 'flow-step' | 'tls-badge' | 'risk-pin';
+export type StepBadgeColor = 'orange' | 'blue' | 'green' | 'crimson';
 
 export type NodeEnvironment = 'None' | 'Prod' | 'Staging' | 'Dev';
 
@@ -122,22 +137,44 @@ export interface CanvasNodeData {
   boundaryType?: GroupBoundaryType;
   boundaryLabel?: string;
   cidr?: string;
+  accountId?: string;
+  azName?: string;
+  asgMin?: number;
+  asgDesired?: number;
+  asgMax?: number;
+  securityGroupPorts?: string;
   accentColor?: string;
   borderStyle?: 'solid' | 'dashed' | 'dotted';
   width?: number;
   height?: number;
 
-  // External Actor properties
+  // External Actor & Network Primitive properties
   isActor?: boolean;
   actorType?: ExternalActorType;
 
-  // Annotation / Sticky Note & Text Block properties
+  // Flow Step Marker & Risk Pin properties
+  isStepBadge?: boolean;
+  stepType?: StepBadgeType;
+  stepNumber?: number;
+  stepColor?: StepBadgeColor;
+  stepCaption?: string;
+
+  // Annotation / Sticky Note, Spec Stamp & Text Block properties
   isAnnotation?: boolean;
   isTextOnly?: boolean;
+  isSpecStamp?: boolean;
   fontSize?: number;
   annotationTitle?: string;
   annotationContent?: string;
   annotationColor?: string;
+
+  // SLA & DR Spec Stamp properties
+  specSystemName?: string;
+  specRevision?: string;
+  specTargetSla?: string;
+  specRpoRto?: string;
+  specCompliance?: string;
+  specClassification?: string;
 
   [key: string]: unknown;
 }

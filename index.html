@@ -62,9 +62,11 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
       }
-      @keyframes compass-shimmer {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(300%); }
+      @keyframes compass-progress {
+        0% { width: 1%; }
+        25% { width: 28%; }
+        60% { width: 68%; }
+        100% { width: 90%; }
       }
       .pre-needle {
         transform-origin: 12px 12px;
@@ -74,15 +76,20 @@
         transform-origin: 42px 42px;
         animation: compass-track-rot 24s linear infinite;
       }
-      .pre-shimmer {
-        animation: compass-shimmer 1.4s ease-in-out infinite;
+      .pre-progress-line {
+        height: 100%;
+        width: 1%;
+        background: #FF9900;
+        border-radius: 9999px;
+        box-shadow: 0 0 10px rgba(255, 153, 0, 0.65);
+        animation: compass-progress 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
       @media (prefers-reduced-motion: reduce) {
         .pre-needle {
           animation: none !important;
           transform: rotate(0deg);
         }
-        .pre-track, .pre-shimmer {
+        .pre-track, .pre-progress-line {
           animation: none !important;
         }
       }
@@ -147,16 +154,12 @@
             </div>
           </div>
 
-          <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;text-align:center;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;text-align:center;width:100%;">
             <span style="font-size:16px;font-weight:700;letter-spacing:-0.01em;">AWS Compass</span>
             <div style="font-size:12px;font-weight:500;opacity:0.8;">Loading AWS Compass…</div>
-            <div style="width:140px;height:2.5px;border-radius:9999px;overflow:hidden;background:rgba(213,219,219,0.3);margin-top:0.25rem;position:relative;">
-              <div class="pre-shimmer" style="height:100%;width:33.333%;background:#FF9900;border-radius:9999px;"></div>
+            <div style="width:220px;height:3.5px;border-radius:9999px;overflow:hidden;background:rgba(213,219,219,0.25);margin-top:0.25rem;position:relative;">
+              <div class="pre-progress-line"></div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
           </div>
         </div>
       </div>
