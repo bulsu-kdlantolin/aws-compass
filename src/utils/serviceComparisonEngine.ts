@@ -709,7 +709,7 @@ function deriveServiceDimensionCell(
         summary: `${service.category} domain`,
         badge: `T${service.tier} · ${tierName}`,
         badgeType,
-        subtext: `CLI Prefix: aws ${service.id}`,
+        subtext: `aws ${service.id}`,
       };
     }
 

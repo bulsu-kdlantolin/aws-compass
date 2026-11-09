@@ -372,7 +372,7 @@ export const NodeInspectorDrawer: React.FC = () => {
       />
 
       {/* Flush Property Sheet (No nested bordered cards) */}
-      <div className="overflow-y-auto custom-scrollbar flex-1 bg-white dark:bg-[#141C28]">
+      <div className="overflow-y-auto custom-scrollbar flex-1 bg-transparent">
         <m.div
           key={selectedTargetId}
           initial={{ opacity: 0, y: 6 }}
@@ -387,8 +387,8 @@ export const NodeInspectorDrawer: React.FC = () => {
                 <>
                   {/* 1. Node Identity & Title */}
                   <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596] flex items-center justify-between">
-                      <span>Node Identity</span>
+                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal flex items-center justify-between">
+                      <span>Node identity</span>
                       <span className="font-mono text-[10px] text-[#0972D3] dark:text-[#539FE5] normal-case font-medium">
                         {currentNode.data.serviceId}
                       </span>
@@ -423,8 +423,8 @@ export const NodeInspectorDrawer: React.FC = () => {
 
                   {/* 2. Cloud Attributes & Deployment */}
                   <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
-                      Cloud Attributes
+                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                      Cloud attributes
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
@@ -516,8 +516,8 @@ export const NodeInspectorDrawer: React.FC = () => {
                   {/* 3. Active Canvas Connections */}
                   <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
-                        Canvas Connections
+                      <span className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                        Canvas connections
                       </span>
                       <span className="font-mono text-[11px] text-[#545B64] dark:text-[#879596]">
                         {incomingEdges.length} in · {outgoingEdges.length} out
@@ -609,8 +609,8 @@ export const NodeInspectorDrawer: React.FC = () => {
                   {service?.arnExample && (
                     <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
-                          ARN Pattern
+                        <span className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                          ARN pattern
                         </span>
                         <CloudscapeCopyButton
                           textToCopy={service.arnExample}
@@ -651,8 +651,8 @@ export const NodeInspectorDrawer: React.FC = () => {
               {currentNode && currentNode.data.isBoundary && (
                 <>
                   <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
-                      Boundary Configuration
+                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                      Boundary configuration
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
@@ -777,8 +777,8 @@ export const NodeInspectorDrawer: React.FC = () => {
                   </div>
 
                   <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-3">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
-                      Boundary Style
+                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                      Boundary style
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
@@ -857,8 +857,8 @@ export const NodeInspectorDrawer: React.FC = () => {
               {currentNode && currentNode.data.isActor && (
                 <>
                   <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
-                      Actor Configuration
+                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                      Actor configuration
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
@@ -929,8 +929,8 @@ export const NodeInspectorDrawer: React.FC = () => {
               {currentNode && currentNode.data.isStepBadge && (
                 <>
                   <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
-                      Flow Marker Configuration
+                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                      Flow marker configuration
                     </div>
 
                     {currentNode.data.stepType === 'flow-step' && (
@@ -1018,8 +1018,8 @@ export const NodeInspectorDrawer: React.FC = () => {
               {currentNode && currentNode.data.isAnnotation && currentNode.data.isSpecStamp && (
                 <>
                   <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
-                      Spec Stamp Configuration
+                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                      Spec stamp configuration
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
@@ -1142,8 +1142,8 @@ export const NodeInspectorDrawer: React.FC = () => {
               {currentNode && currentNode.data.isAnnotation && !currentNode.data.isSpecStamp && (
                 <>
                   <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
-                      {currentNode.data.isTextOnly ? 'Section Header Configuration' : 'Note Configuration'}
+                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                      {currentNode.data.isTextOnly ? 'Section header configuration' : 'Note configuration'}
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
@@ -1231,8 +1231,8 @@ export const NodeInspectorDrawer: React.FC = () => {
                 <>
                   {/* 1. Protocol & Label */}
                   <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
-                      Flow &amp; Protocol
+                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                      Flow &amp; protocol
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
@@ -1262,8 +1262,8 @@ export const NodeInspectorDrawer: React.FC = () => {
 
                   {/* 2. Line Style, Directionality, and Swatches */}
                   <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-3">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596]">
-                      Flow Appearance
+                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                      Flow appearance
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
@@ -1378,15 +1378,26 @@ export const NodeInspectorDrawer: React.FC = () => {
                     components={{
                       code(props) {
                         const { children, className, ...rest } = props;
-                        const match = /language-(w+)/.exec(className || '');
+                        const rawText = String(children || '').replace(/\n$/, '');
+                        const match = /language-(\w+)/.exec(className || '');
                         const language = match ? match[1] : '';
-                        if (language === 'mermaid') {
-                          return <MermaidViewer chart={String(children).replace(/\n$/, '')} />;
+
+                        const isMermaid =
+                          language === 'mermaid' ||
+                          rawText.startsWith('graph ') ||
+                          rawText.startsWith('flowchart ') ||
+                          rawText.startsWith('sequenceDiagram') ||
+                          rawText.startsWith('stateDiagram') ||
+                          rawText.startsWith('erDiagram') ||
+                          rawText.startsWith('classDiagram');
+
+                        if (isMermaid) {
+                          return <MermaidViewer chart={rawText} />;
                         }
-                        if (language === 'bash' || language === 'sh' || language === 'cli') {
+                        if (language === 'bash' || language === 'sh' || language === 'cli' || rawText.startsWith('aws ')) {
                           return (
                             <CloudscapeCodeBlock
-                              code={String(children).replace(/\n$/, '')}
+                              code={rawText}
                               language="bash"
                               title="aws-cli"
                             />

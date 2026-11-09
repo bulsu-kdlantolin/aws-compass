@@ -70,8 +70,8 @@
 }
 
 @theme {
-  --font-sans: "Amazon Ember", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "Amazon Ember Mono", "JetBrains Mono", Consolas, monospace;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "Amazon Ember Mono", Consolas, monospace;
 }
 
 @layer base {
@@ -82,22 +82,22 @@
   html.dark,
   body.dark {
     /* Fonts */
-    --font-sans: "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
-    --font-mono: "Amazon Ember Mono", "JetBrains Mono", Consolas, monospace;
+    --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "JetBrains Mono", "Amazon Ember Mono", Consolas, monospace;
 
-    /* AWS Cloudscape Design System — Dark Mode (Default) */
-    --aws-header-bg: #0F141A;
-    --aws-page-bg: #0F1B2A;
-    --aws-card-bg: #161E2D;
-    --aws-sidebar-bg: #161E2D;
-    --aws-drawer-bg: #192534;
-    --aws-popover-bg: #192534;
-    --aws-popover-hover: #232F3E;
-    --aws-border: #354150;
-    --aws-border-subtle: #242f3d;
-    --aws-input-border: #545B64;
-    --aws-text-primary: #EAEDED;
-    --aws-text-muted: #879596;
+    /* Modern 2026 High-Contrast Obsidian / Slate Surface Tokens — Dark Mode (Default) */
+    --aws-header-bg: #090D16;
+    --aws-page-bg: #090D16;
+    --aws-card-bg: rgba(17, 23, 38, 0.92);
+    --aws-sidebar-bg: rgba(17, 23, 38, 0.92);
+    --aws-drawer-bg: rgba(17, 23, 38, 0.95);
+    --aws-popover-bg: #111726;
+    --aws-popover-hover: #1E293B;
+    --aws-border: rgba(255, 255, 255, 0.08);
+    --aws-border-subtle: rgba(255, 255, 255, 0.05);
+    --aws-input-border: rgba(255, 255, 255, 0.12);
+    --aws-text-primary: #F1F5F9;
+    --aws-text-muted: #94A3B8;
     --aws-interactive: #539FE5;
     --aws-interactive-hover: #7bb5ed;
     --aws-brand: #FF9900;
@@ -106,37 +106,37 @@
     /* Official AWS Architecture Category Colors (Dark Mode) */
     --aws-cat-compute: #ED7100;
     --aws-cat-storage: #3F8624;
-    --aws-cat-database: #3B48CC;
+    --aws-cat-database: #527FFF;
     --aws-cat-networking: #8C4FFF;
     --aws-cat-security: #DD344C;
     --aws-cat-integration: #E7157B;
     --aws-cat-management: #E7157B;
 
     /* Status Colors */
-    --aws-status-success: #1D8102;
+    --aws-status-success: #22C55E;
     --aws-status-info: #539FE5;
     --aws-status-warning: #FF9900;
-    --aws-status-error: #DD344C;
-    --aws-status-inactive: #879596;
+    --aws-status-error: #EF4444;
+    --aws-status-inactive: #64748B;
 
     /* React Flow Grid & Canvas */
-    --aws-canvas-bg: #0F1B2A;
-    --aws-canvas-grid: #354150;
-    --aws-minimap-mask: rgba(15, 27, 42, 0.75);
+    --aws-canvas-bg: #090D16;
+    --aws-canvas-grid: #1E293B;
+    --aws-minimap-mask: rgba(9, 13, 22, 0.75);
 
-    /* AWS Cloudscape Custom Scrollbar Tokens (Dark Mode) */
-    --aws-scrollbar-thumb: #545B64;
-    --aws-scrollbar-thumb-hover: #879596;
+    /* AWS Custom Scrollbar Tokens (Dark Mode) */
+    --aws-scrollbar-thumb: #334155;
+    --aws-scrollbar-thumb-hover: #475569;
     --aws-scrollbar-thumb-active: #539FE5;
     --aws-scrollbar-track: transparent;
-    --aws-scrollbar-track-hover: rgba(22, 30, 45, 0.4);
+    --aws-scrollbar-track-hover: rgba(255, 255, 255, 0.03);
 
     /* Code Blocks & Shell CLI Tokens (Dark Mode) */
-    --aws-code-bg: #0F141A;
-    --aws-code-header-bg: #161E2D;
-    --aws-code-border: #242F3D;
-    --aws-code-text: #EAEDED;
-    --aws-code-muted: #879596;
+    --aws-code-bg: #0B0F19;
+    --aws-code-header-bg: #111726;
+    --aws-code-border: rgba(255, 255, 255, 0.08);
+    --aws-code-text: #F1F5F9;
+    --aws-code-muted: #94A3B8;
 
     color-scheme: dark;
   }
@@ -147,19 +147,19 @@
   html.light,
   body.light,
   .aws-theme-light {
-    /* AWS Cloudscape Design System — Light Mode */
-    --aws-header-bg: #232F3E; /* Top Global Header is always dark */
-    --aws-page-bg: #F2F3F3;
-    --aws-card-bg: #FFFFFF;
-    --aws-sidebar-bg: #FFFFFF;
-    --aws-drawer-bg: #FFFFFF;
+    /* Modern 2026 High-Contrast Alabaster / Crisp White Surface Tokens — Light Mode */
+    --aws-header-bg: #090D16; /* Top Global Header is dark */
+    --aws-page-bg: #F6F8FA;
+    --aws-card-bg: rgba(255, 255, 255, 0.95);
+    --aws-sidebar-bg: rgba(255, 255, 255, 0.95);
+    --aws-drawer-bg: rgba(255, 255, 255, 0.97);
     --aws-popover-bg: #FFFFFF;
-    --aws-popover-hover: #F2F3F3;
-    --aws-border: #D5DBDB;
-    --aws-border-subtle: #E9EBED;
-    --aws-input-border: #7D8998;
-    --aws-text-primary: #16191F;
-    --aws-text-muted: #545B64;
+    --aws-popover-hover: #F1F5F9;
+    --aws-border: #E2E8F0;
+    --aws-border-subtle: #F1F5F9;
+    --aws-input-border: #CBD5E1;
+    --aws-text-primary: #0F172A;
+    --aws-text-muted: #64748B;
     --aws-interactive: #0972D3;
     --aws-interactive-hover: #035aa6;
     --aws-brand: #FF9900;
@@ -168,37 +168,37 @@
     /* Official AWS Architecture Category Colors (Light Mode) */
     --aws-cat-compute: #ED7100;
     --aws-cat-storage: #3F8624;
-    --aws-cat-database: #3B48CC; /* Exact Light Mode AWS Database color */
+    --aws-cat-database: #3B48CC;
     --aws-cat-networking: #8C4FFF;
     --aws-cat-security: #DD344C;
     --aws-cat-integration: #E7157B;
     --aws-cat-management: #E7157B;
 
     /* Status Colors */
-    --aws-status-success: #1D8102;
+    --aws-status-success: #16A34A;
     --aws-status-info: #0972D3;
     --aws-status-warning: #FF9900;
-    --aws-status-error: #DD344C;
-    --aws-status-inactive: #545B64;
+    --aws-status-error: #DC2626;
+    --aws-status-inactive: #94A3B8;
 
     /* React Flow Grid & Canvas */
-    --aws-canvas-bg: #F2F3F3;
-    --aws-canvas-grid: #D5DBDB;
-    --aws-minimap-mask: rgba(242, 243, 243, 0.75);
+    --aws-canvas-bg: #F6F8FA;
+    --aws-canvas-grid: #CBD5E1;
+    --aws-minimap-mask: rgba(246, 248, 250, 0.75);
 
-    /* AWS Cloudscape Custom Scrollbar Tokens (Light Mode) */
-    --aws-scrollbar-thumb: #B6BFC6;
-    --aws-scrollbar-thumb-hover: #7D8998;
+    /* AWS Custom Scrollbar Tokens (Light Mode) */
+    --aws-scrollbar-thumb: #CBD5E1;
+    --aws-scrollbar-thumb-hover: #94A3B8;
     --aws-scrollbar-thumb-active: #0972D3;
     --aws-scrollbar-track: transparent;
     --aws-scrollbar-track-hover: rgba(0, 0, 0, 0.04);
 
     /* Code Blocks & Shell CLI Tokens (Light Mode) */
-    --aws-code-bg: #F8F9FA;
-    --aws-code-header-bg: #EAEDED;
-    --aws-code-border: #D5DBDB;
-    --aws-code-text: #16191F;
-    --aws-code-muted: #545B64;
+    --aws-code-bg: #F8FAFC;
+    --aws-code-header-bg: #F1F5F9;
+    --aws-code-border: #E2E8F0;
+    --aws-code-text: #0F172A;
+    --aws-code-muted: #64748B;
 
     color-scheme: light;
   }
@@ -228,6 +228,8 @@
     background-color: var(--aws-page-bg);
     color: var(--aws-text-primary);
     font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    letter-spacing: -0.011em;
     font-size: 14px;
     line-height: 20px;
     -webkit-font-smoothing: antialiased;
@@ -690,4 +692,22 @@ body.canvas-global-resizing .react-flow__resize-control * {
     }
   }
 }
+
+/* Modern 2026 Studio Floating Islands & Glassmorphic Elevation */
+.studio-island {
+  background-color: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+:is(.dark, [data-theme="dark"]) .studio-island {
+  background-color: rgba(17, 23, 38, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
 

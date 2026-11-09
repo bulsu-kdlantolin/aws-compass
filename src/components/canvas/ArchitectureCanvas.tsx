@@ -806,99 +806,91 @@ const ArchitectureCanvasInner: React.FC = () => {
       <CanvasSidebar />
 
       {/* Main Canvas Viewport Area */}
-      <div className="flex-1 h-full relative flex flex-col min-w-0">
-        {/* Slim Top Context Header */}
-        <div
-          style={{
-            backgroundColor: 'var(--aws-card-bg)',
-            borderBottomColor: 'var(--aws-border)',
-          }}
-          className="h-11 border-b px-4 flex items-center justify-between gap-3 shrink-0 relative z-40 bg-[var(--aws-card-bg)] select-none"
-        >
-          {/* Left Cluster: Blueprint Switcher, Single Save-As Action, and Auto-Save Status */}
-          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 shrink-0">
-            <BlueprintManagerDropdown />
+            <div className="flex-1 h-full relative z-0 isolate min-w-0 overflow-hidden">
+              {/* Floating Top-Left Blueprint Island */}
+              <div className="absolute top-3 left-3 z-30 h-10 px-2.5 rounded-[12px] studio-island flex items-center gap-2 select-none pointer-events-auto">
+                <BlueprintManagerDropdown />
 
-            {/* Save As Custom Blueprint Button */}
-            <div className="relative">
-              <button
-                ref={saveAsTriggerRef}
-                type="button"
-                onClick={() => togglePopover('canvas-save-as')}
-                className="h-8 px-2.5 text-[11px] font-medium rounded-[6px] border border-[var(--aws-border)] hover:border-[var(--aws-interactive)] hover:text-[var(--aws-interactive)] text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)] hover:bg-[var(--aws-page-bg)] flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
-                title="Save current architecture graph as a Custom Blueprint"
-              >
-                <Save className="w-3.5 h-3.5 text-[#1D8102]" />
-                <span className="hidden sm:inline">Save as...</span>
-              </button>
-
-              <AnimatedPopover
-                isOpen={isSaveAsOpen}
-                onClose={() => closePopover('canvas-save-as')}
-                triggerRef={saveAsTriggerRef}
-                align="left"
-                className="w-72 p-2.5 space-y-2"
-              >
-                <div className="text-[12px] font-bold text-[var(--aws-text-primary)] flex items-center justify-between">
-                  <span>Save Custom Blueprint</span>
-                  {saveAsSuccess && (
-                    <span className="text-[11px] text-[#1D8102] flex items-center gap-1 font-semibold">
-                      <Check className="w-3.5 h-3.5" /> Saved
-                    </span>
-                  )}
-                </div>
-                <form onSubmit={handleSaveAsBlueprint} className="space-y-2">
-                  <input
-                    type="text"
-                    value={saveAsNameInput}
-                    onChange={(e) => setSaveAsNameInput(e.target.value)}
-                    placeholder="Blueprint title (e.g. My Prod VPC)..."
-                    autoFocus
-                    className="w-full h-8 px-2.5 text-[12px] rounded border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] outline-none focus:border-[var(--aws-interactive)]"
-                  />
-                  <div className="flex items-center justify-end gap-1.5">
+                  {/* Save As Custom Blueprint Button */}
+                  <div className="relative">
                     <button
+                      ref={saveAsTriggerRef}
                       type="button"
-                      onClick={() => closePopover('canvas-save-as')}
-                      className="px-2.5 py-1 text-[11px] rounded border border-[var(--aws-border)] text-[var(--aws-text-muted)] hover:bg-[var(--aws-page-bg)] cursor-pointer"
+                      onClick={() => togglePopover('canvas-save-as')}
+                      className="h-7 px-2.5 text-[11px] font-medium rounded-[7px] border border-slate-200/90 dark:border-white/[0.08] hover:border-[#0972D3] dark:hover:border-[#539FE5] text-slate-600 dark:text-slate-300 bg-white/70 dark:bg-white/[0.04] hover:bg-white dark:hover:bg-white/[0.08] flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+                      title="Save current architecture graph as a Custom Blueprint"
                     >
-                      Cancel
+                      <Save className="w-3.5 h-3.5 text-[#16A34A]" />
+                      <span className="hidden sm:inline">Save as...</span>
                     </button>
-                    <button
-                      type="submit"
-                      className="px-3 py-1 text-[11px] font-semibold rounded bg-[var(--aws-interactive)] text-white hover:opacity-90 cursor-pointer"
-                    >
-                      Save Blueprint
-                    </button>
-                  </div>
-                </form>
-              </AnimatedPopover>
-            </div>
 
-            {/* Canvas Auto-Save Indicator */}
-            <div
-              className="flex items-center text-[11px] font-mono px-2 py-0.5 rounded select-none"
-              role="status"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              <div
-                className={`inline-flex items-center gap-1.5 transition-opacity duration-200 ${saveStatus === 'idle' ? 'opacity-0' : 'opacity-100'
-                  }`}
-              >
-                <AnimatedIcon
-                  activeKey={saveStatus === 'saving' ? 'saving' : 'saved'}
-                  size={14}
-                  className="w-3.5 h-3.5"
+                        <AnimatedPopover
+                          isOpen={isSaveAsOpen}
+                          onClose={() => closePopover('canvas-save-as')}
+                          triggerRef={saveAsTriggerRef}
+                          align="left"
+                          className="w-72 p-2.5 space-y-2"
+                        >
+                          <div className="text-[12px] font-bold text-[var(--aws-text-primary)] flex items-center justify-between">
+                            <span>Save Custom Blueprint</span>
+                            {saveAsSuccess && (
+                              <span className="text-[11px] text-[#16A34A] flex items-center gap-1 font-semibold">
+                                <Check className="w-3.5 h-3.5" /> Saved
+                              </span>
+                            )}
+                          </div>
+                          <form onSubmit={handleSaveAsBlueprint} className="space-y-2">
+                            <input
+                              type="text"
+                              value={saveAsNameInput}
+                              onChange={(e) => setSaveAsNameInput(e.target.value)}
+                              placeholder="Blueprint title (e.g. My Prod VPC)..."
+                              autoFocus
+                              className="w-full h-8 px-2.5 text-[12px] rounded border border-[var(--aws-input-border)] bg-[var(--aws-page-bg)] text-[var(--aws-text-primary)] outline-none focus:border-[var(--aws-interactive)]"
+                            />
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => closePopover('canvas-save-as')}
+                                className="px-2.5 py-1 text-[11px] rounded border border-[var(--aws-border)] text-[var(--aws-text-muted)] hover:bg-[var(--aws-page-bg)] cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="submit"
+                                className="px-3 py-1 text-[11px] font-semibold rounded bg-[var(--aws-interactive)] text-white hover:opacity-90 cursor-pointer"
+                              >
+                                Save Blueprint
+                              </button>
+                            </div>
+                    </form>
+                  </AnimatedPopover>
+                </div>
+
+                {/* Canvas Auto-Save Indicator */}
+                <div
+                  className="flex items-center text-[11px] font-mono px-1.5 py-0.5 rounded select-none"
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
                 >
+                  <div
+                    className={`inline-flex items-center gap-1.5 transition-opacity duration-200 ${saveStatus === 'idle' ? 'opacity-0' : 'opacity-100'
+                      }`}
+                  >
+              <AnimatedIcon
+                      activeKey={saveStatus === 'saving' ? 'saving' : 'saved'}
+                      size={14}
+                      className="w-3.5 h-3.5"
+                    >
                   <Pulse key="saving" size={14} color="#0972D3" />
-                  <Check key="saved" className="w-3.5 h-3.5 text-[#1D8102]" strokeWidth={2.5} />
+                  <Check key="saved" className="w-3.5 h-3.5 text-[#16A34A]" strokeWidth={2.5} />
                 </AnimatedIcon>
                 <span
                   className={
                     saveStatus === 'saved'
-                      ? 'text-[#1D8102] font-semibold'
-                      : 'text-[var(--aws-text-muted)]'
+                      ? 'text-[#16A34A] font-semibold'
+                      : 'text-slate-400'
                   }
                 >
                   {saveStatus === 'saving' ? 'Saving…' : 'Saved'}
@@ -907,345 +899,340 @@ const ArchitectureCanvasInner: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Cluster: Undo/Redo, Zoom/Fit View, Export Menu, Fullscreen */}
-          <div className="flex items-center gap-1 shrink-0">
-            {/* Undo / Redo Actions (Rule 2: Borderless Ghost Buttons) */}
-            <div className="flex items-center gap-0.5">
-              <button
-                type="button"
-                onClick={undo}
-                disabled={!canUndo}
-                className="size-8 rounded-[6px] flex items-center justify-center text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent cursor-pointer transition-colors"
-                title="Undo (Ctrl+Z)"
-                aria-label="Undo"
-              >
-                <Undo2 className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={redo}
-                disabled={!canRedo}
-                className="size-8 rounded-[6px] flex items-center justify-center text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent cursor-pointer transition-colors"
-                title="Redo (Ctrl+Y)"
-                aria-label="Redo"
-              >
-                <Redo2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            {/* Floating Top-Right Telemetry & Actions Island */}
+            <div className="absolute top-3 right-3 z-30 h-10 px-2 rounded-[12px] studio-island flex items-center gap-1 select-none pointer-events-auto">
+              {/* Undo / Redo Actions */}
+              <div className="flex items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={undo}
+                  disabled={!canUndo}
+                  className="size-7 rounded-[7px] flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-white/[0.07] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  title="Undo (Ctrl+Z)"
+                  aria-label="Undo"
+                >
+                  <Undo2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={redo}
+                  disabled={!canRedo}
+                  className="size-7 rounded-[7px] flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-white/[0.07] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  title="Redo (Ctrl+Y)"
+                  aria-label="Redo"
+                >
+                  <Redo2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
 
-            {/* Hairline Divider */}
-            <div className="h-4 w-px bg-[#D5DBDB] dark:bg-[#2A3647] mx-1" aria-hidden="true" />
+              {/* Hairline Divider */}
+              <div className="h-4 w-px bg-slate-200 dark:bg-white/[0.08] mx-0.5" aria-hidden="true" />
 
-            {/* Canvas Zoom & View Controls (Rule 2: Grouped Ghost Buttons) */}
-            <div className="flex items-center gap-0.5">
-              <button
-                type="button"
-                onClick={() => reactFlowInstance.zoomOut({ duration: 250 })}
-                className="size-8 rounded-[6px] flex items-center justify-center text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] cursor-pointer transition-colors"
-                title="Zoom out"
-                aria-label="Zoom out"
-              >
-                <ZoomOut className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => reactFlowInstance.zoomTo(1, { duration: 250 })}
-                className="px-2 h-8 rounded-[6px] flex items-center justify-center text-[11px] font-mono tabular-nums text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] cursor-pointer transition-colors"
-                title="Click to reset zoom to 100%"
-              >
-                {zoomPercent}%
-              </button>
-              <button
-                type="button"
-                onClick={() => reactFlowInstance.zoomIn({ duration: 250 })}
-                className="size-8 rounded-[6px] flex items-center justify-center text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] cursor-pointer transition-colors"
-                title="Zoom in"
-                aria-label="Zoom in"
-              >
-                <ZoomIn className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => reactFlowInstance.fitView({ padding: 0.18, duration: 250 })}
-                className="size-8 rounded-[6px] flex items-center justify-center text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] cursor-pointer transition-colors"
-                title="Fit diagram to view"
-                aria-label="Fit diagram to view"
-              >
-                <Maximize className="w-3.5 h-3.5" />
-              </button>
-            </div>
+              {/* Canvas Zoom & View Controls */}
+              <div className="flex items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => reactFlowInstance.zoomOut({ duration: 250 })}
+                  className="size-7 rounded-[7px] flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-white/[0.07] cursor-pointer transition-colors"
+                  title="Zoom out"
+                  aria-label="Zoom out"
+                >
+                  <ZoomOut className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => reactFlowInstance.zoomTo(1, { duration: 250 })}
+                  className="px-1.5 h-7 rounded-[7px] flex items-center justify-center text-[11px] font-mono tabular-nums text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-white/[0.07] cursor-pointer transition-colors"
+                  title="Click to reset zoom to 100%"
+                >
+                  {zoomPercent}%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => reactFlowInstance.zoomIn({ duration: 250 })}
+                  className="size-7 rounded-[7px] flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-white/[0.07] cursor-pointer transition-colors"
+                  title="Zoom in"
+                  aria-label="Zoom in"
+                >
+                  <ZoomIn className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => reactFlowInstance.fitView({ padding: 0.18, duration: 250 })}
+                  className="size-7 rounded-[7px] flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-white/[0.07] cursor-pointer transition-colors"
+                  title="Fit diagram to view"
+                  aria-label="Fit diagram to view"
+                >
+                  <Maximize className="w-3.5 h-3.5" />
+                </button>
+              </div>
 
-            {/* Hairline Divider */}
-            <div className="h-4 w-px bg-[#D5DBDB] dark:bg-[#2A3647] mx-1" aria-hidden="true" />
+              {/* Hairline Divider */}
+              <div className="h-4 w-px bg-slate-200 dark:bg-white/[0.08] mx-0.5" aria-hidden="true" />
 
-            {/* Architecture Bill of Materials (BOM) Popover (Rule 1 & 2: Middle Dot & Ghost Button) */}
-            <div className="relative">
-              <button
-                ref={bomTriggerRef}
-                type="button"
-                onClick={() => togglePopover('canvas-bom')}
-                data-open={isBomOpen ? 'true' : 'false'}
-                className={`h-8 px-2.5 rounded-[6px] text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer select-none ${isBomOpen
-                  ? 'bg-[#EAEDED] dark:bg-white/[0.1] text-[#16191F] dark:text-[#EAEDED]'
-                  : 'text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
-                  }`}
-                title="Open Architecture Bill of Materials (BOM) & FinOps Cost Estimator"
-                aria-label="Open Bill of Materials and Cost Estimator"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-[#FF9900]" />
-                <span className="hidden sm:inline">BOM ·</span>
-                <span className="font-mono text-[11px] tabular-nums text-[#545B64] dark:text-[#879596]">
-                  {serviceNodesCount}
-                </span>
-                <span className="text-[#879596] font-mono text-[11px]">·</span>
-                <span className="font-mono text-[11px] font-semibold tabular-nums text-[#FF9900]">
-                  ~${costEstimate.totalMonthlyCost.toLocaleString()}/mo
-                </span>
+                {/* Architecture Bill of Materials (BOM) Popover */}
+                <div className="relative">
+                  <button
+                    ref={bomTriggerRef}
+                    type="button"
+                    onClick={() => togglePopover('canvas-bom')}
+                    data-open={isBomOpen ? 'true' : 'false'}
+                    className={`h-7 px-2 rounded-[7px] text-[11.5px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer select-none ${isBomOpen
+                        ? 'bg-slate-100 dark:bg-white/[0.1] text-slate-900 dark:text-slate-100'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.07] hover:text-slate-900 dark:hover:text-slate-100'
+                      }`}
+                    title="Open Architecture Bill of Materials (BOM) & FinOps Cost Estimator"
+                    aria-label="Open Bill of Materials and Cost Estimator"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-[#FF9900]" />
+                    <span className="hidden sm:inline">BOM ·</span>
+                    <span className="font-mono text-[11px] tabular-nums text-slate-400">
+                      {serviceNodesCount}
+                    </span>
+                    <span className="text-slate-400 font-mono text-[11px]">·</span>
+                    <span className="font-mono text-[11px] font-semibold tabular-nums text-[#FF9900]">
+                      ~${costEstimate.totalMonthlyCost.toLocaleString()}/mo
+                    </span>
+                  </button>
+
+            <CanvasBomPopover
+                    isOpen={isBomOpen}
+                    onClose={() => closePopover('canvas-bom')}
+                    triggerRef={bomTriggerRef}
+                  />
+                </div>
+
+                {/* Export Menu */}
+                <div className="relative">
+                  <button
+                    ref={exportTriggerRef}
+                    type="button"
+                    onClick={() => togglePopover('canvas-export')}
+                    data-open={isExportOpen ? 'true' : 'false'}
+                    className={`h-7 px-2 rounded-[7px] text-[11.5px] font-medium flex items-center gap-1 transition-colors cursor-pointer select-none ${isExportOpen
+                        ? 'bg-slate-100 dark:bg-white/[0.1] text-slate-900 dark:text-slate-100'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.07] hover:text-slate-900 dark:hover:text-slate-100'
+                      }`}
+                    title="Export diagram (PNG, SVG, JSON)"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Export</span>
+                    <ChevronDown
+                      className="w-3 h-3 text-slate-400 transition-transform duration-200"
+                      style={{ transform: isExportOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                    />
               </button>
 
-              <CanvasBomPopover
-                isOpen={isBomOpen}
-                onClose={() => closePopover('canvas-bom')}
-                triggerRef={bomTriggerRef}
-              />
-            </div>
-
-            {/* Export Menu (Rule 2: Ghost Button) */}
-            <div className="relative">
-              <button
-                ref={exportTriggerRef}
-                type="button"
-                onClick={() => togglePopover('canvas-export')}
-                data-open={isExportOpen ? 'true' : 'false'}
-                className={`h-8 px-2.5 rounded-[6px] text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer select-none ${isExportOpen
-                  ? 'bg-[#EAEDED] dark:bg-white/[0.1] text-[#16191F] dark:text-[#EAEDED]'
-                  : 'text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
-                  }`}
-                title="Export diagram (PNG, SVG, JSON)"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Export</span>
-                <ChevronDown
-                  className="w-3.5 h-3.5 text-[#545B64] dark:text-[#879596] transition-transform duration-200"
-                  style={{ transform: isExportOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                />
-              </button>
-
-              <AnimatedPopover
-                isOpen={isExportOpen}
-                onClose={() => closePopover('canvas-export')}
-                triggerRef={exportTriggerRef}
-                align="right"
-                className="p-0 overflow-hidden shadow-xl"
-              >
-                <DiagramExportPopover
-                  reactFlowWrapperRef={reactFlowWrapper}
-                  markdownSpec={markdownSpec}
+            <AnimatedPopover
+                  isOpen={isExportOpen}
                   onClose={() => closePopover('canvas-export')}
-                />
-              </AnimatedPopover>
-            </div>
-
-            {/* Fullscreen / Zen Mode Toggle (Rule 2: Ghost Button) */}
-            {isCanvasFullscreen ? (
-              <button
-                type="button"
-                onClick={toggleCanvasFullscreen}
-                className="h-8 px-2.5 rounded-[6px] bg-[#FF9900]/15 text-[#FF9900] hover:bg-[#FF9900]/25 flex items-center gap-1.5 text-[11px] font-semibold cursor-pointer transition-colors shrink-0"
-                title="Exit Zen / Fullscreen Mode (Shift+F)"
-              >
-                <Minimize2 className="w-3.5 h-3.5" />
-                <span>Exit Zen</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={toggleCanvasFullscreen}
-                className="size-8 rounded-[6px] flex items-center justify-center text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-white/[0.07] hover:text-[#16191F] dark:hover:text-[#EAEDED] cursor-pointer transition-colors shrink-0"
-                title="Zen Mode / Fullscreen (Shift+F)"
-                aria-label="Toggle fullscreen"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-              </button>
-            )}
+                  triggerRef={exportTriggerRef}
+                  align="right"
+                  className="p-0 overflow-hidden shadow-xl"
+                >
+                  <DiagramExportPopover
+                    reactFlowWrapperRef={reactFlowWrapper}
+                    markdownSpec={markdownSpec}
+                    onClose={() => closePopover('canvas-export')}
+              />
+            </AnimatedPopover>
           </div>
-        </div>
 
-        {/* React Flow Core Canvas Viewport (Stacking Isolated) */}
-        <div className="flex-1 h-full relative z-0 isolate">
-          {/* Dagre Auto-Layout & Blueprint Arranging Badge */}
-          {isArranging && (
-            <div
-              role="status"
-              aria-live="polite"
-              className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 px-3.5 py-1.5 rounded-[6px] border border-[#FF9900]/40 bg-[#0F141A]/90 text-[#EAEDED] shadow-lg backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150 select-none"
+              {/* Fullscreen / Zen Mode Toggle */}
+              {isCanvasFullscreen ? (
+            <button
+              type="button"
+              onClick={toggleCanvasFullscreen}
+              className="h-7 px-2 rounded-[7px] bg-[#FF9900]/15 text-[#FF9900] hover:bg-[#FF9900]/25 flex items-center gap-1 text-[11px] font-semibold cursor-pointer transition-colors shrink-0"
+              title="Exit Zen / Fullscreen Mode (Shift+F)"
             >
-              <CompassLoader size={18} />
-              <span className="text-[12px] font-medium tracking-wide">
-                Arranging architecture graph…
-              </span>
-            </div>
+              <Minimize2 className="w-3.5 h-3.5" />
+              <span>Exit Zen</span>
+            </button>
+        ) : (
+        <button
+          type="button"
+          onClick={toggleCanvasFullscreen}
+          className="size-7 rounded-[7px] flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-white/[0.07] cursor-pointer transition-colors shrink-0"
+          title="Zen Mode / Fullscreen (Shift+F)"
+          aria-label="Toggle fullscreen"
+        >
+          <Maximize2 className="w-3.5 h-3.5" />
+        </button>
           )}
+      </div>
 
-          <div
-            ref={reactFlowWrapper}
-            className={`w-full h-full transition-opacity duration-200 ${isArranging ? 'opacity-75' : 'opacity-100'
-              } ${isCanvasPanning ? 'is-canvas-panning' : ''}`}
-            onMouseDown={handleCanvasMouseDown}
-            onMouseMove={handleCanvasMouseMove}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-          >
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              colorMode={theme}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onConnectEnd={handleConnectEnd}
-              onDragOver={onDragOver}
-              onDrop={onDrop}
-              selectionOnDrag={true}
-              panOnDrag={panOnDrag}
-              selectionMode={SelectionMode.Partial}
-              multiSelectionKeyCode={multiSelectionKeyCode}
-              onNodeDragStop={handleNodeDragStop}
-              onMoveStart={(event) => {
-                if (event && ('button' in event || 'buttons' in event)) {
-                  const me = event as MouseEvent;
-                  if (me.button === 2 || me.button === 1 || (me.buttons && ((me.buttons & 2) !== 0 || (me.buttons & 4) !== 0))) {
-                    setIsCanvasPanning(true);
-                  }
-                }
-              }}
-              onMove={(event, vp) => {
-                setZoomPercent(Math.round(vp.zoom * 100));
-                if (event && 'buttons' in event) {
-                  const me = event as MouseEvent;
-                  if ((me.buttons & 2) !== 0 || (me.buttons & 4) !== 0) {
-                    setIsCanvasPanning(true);
-                  }
-                }
-              }}
-              onMoveEnd={() => {
-                panStartRef.current = null;
-                setIsCanvasPanning(false);
-              }}
-              nodeTypes={nodeTypes}
-              edgeTypes={edgeTypes}
-              defaultEdgeOptions={flowEdgeOptions}
-              connectionMode={ConnectionMode.Loose}
-              snapToGrid={snapToGrid}
-              snapGrid={snapGrid}
-              onNodeClick={(_, node) => {
-                openNodeInspector(node.id);
-              }}
-              onEdgeClick={(_, edge) => {
-                openEdgeInspector(edge.id);
-              }}
-              onPaneClick={() => {
-                closeInspector();
-                closeContextMenu();
-              }}
-              onNodeContextMenu={(e, node) => {
-                e.preventDefault();
-                panStartRef.current = null;
-                setIsCanvasPanning(false);
-                openContextMenu({
-                  x: e.clientX,
-                  y: e.clientY,
-                  type: 'node',
-                  targetId: node.id,
-                });
-              }}
-              onEdgeContextMenu={(e, edge) => {
-                e.preventDefault();
-                panStartRef.current = null;
-                setIsCanvasPanning(false);
-                openContextMenu({
-                  x: e.clientX,
-                  y: e.clientY,
-                  type: 'edge',
-                  targetId: edge.id,
-                });
-              }}
-              onPaneContextMenu={(e) => {
-                e.preventDefault();
-                panStartRef.current = null;
-                setIsCanvasPanning(false);
-                openContextMenu({
-                  x: e.clientX,
-                  y: e.clientY,
-                  type: 'canvas',
-                });
-              }}
-              fitView
-              fitViewOptions={{ padding: 0.18 }}
-              minZoom={0.15}
-              maxZoom={2.5}
-              proOptions={{ hideAttribution: true }}
-            >
-              {canvasGridVariant !== 'none' && (
-                <Background
-                  variant={
-                    canvasGridVariant === 'dots'
-                      ? BackgroundVariant.Dots
-                      : canvasGridVariant === 'lines'
-                        ? BackgroundVariant.Lines
-                        : BackgroundVariant.Cross
-                  }
-                  gap={snapGridSize * 1.5}
-                  size={canvasGridVariant === 'dots' ? 1.2 : 1}
-                  color={theme === 'dark' ? '#354150' : '#D5DBDB'}
-                />
-              )}
-              {showMiniMap && (
-                <MiniMap
-                  style={{
-                    backgroundColor: 'var(--aws-card-bg)',
-                    borderColor: 'var(--aws-border)',
-                  }}
-                  className="!border !rounded-[4px] !shadow-md !overflow-hidden"
-                  nodeColor={miniMapNodeColor}
-                  maskColor={theme === 'dark' ? 'rgba(15, 27, 42, 0.75)' : 'rgba(242, 243, 243, 0.75)'}
-                  zoomable
-                  pannable
-                />
-              )}
-            </ReactFlow>
-          </div>
-
-          {/* Unified Floating Studio Dock (Context-Sensitive & Responsive) */}
-          <CanvasFormatBar
-            onFitView={() => reactFlowInstance.fitView({ padding: 0.18, duration: 250 })}
-            onAutoLayout={(dir) => handleTriggerAutoLayout(dir)}
-            layoutDirection={layoutDirection}
-            onChangeLayoutDirection={setLayoutDirection}
-            isArranging={isArranging}
-          />
+      {/* Dagre Auto-Layout & Blueprint Arranging Badge */}
+      {isArranging && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="absolute top-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 px-3.5 py-1.5 rounded-[8px] studio-island text-[#F1F5F9] shadow-lg animate-in fade-in zoom-in-95 duration-150 select-none"
+        >
+          <CompassLoader size={18} />
+          <span className="text-[12px] font-medium tracking-wide">
+            Arranging architecture graph…
+          </span>
         </div>
-      </div >
+      )}
 
-      {/* Right Context Menu Floating Popover */}
-      < CanvasContextMenu />
+      <div
+        ref={reactFlowWrapper}
+        className={`w-full h-full transition-opacity duration-200 ${isArranging ? 'opacity-75' : 'opacity-100'
+          } ${isCanvasPanning ? 'is-canvas-panning' : ''}`}
+        onMouseDown={handleCanvasMouseDown}
+        onMouseMove={handleCanvasMouseMove}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+      >
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          colorMode={theme}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onConnectEnd={handleConnectEnd}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          selectionOnDrag={true}
+          panOnDrag={panOnDrag}
+          selectionMode={SelectionMode.Partial}
+          multiSelectionKeyCode={multiSelectionKeyCode}
+          onNodeDragStop={handleNodeDragStop}
+          onMoveStart={(event) => {
+            if (event && ('button' in event || 'buttons' in event)) {
+              const me = event as MouseEvent;
+              if (me.button === 2 || me.button === 1 || (me.buttons && ((me.buttons & 2) !== 0 || (me.buttons & 4) !== 0))) {
+                setIsCanvasPanning(true);
+              }
+            }
+          }}
+          onMove={(event, vp) => {
+            setZoomPercent(Math.round(vp.zoom * 100));
+            if (event && 'buttons' in event) {
+              const me = event as MouseEvent;
+              if ((me.buttons & 2) !== 0 || (me.buttons & 4) !== 0) {
+                setIsCanvasPanning(true);
+              }
+            }
+          }}
+          onMoveEnd={() => {
+            panStartRef.current = null;
+            setIsCanvasPanning(false);
+          }}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          defaultEdgeOptions={flowEdgeOptions}
+          connectionMode={ConnectionMode.Loose}
+          snapToGrid={snapToGrid}
+          snapGrid={snapGrid}
+          onNodeClick={(_, node) => {
+            openNodeInspector(node.id);
+          }}
+          onEdgeClick={(_, edge) => {
+            openEdgeInspector(edge.id);
+          }}
+          onPaneClick={() => {
+            closeInspector();
+            closeContextMenu();
+          }}
+          onNodeContextMenu={(e, node) => {
+            e.preventDefault();
+            panStartRef.current = null;
+            setIsCanvasPanning(false);
+            openContextMenu({
+              x: e.clientX,
+              y: e.clientY,
+              type: 'node',
+              targetId: node.id,
+            });
+          }}
+          onEdgeContextMenu={(e, edge) => {
+            e.preventDefault();
+            panStartRef.current = null;
+            setIsCanvasPanning(false);
+            openContextMenu({
+              x: e.clientX,
+              y: e.clientY,
+              type: 'edge',
+              targetId: edge.id,
+            });
+          }}
+          onPaneContextMenu={(e) => {
+            e.preventDefault();
+            panStartRef.current = null;
+            setIsCanvasPanning(false);
+            openContextMenu({
+              x: e.clientX,
+              y: e.clientY,
+              type: 'canvas',
+            });
+          }}
+          fitView
+          fitViewOptions={{ padding: 0.18 }}
+          minZoom={0.15}
+          maxZoom={2.5}
+          proOptions={{ hideAttribution: true }}
+        >
+          {canvasGridVariant !== 'none' && (
+            <Background
+              variant={
+                canvasGridVariant === 'dots'
+                  ? BackgroundVariant.Dots
+                  : canvasGridVariant === 'lines'
+                    ? BackgroundVariant.Lines
+                    : BackgroundVariant.Cross
+              }
+              gap={snapGridSize * 1.5}
+              size={canvasGridVariant === 'dots' ? 1.2 : 1}
+              color={theme === 'dark' ? '#1E293B' : '#CBD5E1'}
+            />
+          )}
+          {showMiniMap && (
+            <MiniMap
+              style={{
+                backgroundColor: 'var(--aws-card-bg)',
+              }}
+              className="!border !border-slate-200/90 dark:!border-white/[0.08] !rounded-[12px] !shadow-xl !overflow-hidden studio-island"
+              nodeColor={miniMapNodeColor}
+              maskColor={theme === 'dark' ? 'rgba(9, 13, 22, 0.75)' : 'rgba(246, 248, 250, 0.75)'}
+              zoomable
+              pannable
+            />
+          )}
+        </ReactFlow>
+      </div>
 
-      {/* Docked Resizable Dual-Tab Split Panel */}
-      < NodeInspectorDrawer />
-
-      {/* Drop Wire on Empty Canvas - Quick Connect Node Spawner */}
-      < QuickConnectPopover
-        isOpen={quickConnectState.isOpen}
-        onClose={() => setQuickConnectState((s) => ({ ...s, isOpen: false }))}
-        sourceNodeId={quickConnectState.sourceNodeId}
-        sourceNodeLabel={quickConnectState.sourceNodeLabel}
-        sourceServiceId={quickConnectState.sourceServiceId}
-        sourceCategory={quickConnectState.sourceCategory}
-        sourceHandleId={quickConnectState.sourceHandleId}
-        screenPosition={quickConnectState.screenPosition}
-        flowPosition={quickConnectState.flowPosition}
-        onSelectTarget={handleQuickConnectSelectTarget}
+      {/* Unified Floating Studio Dock (Context-Sensitive & Responsive) */}
+      <CanvasFormatBar
+        onFitView={() => reactFlowInstance.fitView({ padding: 0.18, duration: 250 })}
+        onAutoLayout={(dir) => handleTriggerAutoLayout(dir)}
+        layoutDirection={layoutDirection}
+        onChangeLayoutDirection={setLayoutDirection}
+        isArranging={isArranging}
       />
+    </div>
+
+  {/* Right Context Menu Floating Popover */ }
+  < CanvasContextMenu />
+
+  {/* Docked Resizable Dual-Tab Split Panel */ }
+  < NodeInspectorDrawer />
+
+{/* Drop Wire on Empty Canvas - Quick Connect Node Spawner */ }
+<QuickConnectPopover
+  isOpen={quickConnectState.isOpen}
+  onClose={() => setQuickConnectState((s) => ({ ...s, isOpen: false }))}
+  sourceNodeId={quickConnectState.sourceNodeId}
+  sourceNodeLabel={quickConnectState.sourceNodeLabel}
+  sourceServiceId={quickConnectState.sourceServiceId}
+  sourceCategory={quickConnectState.sourceCategory}
+  sourceHandleId={quickConnectState.sourceHandleId}
+  screenPosition={quickConnectState.screenPosition}
+  flowPosition={quickConnectState.flowPosition}
+  onSelectTarget={handleQuickConnectSelectTarget}
+/>
     </div >
   );
 };

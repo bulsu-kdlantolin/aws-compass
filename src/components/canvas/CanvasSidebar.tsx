@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -8,7 +8,6 @@ import {
   StickyNote,
   Type,
   Plus,
-  GripVertical,
   Star,
   Lock,
   AlertTriangle,
@@ -100,79 +99,91 @@ const BOUNDARY_STENCILS: BoundaryStencilDef[] = [
     borderStyle: 'dashed',
     borderColorLight: '#00A1C9',
     borderColorDark: '#00A1C9',
-    tintLight: 'rgba(0, 161, 201, 0.04)',
-    tintDark: 'rgba(0, 161, 201, 0.06)',
+    tintLight: 'rgba(0, 161, 201, 0.03)',
+    tintDark: 'rgba(0, 161, 201, 0.05)',
   },
   {
     type: 'vpc',
     groupId: 'vpc',
     label: 'VPC Container',
-    desc: '10.0.0.0/16 Virtual Private Cloud',
+    desc: 'Virtual Private Cloud boundary',
     badge: '10.0.0.0/16',
     borderStyle: 'solid',
     borderColorLight: '#8C4FFF',
     borderColorDark: '#8C4FFF',
-    tintLight: 'rgba(140, 79, 255, 0.05)',
-    tintDark: 'rgba(140, 79, 255, 0.08)',
+    tintLight: 'rgba(140, 79, 255, 0.03)',
+    tintDark: 'rgba(140, 79, 255, 0.05)',
   },
   {
     type: 'public-subnet',
     groupId: 'public-subnet',
     label: 'Public Subnet',
-    desc: 'Ingress tier with Internet Gateway route',
+    desc: 'Direct Internet Gateway routing',
     badge: '10.0.1.0/24',
     borderStyle: 'solid',
-    borderColorLight: '#2EA043',
+    borderColorLight: '#1D8102',
     borderColorDark: '#2EA043',
-    tintLight: 'rgba(46, 160, 67, 0.05)',
-    tintDark: 'rgba(46, 160, 67, 0.08)',
+    tintLight: 'rgba(29, 129, 2, 0.04)',
+    tintDark: 'rgba(46, 160, 67, 0.06)',
   },
   {
     type: 'private-subnet',
     groupId: 'private-subnet',
     label: 'Private Subnet',
-    desc: 'Isolated application backend tier',
+    desc: 'NAT/PrivateLink egress only',
     badge: '10.0.2.0/24',
     borderStyle: 'solid',
-    borderColorLight: '#539FE5',
+    borderColorLight: '#0972D3',
     borderColorDark: '#539FE5',
-    tintLight: 'rgba(83, 159, 229, 0.05)',
-    tintDark: 'rgba(83, 159, 229, 0.08)',
+    tintLight: 'rgba(9, 114, 211, 0.04)',
+    tintDark: 'rgba(83, 159, 229, 0.06)',
   },
   {
     type: 'security-group',
     groupId: 'security-group',
     label: 'Security Group',
-    desc: 'Stateful ENI firewall port boundary',
-    badge: 'TCP 443, 80',
+    desc: 'Stateful firewall boundary',
+    badge: 'sg-boundary',
     borderStyle: 'dashed',
     borderColorLight: '#DD344C',
     borderColorDark: '#DD344C',
-    tintLight: 'rgba(221, 52, 76, 0.05)',
-    tintDark: 'rgba(221, 52, 76, 0.08)',
+    tintLight: 'rgba(221, 52, 76, 0.03)',
+    tintDark: 'rgba(221, 52, 76, 0.05)',
   },
   {
     type: 'auto-scaling-group',
     groupId: 'auto-scaling-group',
-    label: 'Auto Scaling Group',
-    desc: 'Dynamic compute scaling boundary',
-    badge: 'Min 2 · Max 10',
+    label: 'Auto Scaling Group (ASG)',
+    desc: 'Elastic compute scaling cluster',
+    badge: 'ASG Min/Max',
     borderStyle: 'dashed',
     borderColorLight: '#ED7100',
     borderColorDark: '#ED7100',
-    tintLight: 'rgba(237, 113, 0, 0.05)',
-    tintDark: 'rgba(237, 113, 0, 0.08)',
+    tintLight: 'rgba(237, 113, 0, 0.03)',
+    tintDark: 'rgba(237, 113, 0, 0.05)',
+  },
+  {
+    type: 'corporate-datacenter',
+    groupId: 'corporate-datacenter',
+    label: 'On-Premises / Corporate Data Center',
+    desc: 'Hybrid customer gateway perimeter',
+    badge: 'On-Prem',
+    borderStyle: 'dashed',
+    borderColorLight: '#545B64',
+    borderColorDark: '#879596',
+    tintLight: 'rgba(84, 91, 100, 0.04)',
+    tintDark: 'rgba(135, 149, 150, 0.06)',
   },
 ];
 
-interface NetworkPrimitiveStencilDef {
+interface ActorStencilDef {
   type: ExternalActorType;
   label: string;
   desc: string;
   badge: string;
 }
 
-const NETWORK_PRIMITIVE_STENCILS: NetworkPrimitiveStencilDef[] = [
+const NETWORK_PRIMITIVE_ACTORS: ActorStencilDef[] = [
   {
     type: 'vpc-gateway-endpoint',
     label: 'VPC Gateway Endpoint',
@@ -188,72 +199,59 @@ const NETWORK_PRIMITIVE_STENCILS: NetworkPrimitiveStencilDef[] = [
   {
     type: 'route-table',
     label: 'Route Table',
-    desc: 'Subnet CIDR destination rules',
-    badge: '0.0.0.0/0',
+    desc: 'Subnet CIDR routing manifest',
+    badge: 'Routes',
   },
   {
     type: 'network-acl',
     label: 'Network ACL (NACL)',
-    desc: 'Stateless subnet packet filter shield',
-    badge: 'NACL',
+    desc: 'Stateless subnet boundary filter',
+    badge: 'Stateless',
   },
   {
     type: 'customer-gateway',
     label: 'Customer Gateway (CGW)',
-    desc: 'On-prem VPN / Direct Connect router',
-    badge: 'BGP / IPSec',
+    desc: 'On-prem VPN/Direct Connect endpoint',
+    badge: 'IPsec',
   },
 ];
 
-interface ActorStencilDef {
-  type: ExternalActorType;
-  label: string;
-  desc: string;
-  badge: string;
-}
-
-const ACTOR_STENCILS: ActorStencilDef[] = [
+const EXTERNAL_SAAS_ACTORS: ActorStencilDef[] = [
   {
     type: 'user-browser',
-    label: 'Web Browser / End User',
-    desc: 'Public HTTPS client traffic',
-    badge: 'HTTPS',
+    label: 'Web Client / End User',
+    desc: 'Browser, Single-Page App, Desktop client',
+    badge: 'Client',
   },
   {
     type: 'mobile-client',
-    label: 'Mobile / IoT Client',
-    desc: 'iOS/Android & MQTT edge devices',
-    badge: 'REST / MQTT',
+    label: 'Mobile App Client',
+    desc: 'iOS / Android Native mobile user',
+    badge: 'Mobile',
+  },
+  {
+    type: 'third-party-api',
+    label: '3rd-Party SaaS / REST API',
+    desc: 'External vendor or partner endpoint (Stripe, Twilio)',
+    badge: 'SaaS API',
+  },
+  {
+    type: 'external-webhook',
+    label: 'Inbound Webhook / Partner Service',
+    desc: 'External HTTP callback / Git event trigger',
+    badge: 'Webhook',
+  },
+  {
+    type: 'branch-office',
+    label: 'Remote Branch Office / Edge Worker',
+    desc: 'Enterprise branch location or field terminal',
+    badge: 'Office',
   },
   {
     type: 'corporate-datacenter',
     label: 'Corporate Data Center',
-    desc: 'On-premise hybrid Direct Connect',
-    badge: 'Hybrid DC',
-  },
-  {
-    type: 'iam-admin',
-    label: 'Developer / IAM Admin',
-    desc: 'SSM Session Manager & CLI operator',
-    badge: 'CLI / SSM',
-  },
-  {
-    type: 'cicd-pipeline',
-    label: 'GitHub / CI/CD Pipeline',
-    desc: 'OIDC automated deployment runner',
-    badge: 'OIDC',
-  },
-  {
-    type: 'idp-auth',
-    label: 'External Identity Provider',
-    desc: 'Okta / Entra ID SAML / OIDC',
-    badge: 'SAML / SSO',
-  },
-  {
-    type: 'saas-webhook',
-    label: 'Observability / SaaS Webhook',
-    desc: 'Datadog, Slack, PagerDuty alerts',
-    badge: 'Webhook',
+    desc: 'On-premises enterprise infrastructure',
+    badge: 'On-Prem',
   },
 ];
 
@@ -261,35 +259,36 @@ interface StepBadgeStencilDef {
   type: StepBadgeType;
   label: string;
   desc: string;
+  caption: string;
   badge: string;
-  caption?: string;
 }
 
 const STEP_BADGE_STENCILS: StepBadgeStencilDef[] = [
   {
     type: 'flow-step',
     label: 'Numbered Flow Step',
-    desc: 'Auto-incrementing ①, ②, ③ flow marker',
+    desc: 'Ordered sequence callout marker (①, ②, ③)',
+    caption: '1',
     badge: '① Step',
   },
   {
     type: 'tls-badge',
-    label: 'TLS / mTLS Badge',
-    desc: 'Edge certificate & termination pin',
-    badge: 'TLS',
-    caption: 'TLS 1.3 / mTLS',
+    label: 'TLS / Encryption Lock',
+    desc: 'Security indicator for mTLS or KMS encrypted link',
+    caption: 'TLS 1.3',
+    badge: 'mTLS',
   },
   {
     type: 'risk-pin',
-    label: 'SPOF / Risk Marker',
-    desc: 'Single point of failure alert pin',
-    badge: 'Risk Pin',
-    caption: 'SPOF Risk',
+    label: 'Architectural Risk / Warning Pin',
+    desc: 'Flag single point of failure or high-cost warning',
+    caption: 'SPOF Alert',
+    badge: 'Warning',
   },
 ];
 
 interface AnnotationStencilDef {
-  kind: 'note' | 'spec-stamp' | 'text-block';
+  kind: 'note' | 'text-block' | 'spec-stamp';
   label: string;
   desc: string;
   badge: string;
@@ -316,25 +315,20 @@ const ANNOTATION_STENCILS: AnnotationStencilDef[] = [
   },
 ];
 
-const CATEGORIES: (AWSCategory | 'All')[] = [
-  'All',
-  ...DEFAULT_CATEGORIES,
-];
-
 interface SidebarServiceCardProps {
   svc: AWSService;
   theme: 'dark' | 'light';
   onDragStart: (e: React.DragEvent, stencil: StencilDragData) => void;
   onQuickAdd: (svc: AWSService) => void;
+  onToggleFavorite?: (id: string, e: React.MouseEvent) => void;
 }
 
 const SidebarServiceCard = React.memo<SidebarServiceCardProps>(({
   svc,
-  theme,
   onDragStart,
   onQuickAdd,
+  onToggleFavorite,
 }) => {
-  const catColor = getAWSCategoryColor(svc.category, theme);
   return (
     <div
       draggable
@@ -347,38 +341,37 @@ const SidebarServiceCard = React.memo<SidebarServiceCardProps>(({
         })
       }
       onClick={() => onQuickAdd(svc)}
-      className="group relative flex items-center gap-2 p-2 rounded-[6px] border border-transparent hover:border-[#D5DBDB] dark:hover:border-[#2A3647] hover:bg-[#F8F9FA] dark:hover:bg-[#1E2B3D] transition-all cursor-grab active:cursor-grabbing select-none"
+      className="group relative h-8 px-2 rounded-[7px] flex items-center gap-2.5 hover:bg-slate-100 dark:hover:bg-white/[0.06] cursor-grab active:cursor-grabbing transition-colors select-none"
       title={`Drag ${svc.name} (${svc.id}) onto the canvas or click to add`}
     >
-      <GripVertical className="w-3.5 h-3.5 text-[#879596]/40 group-hover:text-[#879596] shrink-0" />
-
-      <div className="shrink-0">
-        <AWSServiceIcon serviceId={svc.id} category={svc.category} size={24} variant="service" />
+      <div className="shrink-0 flex items-center justify-center">
+        <AWSServiceIcon serviceId={svc.id} category={svc.category} size={20} variant="service" />
       </div>
 
-      <div className="min-w-0 flex-1">
-        <div className="text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] truncate group-hover:text-[#0972D3] dark:group-hover:text-[#539FE5]">
-          {svc.name}
-        </div>
-        <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#545B64] dark:text-[#879596]">
-          <span className="truncate">{svc.id}</span>
-          <span>•</span>
-          <span style={{ color: catColor }} className="font-semibold">
-            {svc.category}
-          </span>
-        </div>
-      </div>
+      <span className="text-[12.5px] font-medium text-slate-700 dark:text-slate-200 truncate flex-1 group-hover:text-slate-900 dark:group-hover:text-white">
+        {svc.name}
+      </span>
 
-      <span
-        className={`text-[11px] font-mono font-medium tabular-nums shrink-0 ${svc.tier === 1
-          ? 'text-[#FF9900]/90'
-          : svc.tier === 2
-            ? 'text-[#539FE5]/90'
-            : 'text-[#879596]'
-          }`}
-      >
+      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 shrink-0">
         T{svc.tier}
       </span>
+
+      {onToggleFavorite && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(svc.id, e);
+          }}
+          className={`size-6 rounded flex items-center justify-center shrink-0 transition-opacity cursor-pointer ${svc.isFavorite
+            ? 'opacity-100 text-[#FF9900]'
+            : 'opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#FF9900]'
+            }`}
+          title={svc.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          <Star className={`w-3.5 h-3.5 ${svc.isFavorite ? 'fill-[#FF9900]' : ''}`} />
+        </button>
+      )}
     </div>
   );
 });
@@ -388,7 +381,7 @@ export const CanvasSidebar: React.FC = () => {
   const setIsCanvasSidebarOpen = useCanvasStore((s) => s.setIsCanvasSidebarOpen);
   const [activeMode, setActiveMode] = useState<'catalog' | 'stencils'>('catalog');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<AWSCategory | 'All'>('All');
+  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
 
   // Accordion section states for Stencils tab (5 groups)
   const [isBoundariesOpen, setIsBoundariesOpen] = useState(true);
@@ -401,6 +394,7 @@ export const CanvasSidebar: React.FC = () => {
   const theme = useCompassStore((s) => s.theme);
   const filter = useCompassStore((s) => s.filter);
   const setFavoritesFilter = useCompassStore((s) => s.setFavoritesFilter);
+  const toggleFavorite = useCompassStore((s) => s.toggleFavorite);
   const sidebarWidth = useCompassStore((s) => s.sidebarWidth);
   const setSidebarWidth = useCompassStore((s) => s.setSidebarWidth);
   const addServiceNode = useCanvasStore((s) => s.addServiceNode);
@@ -409,32 +403,20 @@ export const CanvasSidebar: React.FC = () => {
   const addStepBadgeNode = useCanvasStore((s) => s.addStepBadgeNode);
   const addAnnotationNode = useCanvasStore((s) => s.addAnnotationNode);
 
-  // When only showing favorites, derive categories strictly from favorited services
-  const availableCategories = useMemo(() => {
-    if (!filter.favoritesOnly) {
-      return CATEGORIES;
-    }
-    const favCatSet = new Set<AWSCategory>();
-    services.forEach((s) => {
-      if (s.isFavorite) {
-        favCatSet.add(s.category);
-      }
-    });
-    const result: (AWSCategory | 'All')[] = ['All'];
-    DEFAULT_CATEGORIES.forEach((cat) => {
-      if (favCatSet.has(cat)) {
-        result.push(cat);
-      }
-    });
-    return result;
-  }, [services, filter.favoritesOnly]);
+  const handleToggleFavorite = useCallback(
+    (id: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      toggleFavorite(id);
+    },
+    [toggleFavorite]
+  );
 
-  // If the currently selected category is not in available categories, reset to 'All'
-  useEffect(() => {
-    if (selectedCategory !== 'All' && !availableCategories.includes(selectedCategory)) {
-      setSelectedCategory('All');
-    }
-  }, [selectedCategory, availableCategories]);
+  const toggleCategoryCollapse = useCallback((cat: string) => {
+    setCollapsedCategories((prev) => ({
+      ...prev,
+      [cat]: !prev[cat],
+    }));
+  }, []);
 
   // Filtered Services
   const filteredServices = useMemo(() => {
@@ -442,430 +424,457 @@ export const CanvasSidebar: React.FC = () => {
       if (filter.favoritesOnly && !svc.isFavorite) {
         return false;
       }
-      const matchesCategory =
-        selectedCategory === 'All' || svc.category === selectedCategory;
       const matchesSearch =
         !searchQuery.trim() ||
         svc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         svc.id.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
+      return matchesSearch;
     });
-  }, [services, filter.favoritesOnly, selectedCategory, searchQuery]);
+  }, [services, filter.favoritesOnly, searchQuery]);
 
-  // Handle Drag Start
-  const handleDragStart = useCallback((e: React.DragEvent, stencil: StencilDragData) => {
-    const json = JSON.stringify(stencil);
-    e.dataTransfer.setData('application/aws-stencil', json);
-    e.dataTransfer.setData('application/json', json);
-    e.dataTransfer.setData('text/plain', json);
-    if (stencil.serviceId) {
-      e.dataTransfer.setData('application/aws-service-id', stencil.serviceId);
-    }
-    e.dataTransfer.effectAllowed = 'copyMove';
-  }, []);
+  // Group filtered services by category
+  const servicesByCategory = useMemo(() => {
+    const map = new Map<AWSCategory, AWSService[]>();
+    DEFAULT_CATEGORIES.forEach((cat) => map.set(cat, []));
 
-  // Quick Click Add to Canvas (Center Offset)
-  const handleQuickAddService = useCallback((svc: AWSService) => {
-    const center = { x: 300 + Math.random() * 80, y: 180 + Math.random() * 60 };
-    addServiceNode(svc, center);
-  }, [addServiceNode]);
+    filteredServices.forEach((svc) => {
+      const list = map.get(svc.category);
+      if (list) {
+        list.push(svc);
+      } else {
+        map.set(svc.category, [svc]);
+      }
+    });
 
-  const handleQuickAddBoundary = (b: BoundaryStencilDef) => {
-    const center = { x: 180, y: 120 };
-    addBoundaryNode(b.type, b.label, center);
-  };
+    return Array.from(map.entries())
+      .filter(([_, svcs]) => svcs.length > 0)
+      .map(([category, svcs]) => ({ category, svcs }));
+  }, [filteredServices]);
 
-    const handleQuickAddActor = (type: ExternalActorType, label: string) => {
-      const center = { x: 140, y: 200 };
-      addExternalActor(type, label, center);
-    };
+  // Filtered Stencils
+  const filteredBoundaries = useMemo(() => {
+    if (!searchQuery.trim()) return BOUNDARY_STENCILS;
+    const q = searchQuery.toLowerCase();
+    return BOUNDARY_STENCILS.filter(
+      (b) =>
+        b.label.toLowerCase().includes(q) ||
+        b.desc.toLowerCase().includes(q) ||
+        b.badge.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
 
-    const handleQuickAddStepBadge = (sb: StepBadgeStencilDef) => {
-      const center = { x: 260, y: 180 };
+  const filteredNetworkPrimitives = useMemo(() => {
+    if (!searchQuery.trim()) return NETWORK_PRIMITIVE_ACTORS;
+    const q = searchQuery.toLowerCase();
+    return NETWORK_PRIMITIVE_ACTORS.filter(
+      (a) =>
+        a.label.toLowerCase().includes(q) ||
+        a.desc.toLowerCase().includes(q) ||
+        a.badge.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
+
+  const filteredActors = useMemo(() => {
+    if (!searchQuery.trim()) return EXTERNAL_SAAS_ACTORS;
+    const q = searchQuery.toLowerCase();
+    return EXTERNAL_SAAS_ACTORS.filter(
+      (a) =>
+        a.label.toLowerCase().includes(q) ||
+        a.desc.toLowerCase().includes(q) ||
+        a.badge.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
+
+  const filteredStepBadges = useMemo(() => {
+    if (!searchQuery.trim()) return STEP_BADGE_STENCILS;
+    const q = searchQuery.toLowerCase();
+    return STEP_BADGE_STENCILS.filter(
+      (s) =>
+        s.label.toLowerCase().includes(q) ||
+        s.desc.toLowerCase().includes(q) ||
+        s.badge.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
+
+  const filteredAnnotations = useMemo(() => {
+    if (!searchQuery.trim()) return ANNOTATION_STENCILS;
+    const q = searchQuery.toLowerCase();
+    return ANNOTATION_STENCILS.filter(
+      (a) =>
+        a.label.toLowerCase().includes(q) ||
+        a.desc.toLowerCase().includes(q) ||
+        a.badge.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
+
+  const totalStencilMatches =
+    filteredBoundaries.length +
+    filteredNetworkPrimitives.length +
+    filteredActors.length +
+    filteredStepBadges.length +
+    filteredAnnotations.length;
+
+  // Drag start handler
+  const handleDragStart = useCallback(
+    (e: React.DragEvent, stencil: StencilDragData) => {
+      e.dataTransfer.setData('application/aws-stencil', JSON.stringify(stencil));
+      e.dataTransfer.effectAllowed = 'copy';
+    },
+    []
+  );
+
+  // Quick-add handlers for 1-click placing onto canvas
+  const handleQuickAddService = useCallback(
+    (svc: AWSService) => {
+      const center = { x: 300 + Math.random() * 80, y: 180 + Math.random() * 60 };
+      addServiceNode(svc, center);
+    },
+    [addServiceNode]
+  );
+
+  const handleQuickAddBoundary = useCallback(
+    (b: BoundaryStencilDef) => {
+      const center = { x: 180, y: 120 };
+      addBoundaryNode(b.type, b.label, center);
+    },
+    [addBoundaryNode]
+  );
+
+  const handleQuickAddActor = useCallback(
+    (actorType: ExternalActorType, label: string) => {
+      const center = { x: 260 + Math.random() * 60, y: 180 + Math.random() * 60 };
+      addExternalActor(actorType, label, center);
+    },
+    [addExternalActor]
+  );
+
+  const handleQuickAddStepBadge = useCallback(
+    (sb: StepBadgeStencilDef) => {
+      const center = { x: 280 + Math.random() * 60, y: 180 + Math.random() * 60 };
       addStepBadgeNode(sb.type, sb.caption, center);
-    };
+    },
+    [addStepBadgeNode]
+  );
 
-    const handleQuickAddSpecStamp = () => {
-      const center = { x: 240, y: 140 };
-      addAnnotationNode('System Architecture Spec', '', center, {
-        isSpecStamp: true,
-        specSystemName: 'System Architecture Spec',
-        specRevision: 'v1.0 · Prod',
-        specTargetSla: '99.99%',
-        specRpoRto: 'RPO < 5m · RTO < 15m',
-        specCompliance: 'SOC2 · HIPAA',
-        specClassification: 'Confidential (PII)',
-        width: 320,
-        height: 180,
-      });
-    };
+  const handleQuickAddNote = useCallback(() => {
+    const center = { x: 320, y: 200 };
+    addAnnotationNode('Architecture Note', 'Double-click to edit markdown note content...', center, { isAnnotation: true });
+  }, [addAnnotationNode]);
 
-    const handleQuickAddNote = () => {
-      const center = { x: 340, y: 220 };
-      addAnnotationNode('Architecture Note', '', center);
-    };
+  const handleQuickAddTextBlock = useCallback(() => {
+    const center = { x: 320, y: 140 };
+    addAnnotationNode('Section Heading', 'Section Heading', center, { isTextOnly: true });
+  }, [addAnnotationNode]);
 
-    const handleQuickAddTextBlock = () => {
-      const center = { x: 300, y: 120 };
-      addAnnotationNode('Architecture Section Header', '', center, {
-        isTextOnly: true,
-        fontSize: 18,
-        width: 280,
-        height: 48,
-      });
-    };
+  const handleQuickAddSpecStamp = useCallback(() => {
+    const center = { x: 320, y: 160 };
+    addAnnotationNode(
+      'System Architecture Spec',
+      'Target Availability: 99.99%\nRTO: < 15 min · RPO: < 1 min\nCompliance: SOC2 / HIPAA\nus-east-1 Active-Active',
+      center,
+      { isSpecStamp: true }
+    );
+  }, [addAnnotationNode]);
 
-    // Filtered Stencil Arrays (Search Query Aware)
-    const stencilQuery = searchQuery.toLowerCase().trim();
-    const filteredBoundaries = useMemo(() => {
-      if (!stencilQuery) return BOUNDARY_STENCILS;
-      return BOUNDARY_STENCILS.filter(
-        (b) =>
-          b.label.toLowerCase().includes(stencilQuery) ||
-          b.desc.toLowerCase().includes(stencilQuery) ||
-          b.badge.toLowerCase().includes(stencilQuery)
-      );
-    }, [stencilQuery]);
+  if (!isCanvasSidebarOpen) {
+    return (
+      <div className="relative z-50 shrink-0">
+        <button
+          type="button"
+          onClick={() => setIsCanvasSidebarOpen(true)}
+          className="absolute left-0 top-16 h-9 pl-2 pr-2.5 rounded-r-[8px] bg-white/92 dark:bg-[#111726]/90 backdrop-blur-xl border-y border-r border-slate-200/90 dark:border-white/[0.08] shadow-md hover:border-[#FF9900] text-slate-500 dark:text-slate-400 hover:text-[#FF9900] flex items-center gap-1.5 transition-all cursor-pointer group z-50"
+          title="Open Canvas Stencils & Catalog"
+          aria-label="Open Canvas Stencils & Catalog"
+        >
+          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          <span className="text-[11px] font-semibold tracking-wide text-slate-800 dark:text-slate-200">
+            Catalog & Stencils
+          </span>
+        </button>
+      </div>
+    );
+  }
 
-    const filteredNetworkPrimitives = useMemo(() => {
-      if (!stencilQuery) return NETWORK_PRIMITIVE_STENCILS;
-      return NETWORK_PRIMITIVE_STENCILS.filter(
-        (p) =>
-          p.label.toLowerCase().includes(stencilQuery) ||
-          p.desc.toLowerCase().includes(stencilQuery) ||
-          p.badge.toLowerCase().includes(stencilQuery)
-      );
-    }, [stencilQuery]);
+  return (
+    <aside
+      aria-label="AWS Canvas Stencils and Service Catalog"
+      style={{
+        width: `${sidebarWidth}px`,
+      }}
+      className="relative h-full flex flex-col border-r border-slate-200/90 dark:border-white/[0.08] bg-white/92 dark:bg-[#111726]/90 backdrop-blur-xl shrink-0 z-30 select-none animate-in fade-in duration-150"
+    >
+      {/* Draggable Resize Handle */}
+      <SidebarResizeHandle
+        sidebarWidth={sidebarWidth}
+        onWidthChange={setSidebarWidth}
+      />
 
-    const filteredActors = useMemo(() => {
-      if (!stencilQuery) return ACTOR_STENCILS;
-      return ACTOR_STENCILS.filter(
-        (a) =>
-          a.label.toLowerCase().includes(stencilQuery) ||
-          a.desc.toLowerCase().includes(stencilQuery) ||
-          a.badge.toLowerCase().includes(stencilQuery)
-      );
-    }, [stencilQuery]);
-
-    const filteredStepBadges = useMemo(() => {
-      if (!stencilQuery) return STEP_BADGE_STENCILS;
-      return STEP_BADGE_STENCILS.filter(
-        (s) =>
-          s.label.toLowerCase().includes(stencilQuery) ||
-          s.desc.toLowerCase().includes(stencilQuery) ||
-          s.badge.toLowerCase().includes(stencilQuery)
-      );
-    }, [stencilQuery]);
-
-    const filteredAnnotations = useMemo(() => {
-      if (!stencilQuery) return ANNOTATION_STENCILS;
-      return ANNOTATION_STENCILS.filter(
-        (an) =>
-          an.label.toLowerCase().includes(stencilQuery) ||
-          an.desc.toLowerCase().includes(stencilQuery) ||
-          an.badge.toLowerCase().includes(stencilQuery)
-      );
-    }, [stencilQuery]);
-
-    const totalStencilMatches =
-      filteredBoundaries.length +
-      filteredNetworkPrimitives.length +
-      filteredActors.length +
-      filteredStepBadges.length +
-      filteredAnnotations.length;
-
-    // If sidebar is collapsed, render minimal expand tab
-    if (!isCanvasSidebarOpen) {
-      return (
-        <div className="relative z-50 shrink-0">
+      {/* Top Header & Segmented Tab Switcher */}
+      <div className="p-3 border-b border-slate-100 dark:border-white/[0.05] space-y-2.5 shrink-0 bg-slate-50/50 dark:bg-white/[0.02]">
+        <div className="flex items-center justify-between">
+          <span className="text-[12px] font-bold text-slate-800 dark:text-slate-200">
+            Canvas Studio
+          </span>
           <button
             type="button"
-            onClick={() => setIsCanvasSidebarOpen(true)}
-            className="absolute left-0 top-14 h-9 pl-2 pr-2.5 rounded-r-[6px] bg-white dark:bg-[#161E2D] border-y border-r border-[#D5DBDB] dark:border-[#354150] shadow-md hover:border-[#FF9900] text-[#545B64] dark:text-[#879596] hover:text-[#FF9900] flex items-center gap-1.5 transition-all cursor-pointer group z-50"
-            title="Open Canvas Stencils & Catalog"
-            aria-label="Open Canvas Stencils & Catalog"
+            onClick={() => setIsCanvasSidebarOpen(false)}
+            className="p-1 rounded-[6px] text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+            title="Collapse Sidebar"
+            aria-label="Collapse Sidebar"
           >
-            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            <span className="text-[11px] font-semibold tracking-wide text-[#16191F] dark:text-[#EAEDED]">
-              Stencils
-            </span>
+            <ChevronLeft className="w-4 h-4" />
           </button>
         </div>
-      );
-    }
 
-    return (
-      <aside
-        aria-label="AWS Canvas Stencils and Service Catalog"
-        style={{
-          width: `${sidebarWidth}px`,
-        }}
-        className="relative h-full flex flex-col border-r border-[#D5DBDB] dark:border-[#354150] bg-white dark:bg-[#161E2D] shrink-0 z-30 select-none animate-in fade-in duration-150"
-      >
-        {/* Draggable Resize Handle */}
-        <SidebarResizeHandle
-          sidebarWidth={sidebarWidth}
-          onWidthChange={setSidebarWidth}
-        />
-        {/* Top Header & Segmented Tab Switcher */}
-        <div className="p-3 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5 shrink-0 bg-[#F8F9FA]/60 dark:bg-[#0F141A]/40">
-          <div className="flex items-center justify-between">
-            <span className="text-[12px] font-bold text-[#16191F] dark:text-[#EAEDED]">
-              Canvas Studio
-            </span>
-            <button
-              type="button"
-              onClick={() => setIsCanvasSidebarOpen(false)}
-              className="p-1 rounded-[4px] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D] transition-colors cursor-pointer"
-              title="Collapse Sidebar"
-              aria-label="Collapse Sidebar"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Dual-Mode Segmented Control */}
-          <div className="grid grid-cols-2 p-0.5 rounded-[6px] bg-[#EAEDED] dark:bg-[#0F141A] border border-[#D5DBDB]/60 dark:border-[#2A3647]">
-            <button
-              type="button"
-              onClick={() => setActiveMode('catalog')}
-              className={`h-7 rounded-[4px] text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${activeMode === 'catalog'
-                ? 'bg-white dark:bg-[#1E2B3D] text-[#0972D3] dark:text-[#539FE5] shadow-xs'
-                : 'text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
-                }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>AWS Catalog</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveMode('stencils')}
-              className={`h-7 rounded-[4px] text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${activeMode === 'stencils'
-                ? 'bg-white dark:bg-[#1E2B3D] text-[#0972D3] dark:text-[#539FE5] shadow-xs'
-                : 'text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
-                }`}
-            >
-              <Shapes className="w-3.5 h-3.5" />
-              <span>Diagram Stencils</span>
-            </button>
-          </div>
-
-          {/* Search Input & Favorites Quick Toggle */}
-          <div className="flex items-center gap-1.5">
-            <CloudscapeSearchInput
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder={
-                activeMode === 'catalog'
-                  ? filter.favoritesOnly
-                    ? 'Filter favorite services…'
-                    : 'Filter services by name, ID…'
-                  : 'Search stencils or boundaries…'
-              }
-              size="sm"
-              className="w-full flex-1"
-            />
-            {activeMode === 'catalog' && (
-              <button
-                type="button"
-                onClick={() => setFavoritesFilter(!filter.favoritesOnly)}
-                className={`h-8 w-8 rounded-[4px] flex items-center justify-center shrink-0 transition-colors cursor-pointer border ${filter.favoritesOnly
-                  ? 'bg-[#FF9900]/15 text-[#FF9900] border-[#FF9900]/40 shadow-2xs'
-                  : 'text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D] border-[#D5DBDB]/60 dark:border-[#2A3647]'
-                  }`}
-                title={
-                  filter.favoritesOnly
-                    ? 'Showing favorite services only (Click to show all)'
-                    : 'Show favorite services only'
-                }
-                aria-label="Favorites filter toggle"
-              >
-                <Star
-                  className={`w-3.5 h-3.5 transition-transform active:scale-90 ${filter.favoritesOnly ? 'fill-[#FF9900] text-[#FF9900]' : ''
-                    }`}
-                />
-              </button>
-            )}
-          </div>
+        {/* Dual-Mode Segmented Control (Sunken Track + Active Pill) */}
+        <div className="grid grid-cols-2 p-0.5 rounded-[8px] bg-slate-100/80 dark:bg-[#090D16]/80 border border-slate-200/90 dark:border-white/[0.05]">
+          <button
+            type="button"
+            onClick={() => setActiveMode('catalog')}
+            className={`h-7 rounded-[6px] text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${activeMode === 'catalog'
+              ? 'bg-white dark:bg-[#1E293B] text-slate-900 dark:text-slate-100 shadow-xs'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>AWS Catalog</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveMode('stencils')}
+            className={`h-7 rounded-[6px] text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${activeMode === 'stencils'
+              ? 'bg-white dark:bg-[#1E293B] text-slate-900 dark:text-slate-100 shadow-xs'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+          >
+            <Shapes className="w-3.5 h-3.5" />
+            <span>Stencils</span>
+          </button>
         </div>
 
-        {/* Mode 1: AWS Service Catalog */}
-        {activeMode === 'catalog' && (
-          <div className="flex-1 flex flex-col min-h-0">
-            {/* Category Horizontal Filter Bar (Only showing categories with services) */}
-            <div className="px-2.5 py-1.5 border-b border-[#EAEDED] dark:border-[#222D3C] flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0">
-              {
-                availableCategories.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`px-2 py-0.5 rounded-[4px] text-[10px] font-medium whitespace-nowrap transition-colors cursor-pointer ${selectedCategory === cat
-                      ? 'bg-[#0972D3] text-white dark:bg-[#539FE5] dark:text-[#0F141A] font-semibold'
-                      : 'text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D]'
-                      }`}
-                  >
-                    {cat}
-                  </button>
-                ))
+        {/* Search Input & Favorites Quick Toggle */}
+        <div className="flex items-center gap-1.5">
+          <CloudscapeSearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder={
+              activeMode === 'catalog'
+                ? filter.favoritesOnly
+                  ? 'Filter favorites…'
+                  : 'Filter services by name, ID…'
+                : 'Search stencils or boundaries…'
+            }
+            size="sm"
+            className="w-full flex-1"
+          />
+          {activeMode === 'catalog' && (
+            <button
+              type="button"
+              onClick={() => setFavoritesFilter(!filter.favoritesOnly)}
+              className={`h-8 w-8 rounded-[6px] flex items-center justify-center shrink-0 transition-colors cursor-pointer border ${filter.favoritesOnly
+                  ? 'bg-[#FF9900]/15 text-[#FF9900] border-[#FF9900]/40 shadow-2xs'
+                  : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.06] border-slate-200/90 dark:border-white/[0.08]'
+                }`}
+              title={
+                filter.favoritesOnly
+                  ? 'Showing favorite services only (Click to show all)'
+                  : 'Show favorite services only'
               }
-            </div>
+              aria-label="Favorites filter toggle"
+            >
+              <Star
+                className={`w-3.5 h-3.5 transition-transform active:scale-90 ${filter.favoritesOnly ? 'fill-[#FF9900] text-[#FF9900]' : ''
+                  }`}
+              />
+            </button>
+          )}
+        </div>
+      </div>
 
-            {/* Service List with Drag Support */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596] px-1 pb-1">
-                Showing {filteredServices.length} {filter.favoritesOnly ? 'Favorite ' : ''}Services · Drag onto Canvas
+      {/* Mode 1: AWS Service Catalog (Tree-First Category Navigation) */}
+      {activeMode === 'catalog' && (
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+          {servicesByCategory.map(({ category, svcs }) => {
+            const isCollapsed = !searchQuery.trim() && !!collapsedCategories[category];
+            const catColor = getAWSCategoryColor(category, theme);
+
+            return (
+              <div key={category} className="space-y-0.5">
+                <button
+                  type="button"
+                  onClick={() => toggleCategoryCollapse(category)}
+                  className="w-full h-7 px-2 flex items-center justify-between text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-[6px] hover:bg-slate-100 dark:hover:bg-white/[0.05] cursor-pointer transition-colors"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      style={{ backgroundColor: catColor }}
+                      className="w-2 h-2 rounded-full shrink-0"
+                    />
+                    <span className="truncate">{category}</span>
+                    <span className="text-[10px] font-mono text-slate-400">
+                      ({svcs.length})
+                    </span>
+                  </div>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'
+                      }`}
+                  />
+                </button>
+
+                {!isCollapsed && (
+                  <div className="space-y-0.5 pl-1">
+                    {svcs.map((svc) => (
+                      <SidebarServiceCard
+                        key={svc.id}
+                        svc={svc}
+                        theme={theme}
+                        onDragStart={handleDragStart}
+                        onQuickAdd={handleQuickAddService}
+                        onToggleFavorite={handleToggleFavorite}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {filteredServices.length === 0 && (
+            <div className="py-8 text-center text-[12px] text-slate-400">
+              {filter.favoritesOnly
+                ? searchQuery.trim()
+                  ? `No favorite services match "${searchQuery}"`
+                  : 'No favorite services found. Star services to see them here.'
+                : `No services match "${searchQuery}"`}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Mode 2: Diagram Stencils */}
+      {activeMode === 'stencils' && (
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2.5">
+          {totalStencilMatches === 0 ? (
+            <div className="py-8 text-center text-[12px] text-slate-400">
+              No stencils match &quot;{searchQuery}&quot;
+            </div>
+          ) : (
+            <>
+              {/* Group 1: Cloud & Account Boundaries */}
+              <div className="space-y-0.5">
+                <button
+                  type="button"
+                  onClick={() => setIsBoundariesOpen((prev) => !prev)}
+                  className="w-full h-7 px-2 flex items-center justify-between text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-[6px] hover:bg-slate-100 dark:hover:bg-white/[0.05] cursor-pointer transition-colors"
+                >
+                  <span>Cloud &amp; Account Boundaries ({filteredBoundaries.length})</span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isBoundariesOpen ? 'rotate-180' : ''
+                      }`}
+                  />
+                </button>
+
+                {isBoundariesOpen && (
+                  <div className="space-y-0.5">
+                    {filteredBoundaries.map((b) => (
+                      <div
+                        key={b.type}
+                        draggable
+                        onDragStart={(e) =>
+                          handleDragStart(e, {
+                            type: 'boundary',
+                            boundaryType: b.type,
+                            label: b.label,
+                          })
+                        }
+                        onClick={() => handleQuickAddBoundary(b)}
+                        className="group flex items-center gap-2.5 h-8 px-2.5 rounded-[7px] hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-grab active:cursor-grabbing select-none"
+                        title={`${b.label} — ${b.desc} (Click to add or drag onto canvas)`}
+                      >
+                        <div className="shrink-0 flex items-center justify-center">
+                          <AWSServiceIcon groupId={b.groupId} size={18} variant="group" />
+                        </div>
+                        <div className="min-w-0 flex-1 flex items-center gap-2">
+                          <span className="text-[12.5px] font-medium text-slate-700 dark:text-slate-200 truncate group-hover:text-slate-900 dark:group-hover:text-white">
+                            {b.label}
+                          </span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-white/[0.06] text-slate-400 shrink-0">
+                            {b.badge}
+                          </span>
+                        </div>
+                        <Plus className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {filteredServices.map((svc) => (
-                <SidebarServiceCard
-                  key={svc.id}
-                  svc={svc}
-                  theme={theme}
-                  onDragStart={handleDragStart}
-                  onQuickAdd={handleQuickAddService}
-                />
-              ))}
+              <div className="border-t border-slate-100 dark:border-white/[0.05]" />
 
-              {filteredServices.length === 0 && (
-                <div className="py-8 text-center text-[12px] text-[#545B64] dark:text-[#879596]">
-                  {filter.favoritesOnly
-                    ? searchQuery.trim()
-                      ? `No favorite services match "${searchQuery}"`
-                      : 'No favorite services found. Star services in Concept Vault to see them here.'
-                    : `No services match "${searchQuery}"`}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+              {/* Group 2: Network & Routing Primitives */}
+              <div className="space-y-0.5">
+                <button
+                  type="button"
+                  onClick={() => setIsNetworkPrimitivesOpen((prev) => !prev)}
+                  className="w-full h-7 px-2 flex items-center justify-between text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-[6px] hover:bg-slate-100 dark:hover:bg-white/[0.05] cursor-pointer transition-colors"
+                >
+                  <span>Network &amp; Routing Primitives ({filteredNetworkPrimitives.length})</span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isNetworkPrimitivesOpen ? 'rotate-180' : ''
+                      }`}
+                  />
+                </button>
 
-        {/* Mode 2: Diagram Stencils */}
-        {activeMode === 'stencils' && (
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2.5">
-                {totalStencilMatches === 0 ? (
-                  <div className="py-8 text-center text-[12px] text-[#545B64] dark:text-[#879596]">
-                    No stencils match &quot;{searchQuery}&quot;
-                  </div>
-                ) : (
-            <>
-                    {/* Group 1: Cloud & Account Boundaries */}
-                    <div className="space-y-0.5">
-                      <button
-                        type="button"
-                        onClick={() => setIsBoundariesOpen((prev) => !prev)}
-                        className="w-full h-7 px-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] rounded-[4px] hover:bg-[#EAEDED]/50 dark:hover:bg-[#1E2B3D]/50 cursor-pointer transition-colors"
+                {isNetworkPrimitivesOpen && (
+                  <div className="space-y-0.5">
+                    {filteredNetworkPrimitives.map((p) => (
+                      <div
+                        key={p.type}
+                        draggable
+                        onDragStart={(e) =>
+                          handleDragStart(e, {
+                            type: 'actor',
+                            actorType: p.type,
+                            label: p.label,
+                          })
+                        }
+                        onClick={() => handleQuickAddActor(p.type, p.label)}
+                        className="group flex items-center gap-2.5 h-8 px-2.5 rounded-[7px] hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-grab active:cursor-grabbing select-none"
+                        title={`${p.label} — ${p.desc} (Click to add or drag onto canvas)`}
                       >
-                        <span>Cloud &amp; Account Boundaries ({filteredBoundaries.length})</span>
-                        <ChevronDown
-                          className={`w-3.5 h-3.5 transition-transform duration-200 ${isBoundariesOpen ? 'rotate-180' : ''
-                            }`}
-                        />
-                      </button>
-
-                                  {isBoundariesOpen && (
-                                    <div className="space-y-0.5">
-                                      {filteredBoundaries.map((b) => (
-                                        <div
-                                          key={b.type}
-                                          draggable
-                                          onDragStart={(e) =>
-                                            handleDragStart(e, {
-                                              type: 'boundary',
-                                              boundaryType: b.type,
-                                              label: b.label,
-                                            })
-                                          }
-                                          onClick={() => handleQuickAddBoundary(b)}
-                                          className="group flex items-center gap-2.5 h-8 px-2.5 rounded-[4px] hover:bg-[#EAEDED]/70 dark:hover:bg-[#1E2B3D] transition-colors cursor-grab active:cursor-grabbing select-none"
-                                          title={`${b.label} — ${b.desc} (Click to add or drag onto canvas)`}
-                                        >
-                                          <GripVertical className="w-3.5 h-3.5 text-[#879596]/40 group-hover:text-[#879596] shrink-0" />
-                                          <div className="shrink-0 flex items-center justify-center">
-                                            <AWSServiceIcon groupId={b.groupId} size={18} variant="group" />
-                                          </div>
-                                          <div className="min-w-0 flex-1 flex items-center gap-2">
-                                            <span className="text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] truncate">
-                                              {b.label}
-                                            </span>
-                                            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#EAEDED]/80 dark:bg-[#0F141A] text-[#545B64] dark:text-[#879596] shrink-0">
-                                              {b.badge}
-                                            </span>
-                                          </div>
-                                          <Plus className="w-3.5 h-3.5 text-[#545B64] dark:text-[#879596] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-
-                                    <div className="border-t border-[#EAEDED] dark:border-[#222D3C]" />
-
-                                    {/* Group 2: Network & Routing Primitives */}
-                                    <div className="space-y-0.5">
-                                      <button
-                                        type="button"
-                                        onClick={() => setIsNetworkPrimitivesOpen((prev) => !prev)}
-                                        className="w-full h-7 px-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] rounded-[4px] hover:bg-[#EAEDED]/50 dark:hover:bg-[#1E2B3D]/50 cursor-pointer transition-colors"
-                                      >
-                                        <span>Network &amp; Routing Primitives ({filteredNetworkPrimitives.length})</span>
-                                        <ChevronDown
-                                          className={`w-3.5 h-3.5 transition-transform duration-200 ${isNetworkPrimitivesOpen ? 'rotate-180' : ''
-                                            }`}
-                                        />
-                                      </button>
-
-                                      {isNetworkPrimitivesOpen && (
-                                        <div className="space-y-0.5">
-                                          {filteredNetworkPrimitives.map((p) => (
-                                            <div
-                                              key={p.type}
-                                              draggable
-                                              onDragStart={(e) =>
-                                                handleDragStart(e, {
-                                                  type: 'actor',
-                                                  actorType: p.type,
-                                                  label: p.label,
-                                                })
-                                              }
-                                              onClick={() => handleQuickAddActor(p.type, p.label)}
-                                              className="group flex items-center gap-2.5 h-8 px-2.5 rounded-[4px] hover:bg-[#EAEDED]/70 dark:hover:bg-[#1E2B3D] transition-colors cursor-grab active:cursor-grabbing select-none"
-                                              title={`${p.label} — ${p.desc} (Click to add or drag onto canvas)`}
-                                            >
-                                              <GripVertical className="w-3.5 h-3.5 text-[#879596]/40 group-hover:text-[#879596] shrink-0" />
-                                              <div className="shrink-0 flex items-center justify-center">
-                                                <AWSServiceIcon actorId={p.type} size={18} variant="actor" />
-                                              </div>
-                                                <div className="min-w-0 flex-1 flex items-center gap-2">
-                                                  <span className="text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] truncate">
-                                                    {p.label}
-                                                  </span>
-                                                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#EAEDED]/80 dark:bg-[#0F141A] text-[#545B64] dark:text-[#879596] shrink-0">
-                                                    {p.badge}
-                                                  </span>
-                                                </div>
-                                                <Plus className="w-3.5 h-3.5 text-[#545B64] dark:text-[#879596] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                                              </div>
+                        <div className="shrink-0 flex items-center justify-center">
+                          <AWSServiceIcon actorId={p.type} size={18} variant="actor" />
+                        </div>
+                        <div className="min-w-0 flex-1 flex items-center gap-2">
+                          <span className="text-[12.5px] font-medium text-slate-700 dark:text-slate-200 truncate group-hover:text-slate-900 dark:group-hover:text-white">
+                            {p.label}
+                          </span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-white/[0.06] text-slate-400 shrink-0">
+                            {p.badge}
+                          </span>
+                        </div>
+                        <Plus className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      </div>
                     ))}
-                                        </div>
-                                      )}
-                                    </div>
+                  </div>
+                )}
+              </div>
 
-                                  <div className="border-t border-[#EAEDED] dark:border-[#222D3C]" />
+              <div className="border-t border-slate-100 dark:border-white/[0.05]" />
 
-                                    {/* Group 3: Clients, DevOps & External SaaS Actors */}
-                                    <div className="space-y-0.5">
-                                      <button
-                                        type="button"
-                                        onClick={() => setIsActorsOpen((prev) => !prev)}
-                                        className="w-full h-7 px-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] rounded-[4px] hover:bg-[#EAEDED]/50 dark:hover:bg-[#1E2B3D]/50 cursor-pointer transition-colors"
-                                      >
-                                        <span>Clients &amp; SaaS Actors ({filteredActors.length})</span>
-                                        <ChevronDown
-                                          className={`w-3.5 h-3.5 transition-transform duration-200 ${isActorsOpen ? 'rotate-180' : ''
-                                            }`}
-                                        />
-                                      </button>
+              {/* Group 3: Clients, DevOps & External SaaS Actors */}
+              <div className="space-y-0.5">
+                <button
+                  type="button"
+                  onClick={() => setIsActorsOpen((prev) => !prev)}
+                  className="w-full h-7 px-2 flex items-center justify-between text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-[6px] hover:bg-slate-100 dark:hover:bg-white/[0.05] cursor-pointer transition-colors"
+                >
+                  <span>Clients &amp; SaaS Actors ({filteredActors.length})</span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isActorsOpen ? 'rotate-180' : ''
+                      }`}
+                  />
+                </button>
 
                 {isActorsOpen && (
                   <div className="space-y-0.5">
@@ -881,43 +890,40 @@ export const CanvasSidebar: React.FC = () => {
                           })
                         }
                         onClick={() => handleQuickAddActor(act.type, act.label)}
-                        className="group flex items-center gap-2.5 h-8 px-2.5 rounded-[4px] hover:bg-[#EAEDED]/70 dark:hover:bg-[#1E2B3D] transition-colors cursor-grab active:cursor-grabbing select-none"
+                        className="group flex items-center gap-2.5 h-8 px-2.5 rounded-[7px] hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-grab active:cursor-grabbing select-none"
                         title={`${act.label} — ${act.desc} (Click to add or drag onto canvas)`}
                       >
-                        <GripVertical className="w-3.5 h-3.5 text-[#879596]/40 group-hover:text-[#879596] shrink-0" />
                         <div className="shrink-0 flex items-center justify-center">
                           <AWSServiceIcon actorId={act.type} size={18} variant="actor" />
                         </div>
                         <div className="min-w-0 flex-1 flex items-center gap-2">
-                          <span className="text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] truncate">
+                          <span className="text-[12.5px] font-medium text-slate-700 dark:text-slate-200 truncate group-hover:text-slate-900 dark:group-hover:text-white">
                             {act.label}
                           </span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#EAEDED]/80 dark:bg-[#0F141A] text-[#545B64] dark:text-[#879596] shrink-0">
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-white/[0.06] text-slate-400 shrink-0">
                             {act.badge}
                           </span>
                         </div>
-                        <Plus className="w-3.5 h-3.5 text-[#545B64] dark:text-[#879596] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        <Plus className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                       </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              <div className="border-t border-[#EAEDED] dark:border-[#222D3C]" />
+              <div className="border-t border-slate-100 dark:border-white/[0.05]" />
 
               {/* Group 4: Flow Step Markers & Risk Pins */}
               <div className="space-y-0.5">
                 <button
                   type="button"
                   onClick={() => setIsStepBadgesOpen((prev) => !prev)}
-                  className="w-full h-7 px-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] rounded-[4px] hover:bg-[#EAEDED]/50 dark:hover:bg-[#1E2B3D]/50 cursor-pointer transition-colors"
+                  className="w-full h-7 px-2 flex items-center justify-between text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-[6px] hover:bg-slate-100 dark:hover:bg-white/[0.05] cursor-pointer transition-colors"
                 >
                   <span>Flow Steps &amp; Risk Pins ({filteredStepBadges.length})</span>
                   <ChevronDown
-                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                      isStepBadgesOpen ? 'rotate-180' : ''
-                    }`}
-                  />
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${isStepBadgesOpen ? 'rotate-180' : ''}`}
+                                            />
                 </button>
 
                 {isStepBadgesOpen && (
@@ -935,10 +941,9 @@ export const CanvasSidebar: React.FC = () => {
                           })
                         }
                         onClick={() => handleQuickAddStepBadge(sb)}
-                        className="group flex items-center gap-2.5 h-8 px-2.5 rounded-[4px] hover:bg-[#EAEDED]/70 dark:hover:bg-[#1E2B3D] transition-colors cursor-grab active:cursor-grabbing select-none"
+                        className="group flex items-center gap-2.5 h-8 px-2.5 rounded-[7px] hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-grab active:cursor-grabbing select-none"
                         title={`${sb.label} — ${sb.desc} (Click to add or drag onto canvas)`}
                       >
-                        <GripVertical className="w-3.5 h-3.5 text-[#879596]/40 group-hover:text-[#879596] shrink-0" />
                         <div className="shrink-0 flex items-center justify-center">
                           {sb.type === 'flow-step' ? (
                             <span className="size-4 rounded-full bg-[#FF9900] text-[#0F141A] font-mono font-bold text-[10px] flex items-center justify-center">
@@ -955,37 +960,37 @@ export const CanvasSidebar: React.FC = () => {
                           )}
                         </div>
                         <div className="min-w-0 flex-1 flex items-center gap-2">
-                          <span className="text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] truncate">
+                          <span className="text-[12.5px] font-medium text-slate-700 dark:text-slate-200 truncate group-hover:text-slate-900 dark:group-hover:text-white">
                             {sb.label}
                           </span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#EAEDED]/80 dark:bg-[#0F141A] text-[#545B64] dark:text-[#879596] shrink-0">
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-white/[0.06] text-slate-400 shrink-0">
                             {sb.badge}
                           </span>
                         </div>
-                        <Plus className="w-3.5 h-3.5 text-[#545B64] dark:text-[#879596] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        <Plus className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                       </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              <div className="border-t border-[#EAEDED] dark:border-[#222D3C]" />
+              <div className="border-t border-slate-100 dark:border-white/[0.05]" />
 
-                                                  {/* Group 5: Architecture Annotations & Spec Stamps */}
+              {/* Group 5: Architecture Annotations & Spec Stamps */}
               <div className="space-y-0.5">
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => setIsAnnotationsOpen((prev) => !prev)}
-                                                    className="w-full h-7 px-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] rounded-[4px] hover:bg-[#EAEDED]/50 dark:hover:bg-[#1E2B3D]/50 cursor-pointer transition-colors"
-                                                  >
-                                                <span>Spec Stamps &amp; Annotations ({filteredAnnotations.length})</span>
-                                                <ChevronDown
-                                                  className={`w-3.5 h-3.5 transition-transform duration-200 ${isAnnotationsOpen ? 'rotate-180' : ''
-                                                    }`}
-                                                />
-                                              </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAnnotationsOpen((prev) => !prev)}
+                  className="w-full h-7 px-2 flex items-center justify-between text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-[6px] hover:bg-slate-100 dark:hover:bg-white/[0.05] cursor-pointer transition-colors"
+                >
+                  <span>Spec Stamps &amp; Annotations ({filteredAnnotations.length})</span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isAnnotationsOpen ? 'rotate-180' : ''
+                      }`}
+                  />
+                </button>
 
-                                            {isAnnotationsOpen && (
+                {isAnnotationsOpen && (
                   <div className="space-y-0.5">
                     {filteredAnnotations.map((an) => (
                       <div
@@ -1012,10 +1017,9 @@ export const CanvasSidebar: React.FC = () => {
                           else if (an.kind === 'spec-stamp') handleQuickAddSpecStamp();
                           else handleQuickAddTextBlock();
                         }}
-                        className="group flex items-center gap-2.5 h-8 px-2.5 rounded-[4px] hover:bg-[#EAEDED]/70 dark:hover:bg-[#1E2B3D] transition-colors cursor-grab active:cursor-grabbing select-none"
+                        className="group flex items-center gap-2.5 h-8 px-2.5 rounded-[7px] hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-grab active:cursor-grabbing select-none"
                         title={`${an.label} — ${an.desc} (Click to add or drag onto canvas)`}
                       >
-                        <GripVertical className="w-3.5 h-3.5 text-[#879596]/40 group-hover:text-[#879596] shrink-0" />
                         <div className="shrink-0 flex items-center justify-center">
                           {an.kind === 'note' ? (
                             <span className="size-4 rounded bg-[#F59E0B]/20 text-[#D97706] flex items-center justify-center">
@@ -1026,31 +1030,31 @@ export const CanvasSidebar: React.FC = () => {
                               <FileSpreadsheet className="w-2.5 h-2.5" />
                             </span>
                           ) : (
-                            <span className="size-4 rounded bg-[#545B64]/15 text-[#545B64] dark:text-[#879596] flex items-center justify-center">
+                            <span className="size-4 rounded bg-slate-500/15 text-slate-400 flex items-center justify-center">
                               <Type className="w-2.5 h-2.5" />
                             </span>
                           )}
                         </div>
                         <div className="min-w-0 flex-1 flex items-center gap-2">
-                          <span className="text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] truncate">
+                          <span className="text-[12.5px] font-medium text-slate-700 dark:text-slate-200 truncate group-hover:text-slate-900 dark:group-hover:text-white">
                             {an.label}
                           </span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#EAEDED]/80 dark:bg-[#0F141A] text-[#545B64] dark:text-[#879596] shrink-0">
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-white/[0.06] text-slate-400 shrink-0">
                             {an.badge}
                           </span>
                         </div>
-                        <Plus className="w-3.5 h-3.5 text-[#545B64] dark:text-[#879596] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        <Plus className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                       </div>
                     ))}
                   </div>
                 )}
-                                        </div>
-                                  </>
+              </div>
+            </>
           )}
-                                </div>
+        </div>
       )}
-                              </aside>
-                            );
-                          };
+    </aside>
+  );
+};
 
-                          export default CanvasSidebar;
+export default CanvasSidebar;

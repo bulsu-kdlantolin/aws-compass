@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { AlignLeft, ChevronRight } from 'lucide-react';
+import { m } from 'motion/react';
+import { SPRING_SMOOTH } from '../../utils/motionTokens';
 
 export interface TocItem {
   id: string;
@@ -71,59 +72,51 @@ export const DocToc: React.FC<DocTocProps> = ({
   return (
     <nav
       aria-label="Table of contents"
-      className={`w-60 shrink-0 select-none hidden xl:block sticky top-6 ${className}`}
+      className={`w-52 shrink-0 select-none hidden xl:block sticky top-20 ${className}`}
     >
-      <div
-        style={{
-          backgroundColor: 'var(--aws-card-bg)',
-          borderColor: 'var(--aws-border)',
-        }}
-        className="rounded-[8px] border p-3.5 shadow-none"
-      >
-        <div className="flex items-center gap-1.5 pb-2.5 mb-2 border-b border-[var(--aws-border)] text-[11px] font-bold uppercase tracking-wider text-[var(--aws-text-muted)]">
-          <AlignLeft className="w-3.5 h-3.5 text-[#FF9900]" />
-          <span>Contents</span>
-        </div>
+      <div className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 mb-2.5 tracking-normal">
+        On this page
+      </div>
 
-        <ul className="space-y-1 relative text-[12px]">
+      <div className="relative border-l border-slate-200 dark:border-white/[0.08] py-0.5">
+        <ul className="space-y-1 relative">
           {items.map((item) => {
             const isActive = activeId === item.id;
 
             return (
               <li key={item.id} className="relative">
+                {isActive && (
+                  <m.span
+                    layoutId="toc-active-bar"
+                    className="absolute -left-[1px] top-1 bottom-1 w-[2px] bg-[#FF9900] rounded-full pointer-events-none"
+                    transition={SPRING_SMOOTH}
+                  />
+                )}
                 <button
                   type="button"
                   onClick={() => scrollToSection(item.id)}
-                  className={`w-full text-left py-1 px-2 rounded-[4px] transition-all flex items-center justify-between group cursor-pointer ${
-                    isActive
-                      ? 'bg-[#FF9900]/10 text-[#FF9900] font-semibold pl-2.5'
-                      : 'text-[var(--aws-text-muted)] hover:text-[var(--aws-text-primary)] hover:bg-[var(--aws-page-bg)]'
+                className={`text-[12.5px] py-1 pl-3.5 transition-colors block text-left w-full truncate cursor-pointer ${isActive
+                  ? 'text-[#FF9900] font-medium'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
-                >
-                  <span className="truncate flex items-center gap-1.5">
-                    {item.number && (
-                      <span className="font-mono text-[10px] opacity-60">
-                        {item.number}.
-                      </span>
-                    )}
-                    <span className="truncate">{item.label}</span>
-                  </span>
-
-                  {isActive && (
-                    <ChevronRight
-                      className="w-3.5 h-3.5 text-[#FF9900] shrink-0 animate-in fade-in duration-150"
-                      strokeWidth={2.5}
-                    />
+                title={item.label}
+                    >
+                <span className="truncate flex items-center gap-1.5">
+                  {item.number && (
+                    <span className="font-mono text-[10px] opacity-60">
+                      {item.number}.
+                    </span>
                   )}
-                </button>
+                  <span className="truncate">{item.label}</span>
+                </span>
+              </button>
               </li>
-            );
+        );
           })}
-        </ul>
-      </div>
-    </nav>
+      </ul>
+    </div>
+    </nav >
   );
 };
 
 export default DocToc;
-

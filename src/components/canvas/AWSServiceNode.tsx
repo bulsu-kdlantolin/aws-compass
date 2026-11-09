@@ -1,9 +1,12 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useMemo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { X, Check } from 'lucide-react';
 import type { CanvasNodeData } from '../../types/aws';
 import { useCanvasStore } from '../../store/useCanvasStore';
+import { useCompassStore } from '../../store/useCompassStore';
 import { AWSServiceIcon } from '../icons/AWSServiceIcon';
+import { getAWSCategoryColor } from '../../utils/awsCategoryColors';
+import { estimateSingleNodeCost } from '../../utils/costEstimator';
 
 export const AWSServiceNode = memo((props: NodeProps) => {
   const nodeData = props.data as unknown as CanvasNodeData;
@@ -14,6 +17,9 @@ export const AWSServiceNode = memo((props: NodeProps) => {
   const removeNode = useCanvasStore((s) => s.removeNode);
   const updateNodeProperties = useCanvasStore((s) => s.updateNodeProperties);
   const openContextMenu = useCanvasStore((s) => s.openContextMenu);
+  const nodes = useCanvasStore((s) => s.nodes);
+  const canvasWorkloadTier = useCanvasStore((s) => s.canvasWorkloadTier);
+  const theme = useCompassStore((s) => s.theme);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingSubtitle, setIsEditingSubtitle] = useState(false);
@@ -21,6 +27,13 @@ export const AWSServiceNode = memo((props: NodeProps) => {
   const [subtitleDraft, setSubtitleDraft] = useState(nodeData.roleSubtitle || nodeData.customNotes || '');
 
   const isCurrentSelected = selected || isSelected;
+
+  // Live node cost estimate
+  const nodeCost = useMemo(() => {
+    const currentNodeItem = nodes.find((n) => n.id === id);
+    if (!currentNodeItem) return null;
+    return estimateSingleNodeCost(currentNodeItem, nodes, canvasWorkloadTier);
+  }, [id, nodes, canvasWorkloadTier]);
 
   const handleInspectClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -63,86 +76,53 @@ export const AWSServiceNode = memo((props: NodeProps) => {
     setIsEditingSubtitle(false);
   };
 
+  const categoryColor = getAWSCategoryColor(nodeData.category || 'Compute', theme);
+
   const envColorMap: Record<string, string> = {
-    Prod: '#DD344C',
+    Prod: '#EF4444',
     Staging: '#ED7100',
     Dev: '#0972D3',
   };
+
+  const displaySubtitle =
+    nodeData.roleSubtitle ||
+    nodeData.customNotes ||
+    (nodeData.isActor ? 'External Actor' : nodeData.serviceId || nodeData.category || 'AWS Service');
 
   return (
     <div
       onClick={handleInspectClick}
       onContextMenu={handleContextMenu}
-      className="relative flex flex-col items-center group select-none cursor-pointer"
-      style={{ width: '144px' }}
-      title={`${nodeData.customTitle || nodeData.label} - Click to inspect, double-click text to edit`}
+      className={`group relative w-[190px] rounded-[12px] p-2.5 bg-white/95 dark:bg-[#131B2E]/95 backdrop-blur-md border select-none cursor-pointer transition-all duration-150 ${isCurrentSelected
+          ? 'ring-2 ring-[#FF9900]/25 !border-[#FF9900] shadow-[0_0_20px_rgba(255,153,0,0.18)]'
+          : 'border-slate-200/90 dark:border-white/[0.09] shadow-[0_4px_16px_-2px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.45)] hover:border-slate-300 dark:hover:border-white/20'
+        }`}
+      title={`${nodeData.customTitle || nodeData.label} — Click to inspect, double-click text to edit`}
     >
-      <div className="flex flex-col items-center w-full">
+        {/* Top Accent Hairline Tinted with Official AWS Category Color */}
+        <div
+          style={{ backgroundColor: categoryColor }}
+          className="absolute -top-px left-3 right-3 h-[2px] rounded-full opacity-90"
+          aria-hidden="true"
+        />
+
         {/* Delete button (hover only) */}
         <button
           type="button"
           onClick={handleDeleteClick}
-          style={{
-            backgroundColor: 'var(--aws-card-bg)',
-            borderColor: 'var(--aws-border)',
-            color: 'var(--aws-text-muted)',
-          }}
-          className="absolute -top-2.5 -right-2 p-0.5 rounded-full border shadow-sm opacity-0 group-hover:opacity-100 hover:text-[#DD344C] hover:border-[#DD344C] transition-opacity cursor-pointer z-20"
-          title="Remove node"
+          className="absolute -top-2 -right-2 p-1 rounded-full bg-white dark:bg-[#1E293B] border border-slate-200/90 dark:border-white/[0.1] shadow-xs opacity-0 group-hover:opacity-100 hover:text-[#EF4444] hover:border-[#EF4444]/40 text-slate-400 transition-opacity cursor-pointer z-20"
+          title="Remove node from canvas"
         >
           <X className="w-3 h-3" />
         </button>
 
-        {/* Badges Bar (Environment & AZ) */}
-        <div className="flex items-center gap-1 mb-1 pointer-events-none">
-          {nodeData.env && nodeData.env !== 'None' && (
-            <span
-              style={{ backgroundColor: envColorMap[nodeData.env] || '#545B64' }}
-              className="text-[9px] font-bold text-white uppercase px-1.5 py-0.2 rounded-[3px] tracking-wider shadow-xs"
-            >
-              {nodeData.env}
-            </span>
-          )}
-          {nodeData.az && (
-            <span className="text-[9px] font-mono text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)] px-1 py-0.2 rounded border border-[var(--aws-border)] shadow-xs">
-              {nodeData.az}
-            </span>
-          )}
-        </div>
-
-        {/* Centered 48x48px Official AWS Service or Actor Icon Tile */}
-        < div
-          style={{
-            boxShadow: isCurrentSelected
-              ? '0 0 0 2px #FF9900, 0 4px 12px rgba(255, 153, 0, 0.3)'
-              : '0 2px 8px rgba(0, 0, 0, 0.15)',
-          }}
-          className={`relative w-12 h-12 rounded-[4px] flex items-center justify-center motion-safe:transition-[box-shadow,transform] duration-150 ease-out ${isCurrentSelected ? 'motion-safe:scale-105' : 'motion-safe:hover:scale-105'
-            }`}
-        >
-          {nodeData.isActor ? (
-            <AWSServiceIcon
-              variant="actor"
-              actorId={nodeData.actorType || 'user-browser'}
-              size={48}
-            />
-          ) : (
-            <AWSServiceIcon
-              serviceId={nodeData.serviceId}
-              category={nodeData.category}
-              size={48}
-              variant="service"
-            />
-          )}
-
-          {/* 4-Way Directional Connection Handles with Explicit IDs */}
+          {/* 4-Way Directional Connection Handles */}
           <Handle
             type="source"
             position={Position.Top}
             id="top"
             isConnectable={true}
-            style={{ backgroundColor: 'var(--aws-interactive)' }}
-            className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            className="!w-2.5 !h-2.5 !rounded-full !border-2 !border-white dark:!border-[#131B2E] !bg-[#0972D3] dark:!bg-[#539FE5] opacity-0 group-hover:opacity-100 hover:scale-125 transition-all"
             title="Connect (Top)"
           />
           <Handle
@@ -150,8 +130,7 @@ export const AWSServiceNode = memo((props: NodeProps) => {
             position={Position.Right}
             id="right"
             isConnectable={true}
-            style={{ backgroundColor: 'var(--aws-interactive)' }}
-            className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            className="!w-2.5 !h-2.5 !rounded-full !border-2 !border-white dark:!border-[#131B2E] !bg-[#0972D3] dark:!bg-[#539FE5] opacity-0 group-hover:opacity-100 hover:scale-125 transition-all"
             title="Connect (Right)"
           />
           <Handle
@@ -159,8 +138,7 @@ export const AWSServiceNode = memo((props: NodeProps) => {
             position={Position.Bottom}
             id="bottom"
             isConnectable={true}
-            style={{ backgroundColor: 'var(--aws-interactive)' }}
-            className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            className="!w-2.5 !h-2.5 !rounded-full !border-2 !border-white dark:!border-[#131B2E] !bg-[#0972D3] dark:!bg-[#539FE5] opacity-0 group-hover:opacity-100 hover:scale-125 transition-all"
             title="Connect (Bottom)"
           />
           <Handle
@@ -168,107 +146,146 @@ export const AWSServiceNode = memo((props: NodeProps) => {
             position={Position.Left}
             id="left"
             isConnectable={true}
-            style={{ backgroundColor: 'var(--aws-interactive)' }}
-            className="!w-2.5 !h-2.5 !border-2 !border-[var(--aws-card-bg)] !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            className="!w-2.5 !h-2.5 !rounded-full !border-2 !border-white dark:!border-[#131B2E] !bg-[#0972D3] dark:!bg-[#539FE5] opacity-0 group-hover:opacity-100 hover:scale-125 transition-all"
             title="Connect (Left)"
           />
-        </div>
 
-        {/* Service Title (12px bold sentence case, double-click inline edit) */}
-        <div className="mt-2 w-full flex justify-center">
-          {isEditingTitle ? (
-            <div className="flex items-center gap-1 w-full px-1">
-              <input
-                type="text"
-                value={titleDraft}
-                onChange={(e) => setTitleDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleCommitTitle();
-                  if (e.key === 'Escape') setIsEditingTitle(false);
-                }}
-                onBlur={() => handleCommitTitle()}
-                autoFocus
-                className="w-full text-center text-[12px] font-bold bg-[var(--aws-card-bg)] text-[var(--aws-text-primary)] border border-[var(--aws-interactive)] rounded px-1 py-0.5 outline-none shadow-xs"
-              />
-              <button
-                type="button"
-                onClick={handleCommitTitle}
-                className="text-[#1D8102] hover:opacity-80 p-0.5"
-              >
-                <Check className="w-3.5 h-3.5" />
-              </button>
+          {/* Card Header: 36x36 Icon + Title & Subtitle */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-[8px] bg-slate-50 dark:bg-white/[0.04] p-0.5 border border-slate-200/60 dark:border-white/[0.06] shadow-2xs shrink-0 flex items-center justify-center">
+              {nodeData.isActor ? (
+                <AWSServiceIcon
+                  variant="actor"
+                  actorId={nodeData.actorType || 'user-browser'}
+                  size={32}
+                />
+              ) : (
+                <AWSServiceIcon
+                  serviceId={nodeData.serviceId}
+                  category={nodeData.category}
+                  size={32}
+                  variant="service"
+                />
+              )}
             </div>
-          ) : (
-            <div
-              onDoubleClick={(e) => {
-                e.stopPropagation();
-                setTitleDraft(nodeData.customTitle || nodeData.label);
-                setIsEditingTitle(true);
-              }}
-              style={{ color: 'var(--aws-text-primary)' }}
-              className="font-bold text-[12px] leading-[1.3] text-center w-[140px] break-words line-clamp-2 hover:underline decoration-dotted cursor-text"
-              title="Double-click to edit title"
-            >
-              {nodeData.customTitle || nodeData.label}
-            </div>
+
+              <div className="min-w-0 flex-1">
+                {isEditingTitle ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="text"
+                        value={titleDraft}
+                        onChange={(e) => setTitleDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleCommitTitle();
+                          if (e.key === 'Escape') setIsEditingTitle(false);
+                        }}
+                        onBlur={() => handleCommitTitle()}
+                        autoFocus
+                        className="w-full text-[12px] font-semibold bg-white dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 border border-[#0972D3] dark:border-[#539FE5] rounded px-1 py-0.5 outline-none shadow-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCommitTitle}
+                        className="text-[#16A34A] hover:opacity-80 p-0.5"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    ) : (
+                    <div
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        setTitleDraft(nodeData.customTitle || nodeData.label);
+                        setIsEditingTitle(true);
+                      }}
+                      className="text-[12.5px] font-semibold text-slate-900 dark:text-slate-100 leading-tight truncate hover:underline decoration-dotted cursor-text"
+                      title="Double-click to edit title"
+                    >
+                      {nodeData.customTitle || nodeData.label}
+                    </div>
           )}
-        </div >
 
-        {/* Resource Identifier / Subtitle (11px monospace, line-clamp-2, double-click inline edit) */}
-        <div className="mt-0.5 w-full flex justify-center">
-          {isEditingSubtitle ? (
-            <div className="flex items-center gap-1 w-full px-1">
-              <input
-                type="text"
-                value={subtitleDraft}
-                onChange={(e) => setSubtitleDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleCommitSubtitle();
-                  if (e.key === 'Escape') setIsEditingSubtitle(false);
-                }}
-                onBlur={() => handleCommitSubtitle()}
-                autoFocus
-                className="w-full text-center text-[11px] font-mono bg-[var(--aws-card-bg)] text-[var(--aws-text-muted)] border border-[var(--aws-interactive)] rounded px-1 py-0.5 outline-none shadow-xs"
-              />
-              <button
-                type="button"
-                onClick={handleCommitSubtitle}
-                className="text-[#1D8102] hover:opacity-80 p-0.5"
-              >
-                <Check className="w-3 h-3" />
-              </button>
-            </div>
-          ) : (
-            <div
-              onDoubleClick={(e) => {
-                e.stopPropagation();
-                setSubtitleDraft(nodeData.roleSubtitle || nodeData.customNotes || '');
-                setIsEditingSubtitle(true);
-              }}
-              style={{ color: 'var(--aws-text-muted)' }}
-              className="font-mono text-[11px] leading-[1.3] text-center w-[140px] break-words line-clamp-2 opacity-85 hover:underline decoration-dotted cursor-text"
-              title="Double-click to edit role / subtitle"
-            >
-              {nodeData.roleSubtitle || nodeData.customNotes || (nodeData.isActor ? 'Actor' : nodeData.serviceId)}
-            </div>
-          )
-          }
-        </div >
+                  {isEditingSubtitle ? (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <input
+                          type="text"
+                          value={subtitleDraft}
+                          onChange={(e) => setSubtitleDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleCommitSubtitle();
+                            if (e.key === 'Escape') setIsEditingSubtitle(false);
+                          }}
+                          onBlur={() => handleCommitSubtitle()}
+                          autoFocus
+                          className="w-full text-[11px] font-mono bg-white dark:bg-[#0B0F19] text-slate-500 dark:text-slate-400 border border-[#0972D3] dark:border-[#539FE5] rounded px-1 py-0.5 outline-none shadow-xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleCommitSubtitle}
+                          className="text-[#16A34A] hover:opacity-80 p-0.5"
+                        >
+                          <Check className="w-3 h-3" />
+                        </button>
+                      </div>
+                      ) : (
+                      <div
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          setSubtitleDraft(nodeData.roleSubtitle || nodeData.customNotes || '');
+                          setIsEditingSubtitle(true);
+                        }}
+                        className="text-[11px] text-slate-500 dark:text-slate-400 font-normal truncate mt-0.5 hover:underline decoration-dotted cursor-text"
+                        title="Double-click to edit subtitle / role"
+                      >
+                        {displaySubtitle}
+                      </div>
+                  )}
+                </div>
+              </div>
 
-        {/* Custom Metadata Pill (e.g. 10.0.1.24 or kms:Encrypted) */}
-        {
-          nodeData.metadataPill && (
-            <div className="mt-1">
-              <span className="text-[10px] font-mono text-[var(--aws-text-muted)] bg-[var(--aws-card-bg)] px-1.5 py-0.5 rounded-[4px] border border-[var(--aws-border)] shadow-xs max-w-[130px] truncate block text-center">
-                {nodeData.metadataPill}
-              </span>
+              {/* Bottom Micro-Footer */}
+              <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-white/[0.05] flex items-center justify-between text-[10px] font-mono">
+                {/* Left: Environment or AZ Badge */}
+                <div className="flex items-center gap-1 min-w-0 truncate">
+                  {nodeData.env && nodeData.env !== 'None' ? (
+                    <span
+                      style={{ backgroundColor: envColorMap[nodeData.env] || '#64748B' }}
+                      className="text-[9px] font-bold text-white uppercase px-1 py-0.2 rounded-[3px] tracking-wider shrink-0"
+                    >
+                      {nodeData.env}
+                    </span>
+                  ) : nodeData.az ? (
+                    <span className="text-slate-500 dark:text-slate-400 truncate">
+                      {nodeData.az}
+                    </span>
+                  ) : nodeData.metadataPill ? (
+                    <span className="text-slate-500 dark:text-slate-400 truncate">
+                      {nodeData.metadataPill}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400 dark:text-slate-500 truncate">
+                      {nodeData.category || 'Cloud'}
+                    </span>
+                  )}
+                </div>
+
+                {/* Right: Live Node Cost or Tier Badge */}
+                <div className="shrink-0 pl-1">
+                  {nodeCost && nodeCost.monthlyCost > 0 ? (
+                    <span className="font-semibold text-[#FF9900] tabular-nums">
+                      ~${nodeCost.monthlyCost}/mo
+                    </span>
+                  ) : nodeCost && nodeCost.effectiveTier === 'free' ? (
+                    <span className="text-slate-400 dark:text-slate-500">Free</span>
+                  ) : (
+                    <span className="text-slate-400 dark:text-slate-500">T1</span>
+                  )}
+                </div>
+              </div>
             </div>
-          )
-        }
-      </div>
-    </div>
-  );
+            );
 });
 
-AWSServiceNode.displayName = 'AWSServiceNode';
-export default AWSServiceNode;
+            AWSServiceNode.displayName = 'AWSServiceNode';
+            export default AWSServiceNode;
