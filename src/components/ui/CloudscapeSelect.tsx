@@ -267,7 +267,7 @@ export function CloudscapeSelect<T extends string = string>({
         aria-activedescendant={
           isOpen && highlightedIndex >= 0 ? `opt-${uniqueId}-${highlightedIndex}` : undefined
         }
-        className={`group ${heightClass} w-full px-2.5 rounded-[6px] bg-[#F8F9FA] dark:bg-[#0F141A] hover:bg-[#EAEDED]/60 dark:hover:bg-[#192534] border border-[#D5DBDB] dark:border-[#2A3647] data-[open=true]:border-[#0972D3] dark:data-[open=true]:border-[#539FE5] flex items-center justify-between text-[#16191F] dark:text-[#EAEDED] transition-colors duration-150 outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
+        className={`group ${heightClass} w-full px-2.5 rounded-[6px] bg-[var(--aws-field-bg)] hover:bg-[var(--aws-control-hover)] border border-[var(--aws-control-border)] data-[open=true]:border-[var(--aws-interactive)] flex items-center justify-between text-[var(--aws-field-text)] transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--aws-interactive)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
       >
         <span className="flex items-center gap-2 truncate text-left min-w-0 flex-1 mr-1">
           {selectedOption?.icon}
@@ -277,7 +277,7 @@ export function CloudscapeSelect<T extends string = string>({
         </span>
 
         <ChevronDown
-          className="size-3.5 text-[#879596] shrink-0 transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] group-data-[open=true]:rotate-180"
+          className="size-3.5 text-[var(--aws-control-muted-text)] shrink-0 transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] group-data-[open=true]:rotate-180"
           aria-hidden="true"
         />
       </button>
@@ -304,7 +304,7 @@ export function CloudscapeSelect<T extends string = string>({
               zIndex: 9999,
               overscrollBehavior: 'contain',
             }}
-            className={`max-h-64 overflow-y-auto custom-scrollbar rounded-[10px] p-1 border shadow-[0_12px_32px_rgba(0,0,0,0.22)] backdrop-blur-md bg-white dark:bg-[#141C28] border-[#D5DBDB] dark:border-[#2A3647] text-[#16191F] dark:text-[#EAEDED] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] ${isOpen
+            className={`max-h-64 overflow-y-auto custom-scrollbar rounded-[10px] p-1 border shadow-[0_12px_32px_rgba(0,0,0,0.22)] backdrop-blur-md bg-[var(--aws-popover-bg)] border-[var(--aws-control-border)] text-[var(--aws-field-text)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] ${isOpen
               ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
               : 'opacity-0 scale-[0.96] -translate-y-1.5 pointer-events-none'
               }`}
@@ -322,10 +322,10 @@ export function CloudscapeSelect<T extends string = string>({
                   onClick={() => handleSelect(opt.value)}
                   onMouseEnter={() => setHighlightedIndex(idx)}
                   className={`px-2.5 py-1.5 rounded-[6px] flex items-center justify-between gap-2.5 text-[12px] transition-colors duration-100 cursor-pointer select-none ${isSelected
-                    ? 'bg-[#0972D3]/10 dark:bg-[#539FE5]/15 text-[#0972D3] dark:text-[#539FE5] font-semibold'
+                    ? 'bg-[var(--aws-interactive)]/10 text-[var(--aws-interactive)] font-semibold'
                     : isHighlighted
-                      ? 'bg-[#F2F3F3] dark:bg-[#1E2B3D] text-[#16191F] dark:text-[#EAEDED]'
-                      : 'text-[#16191F] dark:text-[#EAEDED] hover:bg-[#F2F3F3] dark:hover:bg-[#1E2B3D]'
+                      ? 'bg-[var(--aws-popover-hover)] text-[var(--aws-field-text)]'
+                      : 'text-[var(--aws-field-text)] hover:bg-[var(--aws-popover-hover)]'
                     }`}
                 >
                   <div className="flex items-center gap-2 truncate flex-1 min-w-0">
@@ -333,7 +333,7 @@ export function CloudscapeSelect<T extends string = string>({
                     <div className="truncate">
                       <div className="truncate leading-tight">{opt.label}</div>
                       {opt.description && (
-                        <div className="text-[11px] font-normal truncate text-[#545B64] dark:text-[#879596] opacity-90 mt-0.5">
+                        <div className="text-[11px] font-normal truncate text-[var(--aws-control-muted-text)] opacity-90 mt-0.5">
                           {opt.description}
                         </div>
                       )}
@@ -342,14 +342,14 @@ export function CloudscapeSelect<T extends string = string>({
 
                   <div className="flex items-center gap-2 shrink-0">
                     {opt.count !== undefined && (
-                      <span className="text-[11px] font-mono tabular-nums text-[#545B64] dark:text-[#879596] font-medium">
+                      <span className="text-[11px] font-mono tabular-nums text-[var(--aws-control-muted-text)] font-medium">
                         {opt.count}
                       </span>
                     )}
                     {opt.badge}
                     {isSelected && (
                       <Check
-                        className="size-3.5 text-[#0972D3] dark:text-[#539FE5]"
+                        className="size-3.5 text-[var(--aws-interactive)]"
                         aria-hidden="true"
                       />
                     )}

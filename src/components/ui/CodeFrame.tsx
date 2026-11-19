@@ -22,7 +22,7 @@ export function highlightAwsCliLine(line: string): React.ReactNode {
 
   // Comments
   if (line.trim().startsWith('#')) {
-    return <span className="text-[#545B64] dark:text-[#879596] italic">{line}</span>;
+    return <span className="text-[var(--aws-control-muted-text)] italic">{line}</span>;
   }
 
   // Tokenize line by whitespace and quotes
@@ -81,7 +81,7 @@ export function highlightAwsCliLine(line: string): React.ReactNode {
         }
 
         return (
-          <span key={idx} className="text-[#16191F] dark:text-[#EAEDED]">
+          <span key={idx} className="text-[var(--aws-field-text)]">
             {token}
           </span>
         );
@@ -124,7 +124,7 @@ export const CodeFrame: React.FC<CodeFrameProps> = ({
         backgroundColor: 'var(--aws-code-bg, #0F141A)',
         borderColor: 'var(--aws-code-border, #242F3D)',
       }}
-      className={`rounded-[6px] border border-[#D5DBDB] dark:border-[#242F3D] bg-[#F8F9FA] dark:bg-[#0F141A] overflow-hidden font-mono text-[12px] leading-[20px] my-3 select-text shadow-2xs ${className}`}
+      className={`rounded-[6px] border border-[#D5DBDB] dark:border-[#242F3D] bg-[var(--aws-field-bg)] overflow-hidden font-mono text-[12px] leading-[20px] my-3 select-text shadow-2xs ${className}`}
     >
       {/* Top Utility Header */}
       <div
@@ -133,9 +133,9 @@ export const CodeFrame: React.FC<CodeFrameProps> = ({
           backgroundColor: 'var(--aws-code-header-bg, #161E2D)',
           color: 'var(--aws-code-muted, #879596)',
         }}
-        className="px-3.5 py-1.5 border-b border-[#D5DBDB] dark:border-[#242F3D] bg-[#EAEDED] dark:bg-[#161E2D] flex items-center justify-between text-[11px] select-none text-[#545B64] dark:text-[#879596]"
+        className="px-3.5 py-1.5 border-b border-[#D5DBDB] dark:border-[#242F3D] bg-[#EAEDED] dark:bg-[#161E2D] flex items-center justify-between text-[11px] select-none text-[var(--aws-control-muted-text)]"
       >
-        <div className="flex items-center gap-2 font-medium text-[#16191F] dark:text-[#EAEDED]">
+        <div className="flex items-center gap-2 font-medium text-[var(--aws-field-text)]">
           <Terminal className="w-3.5 h-3.5 text-[#0972D3] dark:text-[#539FE5]" />
           <span>{title || language}</span>
         </div>
@@ -148,7 +148,7 @@ export const CodeFrame: React.FC<CodeFrameProps> = ({
           title={copied ? 'Copied to clipboard' : 'Copy code'}
           className={`relative inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-sans font-medium rounded-[4px] border transition-all duration-150 cursor-pointer enabled:active:scale-[0.96] ${copied
             ? 'border-[#1D8102]/60 bg-[#1D8102]/15 text-[#1D8102] dark:text-[#38D9A9]'
-            : 'border-transparent hover:border-[#D5DBDB] dark:hover:border-[#354150] hover:bg-[#D5DBDB]/50 dark:hover:bg-[#1E2B3D] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
+            : 'border-transparent hover:border-[#D5DBDB] dark:hover:border-[#354150] hover:bg-[#D5DBDB]/50 dark:hover:bg-[#1E2B3D] text-[var(--aws-control-muted-text)] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
             }`}
         >
           <AnimatedIcon iconKey={copied ? 'copied' : 'idle'} size={14} className="size-3.5">
@@ -165,7 +165,7 @@ export const CodeFrame: React.FC<CodeFrameProps> = ({
       {/* Numbered Code Body */}
       <pre
         style={{ fontSize: codeFontSize }}
-        className="p-3 m-0 overflow-x-auto custom-scrollbar bg-transparent text-[#16191F] dark:text-[#EAEDED] leading-[20px]"
+        className="p-3 m-0 overflow-x-auto custom-scrollbar bg-transparent text-[var(--aws-field-text)] leading-[20px]"
       >
         <code className="block min-w-full">
           {lines.map((line, idx) => {

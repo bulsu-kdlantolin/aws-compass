@@ -96,7 +96,7 @@ export const DocToc: React.FC<DocTocProps> = ({
                   type="button"
                   onClick={() => scrollToSection(item.id)}
                 className={`text-[12.5px] py-1 pl-3.5 transition-colors block text-left w-full truncate cursor-pointer ${isActive
-                  ? 'text-[#FF9900] font-medium'
+                  ? 'text-[var(--aws-brand-text)] font-medium'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 title={item.label}

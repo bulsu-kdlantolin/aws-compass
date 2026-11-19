@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 export interface SidebarResizeHandleProps {
   sidebarWidth: number;
@@ -18,16 +18,16 @@ export const SidebarResizeHandle: React.FC<SidebarResizeHandleProps> = ({
   className = '',
 }) => {
   const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef<{ startX: number; startWidth: number }>({
-    startX: 0,
-    startWidth: sidebarWidth,
-  });
+  const dragStartRef = useRef<{ pointerId: number; startX: number; startWidth: number } | null>(null);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
     e.preventDefault();
     e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
     setIsDragging(true);
     dragStartRef.current = {
+      pointerId: e.pointerId,
       startX: e.clientX,
       startWidth: sidebarWidth,
     };
@@ -39,47 +39,48 @@ export const SidebarResizeHandle: React.FC<SidebarResizeHandleProps> = ({
     onWidthChange(defaultWidth);
   };
 
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isDragging) return;
-      const delta = e.clientX - dragStartRef.current.startX;
-      const maxAvailable =
-        typeof window !== 'undefined'
-          ? Math.min(maxWidth, Math.max(window.innerWidth - 340, minWidth))
-          : maxWidth;
-      const targetWidth = Math.min(
-        Math.max(dragStartRef.current.startWidth + delta, minWidth),
-        maxAvailable
-      );
-      onWidthChange(Math.round(targetWidth));
-    },
-    [isDragging, minWidth, maxWidth, onWidthChange]
-  );
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragStartRef.current;
+    if (!isDragging || drag?.pointerId !== e.pointerId) return;
+    const delta = e.clientX - drag.startX;
+    const maxAvailable =
+      typeof window !== 'undefined'
+        ? Math.min(maxWidth, Math.max(window.innerWidth - 340, minWidth))
+        : maxWidth;
+    const targetWidth = Math.min(
+      Math.max(drag.startWidth + delta, minWidth),
+      maxAvailable
+    );
+    onWidthChange(Math.round(targetWidth));
+  };
 
-  const handleMouseUp = useCallback(() => {
-    if (isDragging) {
-      setIsDragging(false);
-    }
-  }, [isDragging]);
+  const finishPointerDrag = (pointerId?: number) => {
+    if (pointerId !== undefined && dragStartRef.current?.pointerId !== pointerId) return;
+    dragStartRef.current = null;
+    setIsDragging(false);
+  };
 
   useEffect(() => {
+    const handleWindowBlur = () => {
+      dragStartRef.current = null;
+      setIsDragging(false);
+    };
+
     if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove, { passive: false });
-      window.addEventListener('mouseup', handleMouseUp);
       document.body.style.userSelect = 'none';
       document.body.style.cursor = 'col-resize';
+      window.addEventListener('blur', handleWindowBlur);
     } else {
       document.body.style.userSelect = '';
       document.body.style.cursor = '';
     }
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
       document.body.style.userSelect = '';
       document.body.style.cursor = '';
+      window.removeEventListener('blur', handleWindowBlur);
     };
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+  }, [isDragging]);
 
   // Keyboard accessibility
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -114,12 +115,16 @@ export const SidebarResizeHandle: React.FC<SidebarResizeHandleProps> = ({
         aria-label="Resize sidebar width"
         aria-valuenow={sidebarWidth}
         aria-valuemin={minWidth}
-        aria-valuemax={maxWidth}
+        aria-valuemax={Math.min(maxWidth, Math.max(window.innerWidth - 340, minWidth))}
         tabIndex={0}
-        onMouseDown={handleMouseDown}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={(e) => finishPointerDrag(e.pointerId)}
+        onPointerCancel={(e) => finishPointerDrag(e.pointerId)}
+        onLostPointerCapture={(e) => finishPointerDrag(e.pointerId)}
         onDoubleClick={handleDoubleClick}
         onKeyDown={handleKeyDown}
-        className={`absolute top-0 right-0 bottom-0 w-2 -mr-1 z-50 cursor-col-resize group select-none outline-none focus-visible:ring-1 focus-visible:ring-[#FF9900] ${
+        className={`absolute top-0 right-0 bottom-0 w-6 -mr-3 z-50 cursor-col-resize group select-none touch-none outline-none focus-visible:ring-2 focus-visible:ring-[var(--aws-brand)] ${
           isDragging ? 'pointer-events-auto' : ''
         } ${className}`}
         title={`Drag to adjust sidebar width (Double-click or Enter to reset to ${defaultWidth}px)`}
@@ -134,13 +139,6 @@ export const SidebarResizeHandle: React.FC<SidebarResizeHandleProps> = ({
         />
       </div>
 
-      {/* Global transparent drag shield to intercept pointer events over ReactFlow / iframe */}
-      {isDragging && (
-        <div
-          className="fixed inset-0 z-[99999] cursor-col-resize select-none bg-transparent"
-          aria-hidden="true"
-        />
-      )}
     </>
   );
 };

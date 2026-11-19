@@ -481,7 +481,7 @@ export const ServiceCatalog: React.FC = React.memo(() => {
                   <button
                     type="button"
                     onClick={() => toggleCategory(cat)}
-                    className="flex items-center gap-1.5 min-w-0 flex-1 text-left cursor-pointer focus:outline-none"
+                    className="flex items-center gap-1.5 min-w-0 flex-1 rounded-sm text-left cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--aws-interactive)]"
                   >
                     <AnimatedIcon iconKey={isCollapsed ? 'collapsed' : 'expanded'} size={14}>
                       <ChevronRight

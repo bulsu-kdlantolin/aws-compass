@@ -7,16 +7,20 @@ import {
 } from './awsOfficialVectors';
 import { getAWSServiceIconUrl, getAWSGroupIconUrl } from './awsIconRegistry';
 import { useCompassStore } from '../../store/useCompassStore';
-import { SEED_SERVICES } from '../../db/seedServices';
-
-// Precomputed category lookup map to eliminate store subscriptions across hundreds of icons
-const SERVICE_CATEGORY_CACHE = new Map<string, string>();
-for (const s of SEED_SERVICES) {
-  SERVICE_CATEGORY_CACHE.set(s.id.toLowerCase(), s.category);
-}
 
 // Global cache for failed asset URLs so an icon only ever fails once across the entire session
 const globalFailedUrls = new Set<string>();
+let cachedServices: ReturnType<typeof useCompassStore.getState>['services'] | null = null;
+let serviceCategoryCache = new Map<string, string>();
+
+function getCachedServiceCategory(serviceId: string): string | undefined {
+  const services = useCompassStore.getState().services;
+  if (services !== cachedServices) {
+    cachedServices = services;
+    serviceCategoryCache = new Map(services.map((service) => [service.id.toLowerCase(), service.category]));
+  }
+  return serviceCategoryCache.get(serviceId.toLowerCase());
+}
 
 export interface AWSServiceIconProps {
   serviceId?: string;
@@ -124,8 +128,8 @@ export interface AWSServiceIconProps {
       // Service / Resource Icon Variant
       const resolvedCategory =
         category ||
-        SERVICE_CATEGORY_CACHE.get(normalizedKey) ||
-        useCompassStore.getState().services.find((s) => s.id === normalizedKey || s.id === serviceId)?.category ||
+        getCachedServiceCategory(normalizedKey) ||
+        getCachedServiceCategory(serviceId || '') ||
         '';
 
       const vectorDef =

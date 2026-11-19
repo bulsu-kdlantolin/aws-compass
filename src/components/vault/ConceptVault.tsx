@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, memo } from 'react';
+import React, { useState, useMemo, useRef, memo, useEffect } from 'react';
 import Markdown from 'react-markdown';
 import {
   ExternalLink,
@@ -23,8 +23,6 @@ import { useCanvasStore } from '../../store/useCanvasStore';
 import { useCompareStore } from '../../store/useCompareStore';
 import type { AWSService } from '../../types/aws';
 import { MermaidViewer } from './MermaidViewer';
-import { SEED_SERVICES } from '../../db/seedServices';
-import { SEED_BLUEPRINTS } from '../../db/seedBlueprints';
 import { AWSServiceIcon } from '../icons/AWSServiceIcon';
 import { ServiceCatalog } from '../catalog/ServiceCatalog';
 import { CloudscapeAlert } from '../ui/CloudscapeAlert';
@@ -195,13 +193,13 @@ const ConceptVaultTable: React.FC<{
             }}
             className="px-4 py-2.5 border-b flex flex-wrap items-center justify-between gap-3 shrink-0 relative z-20"
           >
-            <div className="flex items-center gap-3 flex-1 min-w-[300px] max-w-2xl">
+            <div className="flex w-full min-w-0 flex-col items-stretch gap-2 sm:flex-1 sm:flex-row sm:items-center sm:gap-3 sm:min-w-[300px] max-w-2xl">
               <CloudscapeSearchInput
                 value={search}
                 onChange={setSearch}
                 placeholder="Search services by name, ID, category, or CLI prefix..."
                 ariaLabel="Filter services"
-                className="flex-1 min-w-[220px]"
+                className="w-full min-w-0 flex-1"
                 size="md"
               />
 
@@ -212,7 +210,7 @@ const ConceptVaultTable: React.FC<{
                 onChange={setCategoryFilter}
                 ariaLabel="Filter by category"
                 placeholder="All categories"
-                className="w-56 shrink-0"
+                className="w-full shrink-0 sm:w-56"
               />
             </div>
 
@@ -493,6 +491,25 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = memo(({
   const [isEditing, setIsEditing] = useState(false);
   const [editorContent, setEditorContent] = useState(service.markdownDoc);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [seedBlueprints, setSeedBlueprints] = useState<Array<{
+    id: string;
+    name: string;
+    description: string;
+    nodes: any[];
+    edges: any[];
+  }>>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void import('../../db/seedBlueprints').then(({ SEED_BLUEPRINTS }) => {
+      if (!cancelled) setSeedBlueprints(Object.values(SEED_BLUEPRINTS));
+    }).catch(() => {
+      if (!cancelled) setSeedBlueprints([]);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
@@ -506,6 +523,7 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = memo(({
   };
 
   const handleResetToSeed = async () => {
+    const { SEED_SERVICES } = await import('../../db/seedServices');
     const original = SEED_SERVICES.find((s) => s.id === service.id);
     if (original) {
       setEditorContent(original.markdownDoc);
@@ -540,7 +558,7 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = memo(({
       edges: any[];
       isTemplate: boolean;
     }> = [
-        ...Object.values(SEED_BLUEPRINTS).map((b) => ({ ...b, isTemplate: true })),
+        ...seedBlueprints.map((b) => ({ ...b, isTemplate: true })),
         ...savedDiagrams.map((d) => ({ ...d, isTemplate: false })),
       ];
 
@@ -553,7 +571,7 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = memo(({
           n.data?.customTitle?.toLowerCase().includes(service.name.toLowerCase())
       )
     );
-  }, [service.id, service.name, savedDiagrams]);
+  }, [service.id, service.name, savedDiagrams, seedBlueprints]);
 
   const handleOpenBlueprint = (blueprint: { id: string; nodes: any[]; isTemplate: boolean }) => {
     if (blueprint.isTemplate) {
@@ -828,11 +846,11 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = memo(({
                             <span className="font-semibold text-slate-200">Markdown Source</span>
                             <span>Supports Mermaid & CLI</span>
                           </div>
-                          <div className="flex-1 flex min-h-0 overflow-hidden relative">
+                          <div className="aws-mobile-readable-editor flex-1 flex min-h-0 overflow-hidden relative">
                             {/* Line Numbers Column */}
                             <div
                               ref={lineNumbersRef}
-                              className="w-11 py-4 pr-3 text-right font-mono text-[13px] leading-[1.65] text-slate-600 select-none bg-[#0B1120] border-r border-white/[0.06] overflow-hidden shrink-0"
+                              className="aws-mobile-editor-line-number w-11 py-4 pr-3 text-right font-mono text-[13px] leading-[1.65] text-slate-600 select-none bg-[#0B1120] border-r border-white/[0.06] overflow-hidden shrink-0"
                             >
                               {Array.from({ length: lineCount }, (_, i) => (
                                 <div key={i + 1}>{i + 1}</div>
@@ -849,7 +867,7 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = memo(({
                               }}
                               placeholder="Enter markdown document with mermaid diagrams..."
                               spellCheck={false}
-                              className="flex-1 h-full bg-transparent text-slate-100 font-mono text-[13px] leading-[1.65] p-4 resize-none outline-none selection:bg-[#3B82F6]/30 overflow-y-auto scrollbar-thin custom-scrollbar border-0"
+                              className="flex-1 h-full bg-transparent text-slate-100 font-mono text-[13px] leading-[1.65] p-4 resize-none outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--aws-interactive)] selection:bg-[#3B82F6]/30 overflow-y-auto scrollbar-thin custom-scrollbar border-0"
                             />
                           </div>
                         </div>

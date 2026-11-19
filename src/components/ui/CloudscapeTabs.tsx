@@ -45,7 +45,7 @@ export function CloudscapeTabs<T extends string = string>({
             style={{
               color: isActive ? 'var(--aws-text-primary)' : 'var(--aws-text-muted)',
             }}
-            className={`relative py-3 flex items-center gap-2 text-[14px] leading-[20px] cursor-pointer transition-colors outline-none hover:text-[var(--aws-text-primary)] ${isActive ? 'font-bold' : 'font-normal'
+            className={`relative py-3 flex items-center gap-2 text-[14px] leading-[20px] cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--aws-interactive)] hover:text-[var(--aws-text-primary)] ${isActive ? 'font-bold' : 'font-normal'
               }`}
           >
             {tab.icon && (

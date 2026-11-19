@@ -28,8 +28,6 @@ import {
   toggleServiceFavorite as dbToggleServiceFavorite,
   clearAllFavorites as dbClearAllFavorites,
 } from '../db/compassDb';
-import { ARCHITECTURE_TEMPLATES } from '../components/canvas/canvasTemplates';
-import { SEED_SERVICES } from '../db/seedServices';
 import { disableTransitionsTemporarily } from '../utils/themeTransitions';
 
 let debounceSaveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -144,7 +142,7 @@ interface CompassState {
   removeNode: (nodeId: string) => void;
   removeEdge: (edgeId: string) => void;
   clearCanvas: () => void;
-  loadTemplate: (templateId: string) => void;
+  loadTemplate: (templateId: string) => Promise<void>;
   openInspector: (nodeId: string) => void;
   closeInspector: () => void;
 }
@@ -213,8 +211,8 @@ export const useCompassStore = create<CompassState>((set, get) => ({
   },
 
   // Initial nodes/edges initialized with Serverless API template
-  nodes: ARCHITECTURE_TEMPLATES['serverless-api'].nodes,
-  edges: ARCHITECTURE_TEMPLATES['serverless-api'].edges,
+  nodes: [],
+  edges: [],
   activeDiagramId: 'active-canvas-diagram',
   selectedNodeId: null,
   isInspectorOpen: false,
@@ -274,8 +272,11 @@ export const useCompassStore = create<CompassState>((set, get) => ({
     }
 
     // Check if there is an active saved diagram in Dexie
-    let initialNodes = ARCHITECTURE_TEMPLATES['serverless-api'].nodes;
-    let initialEdges = ARCHITECTURE_TEMPLATES['serverless-api'].edges;
+    let initialNodes: CanvasNodeItem[] = [];
+    let initialEdges: CanvasEdgeItem[] = [];
+    const { ARCHITECTURE_TEMPLATES } = await import('../components/canvas/canvasTemplates');
+    initialNodes = ARCHITECTURE_TEMPLATES['serverless-api'].nodes;
+    initialEdges = ARCHITECTURE_TEMPLATES['serverless-api'].edges;
     try {
       const saved = await getDiagramById('active-canvas-diagram');
       if (saved && saved.nodes && saved.nodes.length > 0) {
@@ -379,6 +380,7 @@ export const useCompassStore = create<CompassState>((set, get) => ({
     }
     await resetDatabaseToDefaults();
     const services = await getAllServices();
+    const { ARCHITECTURE_TEMPLATES } = await import('../components/canvas/canvasTemplates');
     const defaultTemplate = ARCHITECTURE_TEMPLATES['serverless-api'];
     set({
       services,
@@ -397,6 +399,7 @@ export const useCompassStore = create<CompassState>((set, get) => ({
       localStorage.removeItem('aws-compass-service-order');
       localStorage.removeItem('aws-compass-category-order');
     }
+    const { SEED_SERVICES } = await import('../db/seedServices');
     const seedCategoryMap = new Map(SEED_SERVICES.map((s) => [s.id, s.category]));
     const currentServices = await getAllServices();
 
@@ -717,7 +720,8 @@ export const useCompassStore = create<CompassState>((set, get) => ({
     scheduleDebouncedDiagramSave([], []);
   },
 
-  loadTemplate: (templateId: string) => {
+  loadTemplate: async (templateId: string) => {
+    const { ARCHITECTURE_TEMPLATES } = await import('../components/canvas/canvasTemplates');
     const template = ARCHITECTURE_TEMPLATES[templateId];
     if (template) {
       set({

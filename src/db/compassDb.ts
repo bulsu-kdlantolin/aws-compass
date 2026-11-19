@@ -1,6 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { AWSService, Diagram } from '../types/aws';
-import { SEED_SERVICES } from './seedServices';
 import { VERIFIED_AWS_DOCS } from '../utils/awsDocs';
 
 /**
@@ -28,6 +27,7 @@ export const db = new CompassDatabase();
  * for existing services without overwriting user's custom notes or order.
  */
 export async function initializeDatabase(): Promise<void> {
+  const { SEED_SERVICES } = await import('./seedServices');
   const count = await db.services.count();
   if (count === 0) {
     await db.services.bulkPut(SEED_SERVICES);
@@ -108,6 +108,7 @@ export async function initializeDatabase(): Promise<void> {
    * Resets the service catalog to the initial seed dataset.
    */
   export async function resetDatabaseToDefaults(): Promise<void> {
+  const { SEED_SERVICES } = await import('./seedServices');
     await db.services.clear();
     await db.services.bulkPut(SEED_SERVICES);
   }

@@ -32,7 +32,7 @@ export const CloudscapeCodeBlock: React.FC<CloudscapeCodeBlockProps> = ({
         backgroundColor: 'var(--aws-code-bg, #0F141A)',
         borderColor: 'var(--aws-code-border, var(--aws-border))',
       }}
-      className={`rounded-[4px] border border-[#D5DBDB] dark:border-[#242F3D] bg-[#F8F9FA] dark:bg-[#0F141A] overflow-hidden font-mono text-[12px] leading-[18px] my-3 select-text shadow-2xs ${className}`}
+      className={`rounded-[4px] border border-[#D5DBDB] dark:border-[#242F3D] bg-[var(--aws-field-bg)] overflow-hidden font-mono text-[12px] leading-[18px] my-3 select-text shadow-2xs ${className}`}
     >
       {/* Top Utility Bar (Strictly no macOS dots) */}
       <div
@@ -40,9 +40,9 @@ export const CloudscapeCodeBlock: React.FC<CloudscapeCodeBlockProps> = ({
           borderBottomColor: 'var(--aws-code-border, var(--aws-border))',
           backgroundColor: 'var(--aws-code-header-bg, #161E2D)',
         }}
-        className="px-3 py-1.5 border-b border-[#D5DBDB] dark:border-[#242F3D] bg-[#EAEDED] dark:bg-[#161E2D] flex items-center justify-between text-[11px] select-none text-[#545B64] dark:text-[#879596]"
+        className="px-3 py-1.5 border-b border-[#D5DBDB] dark:border-[#242F3D] bg-[#EAEDED] dark:bg-[#161E2D] flex items-center justify-between text-[11px] select-none text-[var(--aws-control-muted-text)]"
       >
-        <div className="flex items-center gap-1.5 font-semibold text-[#16191F] dark:text-[#EAEDED]">
+        <div className="flex items-center gap-1.5 font-semibold text-[var(--aws-field-text)]">
           <Terminal className="w-3.5 h-3.5 text-[#0972D3] dark:text-[#539FE5]" />
           <span>{title || language}</span>
         </div>
@@ -59,7 +59,7 @@ export const CloudscapeCodeBlock: React.FC<CloudscapeCodeBlockProps> = ({
       {/* Code Text Content */}
       <pre
         style={{ fontSize: codeFontSize }}
-        className="p-3 m-0 overflow-x-auto custom-scrollbar text-[#16191F] dark:text-[#EAEDED] bg-transparent leading-[20px]"
+        className="p-3 m-0 overflow-x-auto custom-scrollbar text-[var(--aws-field-text)] bg-transparent leading-[20px]"
       >
         <code className="block min-w-full">
           {lines.map((line, idx) => (

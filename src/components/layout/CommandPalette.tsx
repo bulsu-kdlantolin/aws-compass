@@ -348,7 +348,7 @@ const CommandPaletteModal: React.FC<Omit<CommandPaletteProps, 'isOpen'>> = ({
               placeholder="Search services, CLI prefixes, or blueprints..."
               spellCheck={false}
               autoComplete="off"
-              className="w-full h-full bg-transparent flex-1 text-[15px] sm:text-[16px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none caret-[#FF9900] leading-normal self-center p-0 border-none"
+              className="w-full h-full bg-transparent flex-1 text-[16px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--aws-interactive)] caret-[#FF9900] leading-normal self-center p-0 border-none"
             />
               {
                 search.length > 0 && (

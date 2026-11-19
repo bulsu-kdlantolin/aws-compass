@@ -1,5 +1,4 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
-import mermaid from 'mermaid';
 import { AlertCircle, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, ExternalLink, X } from 'lucide-react';
 import { useCompassStore } from '../../store/useCompassStore';
 import { useCanvasStore } from '../../store/useCanvasStore';
@@ -17,6 +16,7 @@ interface MermaidViewerProps {
 }
 
 export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, service, className = '' }) => {
+  const renderHostRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const rawId = useId();
   const diagramId = `mermaid-${rawId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
@@ -26,9 +26,33 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, service, cl
   const [zoom, setZoom] = useState<number>(1);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isOpenInSandboxLoading, setIsOpenInSandboxLoading] = useState<boolean>(false);
+  const [hasEnteredViewport, setHasEnteredViewport] = useState(false);
   const theme = useCompassStore((s) => s.theme);
   const services = useCompassStore((s) => s.services);
   const setWorkspaceMode = useCompassStore((s) => s.setWorkspaceMode);
+
+  useEffect(() => {
+    const host = renderHostRef.current;
+    if (!host) return;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      setHasEnteredViewport(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHasEnteredViewport(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '480px 0px' }
+    );
+    observer.observe(host);
+
+    return () => observer.disconnect();
+  }, []);
 
   const handleOpenInSandbox = async () => {
     try {
@@ -92,17 +116,22 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, service, cl
   }, [isFullscreen]);
 
   useEffect(() => {
+    if (!hasEnteredViewport) return;
+
     let isCancelled = false;
 
     const renderChart = async () => {
+      setIsRendering(true);
       if (!chart.trim()) {
         setSvgContent('');
         setError(null);
+        setIsRendering(false);
         return;
       }
 
       try {
         setError(null);
+        const { default: mermaid } = await import('mermaid');
 
         // Dynamically initialize Mermaid for active theme with official Cloudscape tokens
         mermaid.initialize({
@@ -217,10 +246,11 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, service, cl
     return () => {
       isCancelled = true;
     };
-  }, [chart, diagramId, theme, services]);
+  }, [chart, diagramId, theme, services, hasEnteredViewport]);
 
   return (
     <div
+      ref={renderHostRef}
       style={{
         backgroundColor: 'var(--aws-page-bg)',
         borderColor: 'var(--aws-border)',
@@ -306,7 +336,11 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, service, cl
         </div>
       </div>
 
-      {isRendering ? (
+      {!hasEnteredViewport ? (
+        <div className="flex min-h-[180px] w-full items-center justify-center p-6 text-[12px] font-medium text-[var(--aws-text-muted)]">
+          Diagram preview loads as it approaches the viewport.
+        </div>
+      ) : isRendering ? (
         <div
           role="status"
           aria-busy="true"

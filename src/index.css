@@ -96,12 +96,18 @@
     --aws-border: rgba(255, 255, 255, 0.08);
     --aws-border-subtle: rgba(255, 255, 255, 0.05);
     --aws-input-border: rgba(255, 255, 255, 0.12);
+    --aws-field-bg: #0F141A;
+    --aws-field-text: #EAEDED;
+    --aws-control-border: #354150;
+    --aws-control-hover: #2A3647;
+    --aws-control-muted-text: #879596;
     --aws-text-primary: #F1F5F9;
     --aws-text-muted: #94A3B8;
     --aws-interactive: #539FE5;
     --aws-interactive-hover: #7bb5ed;
     --aws-brand: #FF9900;
     --aws-brand-hover: #EC7211;
+    --aws-brand-text: #FFB84D;
 
     /* Official AWS Architecture Category Colors (Dark Mode) */
     --aws-cat-compute: #ED7100;
@@ -158,12 +164,18 @@
     --aws-border: #E2E8F0;
     --aws-border-subtle: #F1F5F9;
     --aws-input-border: #CBD5E1;
+    --aws-field-bg: #F8F9FA;
+    --aws-field-text: #16191F;
+    --aws-control-border: #D5DBDB;
+    --aws-control-hover: #EAEDED;
+    --aws-control-muted-text: #545B64;
     --aws-text-primary: #0F172A;
-    --aws-text-muted: #64748B;
+    --aws-text-muted: #626F80;
     --aws-interactive: #0972D3;
     --aws-interactive-hover: #035aa6;
     --aws-brand: #FF9900;
     --aws-brand-hover: #EC7211;
+    --aws-brand-text: #A65300;
 
     /* Official AWS Architecture Category Colors (Light Mode) */
     --aws-cat-compute: #ED7100;
@@ -680,16 +692,16 @@ body.canvas-global-resizing .react-flow__resize-control * {
 
 @media (prefers-reduced-motion: reduce) {
   .cloudscape-skeleton {
-    animation: cloudscape-pulse 2s ease-in-out infinite;
+    animation: none;
+    opacity: 1;
   }
+}
 
-  @keyframes cloudscape-pulse {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.6;
-    }
+@media (max-width: 639px) {
+  .aws-mobile-readable-controls :is(input, textarea, select),
+  .aws-mobile-readable-editor :is(textarea, .aws-mobile-editor-line-number),
+  .react-flow :is(input:not([type='checkbox']), textarea) {
+    font-size: 16px !important;
   }
 }
 

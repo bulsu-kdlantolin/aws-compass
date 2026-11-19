@@ -244,7 +244,7 @@ export const NodeInspectorDrawer: React.FC = () => {
   const outgoingEdges = currentNode ? edges.filter((e) => e.source === currentNode.id) : [];
 
   // Determine Title & Header Icon
-  let headerIcon = <Sliders className="w-5 h-5 text-[#0972D3] dark:text-[#539FE5]" />;
+  let headerIcon = <Sliders className="w-5 h-5 text-[var(--aws-interactive)]" />;
   let headerMainTitle = 'Inspector';
   let headerSubtitle = 'Configure properties';
 
@@ -288,7 +288,7 @@ export const NodeInspectorDrawer: React.FC = () => {
   } else if (currentEdge) {
     const srcNode = nodes.find((n) => n.id === currentEdge.source);
     const tgtNode = nodes.find((n) => n.id === currentEdge.target);
-    headerIcon = <ArrowLeftRight className="w-5 h-5 text-[#0972D3] dark:text-[#539FE5]" />;
+    headerIcon = <ArrowLeftRight className="w-5 h-5 text-[var(--aws-interactive)]" />;
     headerMainTitle = currentEdge.data?.customLabel || currentEdge.protocol || 'Connection Flow';
     headerSubtitle = `${srcNode?.data.label || currentEdge.source} ➔ ${tgtNode?.data.label || currentEdge.target}`;
   }
@@ -297,10 +297,10 @@ export const NodeInspectorDrawer: React.FC = () => {
     <div className="flex items-center gap-2.5 truncate">
       {headerIcon}
       <div className="truncate">
-        <div className="text-[14px] leading-[20px] font-bold text-[#16191F] dark:text-[#EAEDED] truncate">
+        <div className="text-[14px] leading-[20px] font-bold text-[var(--aws-field-text)] truncate">
           {headerMainTitle}
         </div>
-        <div className="text-[12px] leading-[16px] text-[#545B64] dark:text-[#879596] font-mono truncate">
+        <div className="text-[12px] leading-[16px] text-[var(--aws-control-muted-text)] font-mono truncate">
           {headerSubtitle}
         </div>
       </div>
@@ -316,7 +316,7 @@ export const NodeInspectorDrawer: React.FC = () => {
           className={`p-1 rounded-[4px] transition-colors cursor-pointer enabled:active:scale-[0.96] ${
             service.isFavorite
               ? 'text-[#FF9900] hover:bg-[#FF9900]/10'
-              : 'text-[#545B64] dark:text-[#879596] hover:text-[#FF9900] hover:bg-[#EAEDED]/60 dark:hover:bg-[#1E2B3D]'
+              : 'text-[var(--aws-control-muted-text)] hover:text-[#FF9900] hover:bg-[#EAEDED]/60 dark:hover:bg-[#1E2B3D]'
           }`}
           title={service.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
           aria-label="Toggle favorite"
@@ -333,7 +333,7 @@ export const NodeInspectorDrawer: React.FC = () => {
       <button
         type="button"
         onClick={handleFocusNode}
-        className="p-1 rounded-[4px] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] hover:bg-[#EAEDED]/60 dark:hover:bg-[#1E2B3D] transition-colors cursor-pointer"
+        className="p-1 rounded-[4px] text-[var(--aws-control-muted-text)] hover:text-[#16191F] dark:hover:text-[#EAEDED] hover:bg-[#EAEDED]/60 dark:hover:bg-[#1E2B3D] transition-colors cursor-pointer"
         title="Center canvas on this node"
       >
         <Maximize2 className="w-4 h-4" />
@@ -372,7 +372,7 @@ export const NodeInspectorDrawer: React.FC = () => {
       />
 
       {/* Flush Property Sheet (No nested bordered cards) */}
-      <div className="overflow-y-auto custom-scrollbar flex-1 bg-transparent">
+      <div className="aws-mobile-readable-controls overflow-y-auto custom-scrollbar flex-1 bg-transparent">
         <m.div
           key={selectedTargetId}
           initial={{ opacity: 0, y: 6 }}
@@ -386,16 +386,16 @@ export const NodeInspectorDrawer: React.FC = () => {
               {currentNode && !currentNode.data.isBoundary && !currentNode.data.isActor && !currentNode.data.isAnnotation && !currentNode.data.isStepBadge && (
                 <>
                   {/* 1. Node Identity & Title */}
-                  <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
-                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal flex items-center justify-between">
+                  <div className="px-5 py-4 border-b border-[var(--aws-border)] space-y-2.5">
+                    <div className="text-[12px] font-semibold text-[var(--aws-text-muted)] tracking-normal flex items-center justify-between">
                       <span>Node identity</span>
-                      <span className="font-mono text-[10px] text-[#0972D3] dark:text-[#539FE5] normal-case font-medium">
+                      <span className="font-mono text-[10px] text-[var(--aws-interactive)] normal-case font-medium">
                         {currentNode.data.serviceId}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Title
                       </label>
                       <input
@@ -403,12 +403,12 @@ export const NodeInspectorDrawer: React.FC = () => {
                         value={currentNode.data.customTitle || currentNode.data.label}
                         onChange={(e) => updateNodeProperties(currentNode.id, { customTitle: e.target.value })}
                         placeholder="e.g. Orders API Lambda"
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[12px] text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[12px] text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Subtitle / Role
                       </label>
                       <input
@@ -416,19 +416,19 @@ export const NodeInspectorDrawer: React.FC = () => {
                         value={currentNode.data.roleSubtitle || currentNode.data.customNotes || ''}
                         onChange={(e) => updateNodeProperties(currentNode.id, { roleSubtitle: e.target.value })}
                         placeholder="e.g. Python 3.12 · 512MB · arm64"
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[11px] font-mono text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
                   </div>
 
                   {/* 2. Cloud Attributes & Deployment */}
-                  <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
-                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                  <div className="px-5 py-4 border-b border-[var(--aws-border)] space-y-2.5">
+                    <div className="text-[12px] font-semibold text-[var(--aws-text-muted)] tracking-normal">
                       Cloud attributes
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Environment
                       </label>
                       <CloudscapeSelect<NodeEnvironment>
@@ -439,7 +439,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Avail. Zone
                       </label>
                       <input
@@ -447,13 +447,13 @@ export const NodeInspectorDrawer: React.FC = () => {
                         value={currentNode.data.az || ''}
                         onChange={(e) => updateNodeProperties(currentNode.id, { az: e.target.value })}
                         placeholder="e.g. Multi-AZ or us-east-1a"
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[11px] font-mono text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
 
                     {/* Capacity tier (T-Shirt Sizing) & FinOps cost readout */}
                     <div className="grid grid-cols-[110px_1fr] items-start gap-2.5 py-1">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596] pt-1">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)] pt-1">
                         Capacity tier
                       </label>
                       <div className="space-y-1.5 min-w-0">
@@ -474,7 +474,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                               Est. ~$${currentNodeCost.monthlyCost}/mo
                             </span>
                             <span className="text-[#879596]">·</span>
-                            <span className="text-[#545B64] dark:text-[#879596]">
+                            <span className="text-[var(--aws-control-muted-text)]">
                               {currentNodeCost.billingModel}
                               {currentNodeCost.isMultiAz
                                 ? ' (2x Multi-AZ)'
@@ -488,7 +488,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Metadata Pill
                       </label>
                       <input
@@ -496,13 +496,13 @@ export const NodeInspectorDrawer: React.FC = () => {
                         value={currentNode.data.metadataPill || ''}
                         onChange={(e) => updateNodeProperties(currentNode.id, { metadataPill: e.target.value })}
                         placeholder="e.g. 10.0.1.24 or kms:Encrypted"
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[11px] font-mono text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596] flex items-center gap-1.5">
-                        <Layers className="size-3.5 text-[#0972D3] dark:text-[#539FE5]" />
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)] flex items-center gap-1.5">
+                        <Layers className="size-3.5 text-[var(--aws-interactive)]" />
                         <span>Container</span>
                       </label>
                       <CloudscapeSelect<string>
@@ -514,24 +514,24 @@ export const NodeInspectorDrawer: React.FC = () => {
                   </div>
 
                   {/* 3. Active Canvas Connections */}
-                  <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-3">
+                  <div className="px-5 py-4 border-b border-[var(--aws-border)] space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                      <span className="text-[12px] font-semibold text-[var(--aws-text-muted)] tracking-normal">
                         Canvas connections
                       </span>
-                      <span className="font-mono text-[11px] text-[#545B64] dark:text-[#879596]">
+                      <span className="font-mono text-[11px] text-[var(--aws-control-muted-text)]">
                         {incomingEdges.length} in · {outgoingEdges.length} out
                       </span>
                     </div>
 
                     {/* Incoming Connections */}
                     <div className="space-y-1.5">
-                      <div className="text-[11px] font-semibold text-[#545B64] dark:text-[#879596] flex items-center gap-1.5">
-                        <ArrowLeft className="size-3 text-[#0972D3] dark:text-[#539FE5]" />
+                      <div className="text-[11px] font-semibold text-[var(--aws-control-muted-text)] flex items-center gap-1.5">
+                        <ArrowLeft className="size-3 text-[var(--aws-interactive)]" />
                         <span>Incoming ({incomingEdges.length})</span>
                       </div>
                       {incomingEdges.length === 0 ? (
-                        <div className="text-[12px] text-[#545B64] dark:text-[#879596] italic pl-4 py-0.5">
+                        <div className="text-[12px] text-[var(--aws-control-muted-text)] italic pl-4 py-0.5">
                           No incoming connections
                         </div>
                       ) : (
@@ -542,7 +542,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                               <div
                                 key={e.id}
                                 onClick={() => openNodeInspector(e.source)}
-                                className="flex items-center justify-between py-1.5 px-2 rounded-[6px] hover:bg-[#F2F3F3] dark:hover:bg-[#1E2B3D] transition-colors group cursor-pointer"
+                                className="flex items-center justify-between py-1.5 px-2 rounded-[6px] hover:bg-[var(--aws-popover-hover)] transition-colors group cursor-pointer"
                               >
                                 <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
                                   <AWSServiceIcon
@@ -550,11 +550,11 @@ export const NodeInspectorDrawer: React.FC = () => {
                                     size={18}
                                     variant="service"
                                   />
-                                  <span className="text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] group-hover:text-[#0972D3] dark:group-hover:text-[#539FE5] truncate">
+                                  <span className="text-[12px] font-medium text-[var(--aws-field-text)] group-hover:text-[#0972D3] dark:group-hover:text-[#539FE5] truncate">
                                     {src?.data.customTitle || src?.data.label || e.source}
                                   </span>
                                 </div>
-                                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#EAEDED] dark:bg-[#222D3C] text-[#545B64] dark:text-[#879596] shrink-0">
+                                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[var(--aws-popover-hover)] text-[var(--aws-control-muted-text)] shrink-0">
                                   {e.protocol || 'TCP'}
                                 </span>
                               </div>
@@ -566,12 +566,12 @@ export const NodeInspectorDrawer: React.FC = () => {
 
                     {/* Outgoing Connections */}
                     <div className="space-y-1.5 pt-1">
-                      <div className="text-[11px] font-semibold text-[#545B64] dark:text-[#879596] flex items-center gap-1.5">
+                      <div className="text-[11px] font-semibold text-[var(--aws-control-muted-text)] flex items-center gap-1.5">
                         <ArrowRight className="size-3 text-[#3F8624] dark:text-[#4ADE80]" />
                         <span>Outgoing ({outgoingEdges.length})</span>
                       </div>
                       {outgoingEdges.length === 0 ? (
-                        <div className="text-[12px] text-[#545B64] dark:text-[#879596] italic pl-4 py-0.5">
+                        <div className="text-[12px] text-[var(--aws-control-muted-text)] italic pl-4 py-0.5">
                           No outgoing connections
                         </div>
                       ) : (
@@ -582,7 +582,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                               <div
                                 key={e.id}
                                 onClick={() => openNodeInspector(e.target)}
-                                className="flex items-center justify-between py-1.5 px-2 rounded-[6px] hover:bg-[#F2F3F3] dark:hover:bg-[#1E2B3D] transition-colors group cursor-pointer"
+                                className="flex items-center justify-between py-1.5 px-2 rounded-[6px] hover:bg-[var(--aws-popover-hover)] transition-colors group cursor-pointer"
                               >
                                 <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
                                   <AWSServiceIcon
@@ -590,11 +590,11 @@ export const NodeInspectorDrawer: React.FC = () => {
                                     size={18}
                                     variant="service"
                                   />
-                                  <span className="text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] group-hover:text-[#0972D3] dark:group-hover:text-[#539FE5] truncate">
+                                  <span className="text-[12px] font-medium text-[var(--aws-field-text)] group-hover:text-[#0972D3] dark:group-hover:text-[#539FE5] truncate">
                                     {tgt?.data.customTitle || tgt?.data.label || e.target}
                                   </span>
                                 </div>
-                                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#EAEDED] dark:bg-[#222D3C] text-[#545B64] dark:text-[#879596] shrink-0">
+                                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[var(--aws-popover-hover)] text-[var(--aws-control-muted-text)] shrink-0">
                                   {e.protocol || 'TCP'}
                                 </span>
                               </div>
@@ -607,9 +607,9 @@ export const NodeInspectorDrawer: React.FC = () => {
 
                   {/* 4. ARN Pattern (if available) */}
                   {service?.arnExample && (
-                    <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2">
+                    <div className="px-5 py-4 border-b border-[var(--aws-border)] space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                        <span className="text-[12px] font-semibold text-[var(--aws-text-muted)] tracking-normal">
                           ARN pattern
                         </span>
                         <CloudscapeCopyButton
@@ -618,7 +618,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                           copiedLabel="Copied"
                         />
                       </div>
-                      <div className="font-mono text-[11px] p-2.5 rounded-[6px] border border-[#EAEDED] dark:border-[#222D3C] bg-[#F8F9FA] dark:bg-[#0F141A] text-[#545B64] dark:text-[#879596] break-all select-all">
+                      <div className="font-mono text-[11px] p-2.5 rounded-[6px] border border-[var(--aws-border)] bg-[var(--aws-field-bg)] text-[var(--aws-control-muted-text)] break-all select-all">
                         {service.arnExample}
                       </div>
                     </div>
@@ -629,16 +629,16 @@ export const NodeInspectorDrawer: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => duplicateNode(currentNode.id)}
-                      className="flex-1 h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="flex-1 h-8 px-3 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] hover:bg-[var(--aws-popover-hover)] text-[12px] font-medium text-[var(--aws-field-text)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <CopyPlus className="size-3.5 text-[#0972D3] dark:text-[#539FE5]" />
+                      <CopyPlus className="size-3.5 text-[var(--aws-interactive)]" />
                       <span>Duplicate (Ctrl+D)</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => removeNode(currentNode.id)}
-                      className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[#545B64] dark:text-[#879596] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[var(--aws-control-muted-text)] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Trash2 className="size-3.5" />
                       <span>Delete</span>
@@ -650,13 +650,13 @@ export const NodeInspectorDrawer: React.FC = () => {
               {/* ================= GROUP BOUNDARY CUSTOMIZER ================= */}
               {currentNode && currentNode.data.isBoundary && (
                 <>
-                  <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
-                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                  <div className="px-5 py-4 border-b border-[var(--aws-border)] space-y-2.5">
+                    <div className="text-[12px] font-semibold text-[var(--aws-text-muted)] tracking-normal">
                       Boundary configuration
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Type
                       </label>
                       <CloudscapeSelect<GroupBoundaryType>
@@ -671,7 +671,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Label
                       </label>
                       <input
@@ -679,12 +679,12 @@ export const NodeInspectorDrawer: React.FC = () => {
                         value={currentNode.data.boundaryLabel || currentNode.data.label}
                         onChange={(e) => updateNodeProperties(currentNode.id, { boundaryLabel: e.target.value })}
                         placeholder="e.g. Production VPC"
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[12px] text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[12px] text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         CIDR / Scope
                       </label>
                       <input
@@ -692,13 +692,13 @@ export const NodeInspectorDrawer: React.FC = () => {
                         value={currentNode.data.cidr || ''}
                         onChange={(e) => updateNodeProperties(currentNode.id, { cidr: e.target.value })}
                         placeholder="e.g. 10.0.0.0/16 or us-east-1"
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[11px] font-mono text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
 
                     {currentNode.data.boundaryType === 'aws-account' && (
                       <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                        <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                        <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                           Account ID
                         </label>
                         <input
@@ -706,14 +706,14 @@ export const NodeInspectorDrawer: React.FC = () => {
                           value={currentNode.data.accountId || ''}
                           onChange={(e) => updateNodeProperties(currentNode.id, { accountId: e.target.value })}
                           placeholder="e.g. 1234-5678-9012"
-                          className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                          className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[11px] font-mono text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                         />
                       </div>
                     )}
 
                     {currentNode.data.boundaryType === 'availability-zone' && (
                       <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                        <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                        <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                           AZ Identifier
                         </label>
                         <input
@@ -721,14 +721,14 @@ export const NodeInspectorDrawer: React.FC = () => {
                           value={currentNode.data.azName || ''}
                           onChange={(e) => updateNodeProperties(currentNode.id, { azName: e.target.value })}
                           placeholder="e.g. us-east-1a"
-                          className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                          className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[11px] font-mono text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                         />
                       </div>
                     )}
 
                     {currentNode.data.boundaryType === 'auto-scaling-group' && (
                       <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                        <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                        <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                           ASG Capacity
                         </label>
                         <div className="grid grid-cols-3 gap-1.5">
@@ -738,7 +738,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                             onChange={(e) => updateNodeProperties(currentNode.id, { asgMin: parseInt(e.target.value, 10) || 0 })}
                             placeholder="Min"
                             title="Minimum Capacity"
-                            className="h-8 w-full px-2 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-center text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                            className="h-8 w-full px-2 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[11px] font-mono text-center text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                           />
                           <input
                             type="number"
@@ -746,7 +746,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                             onChange={(e) => updateNodeProperties(currentNode.id, { asgDesired: parseInt(e.target.value, 10) || 0 })}
                             placeholder="Desired"
                             title="Desired Capacity"
-                            className="h-8 w-full px-2 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-center text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                            className="h-8 w-full px-2 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[11px] font-mono text-center text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                           />
                           <input
                             type="number"
@@ -754,7 +754,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                             onChange={(e) => updateNodeProperties(currentNode.id, { asgMax: parseInt(e.target.value, 10) || 0 })}
                             placeholder="Max"
                             title="Maximum Capacity"
-                            className="h-8 w-full px-2 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-center text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                            className="h-8 w-full px-2 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[11px] font-mono text-center text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                           />
                         </div>
                       </div>
@@ -762,7 +762,7 @@ export const NodeInspectorDrawer: React.FC = () => {
 
                     {currentNode.data.boundaryType === 'security-group' && (
                       <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                        <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                        <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                           Allowed Ports
                         </label>
                         <input
@@ -770,19 +770,19 @@ export const NodeInspectorDrawer: React.FC = () => {
                           value={currentNode.data.securityGroupPorts || ''}
                           onChange={(e) => updateNodeProperties(currentNode.id, { securityGroupPorts: e.target.value })}
                           placeholder="e.g. TCP: 443, 80"
-                          className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                          className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[11px] font-mono text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                         />
                       </div>
                     )}
                   </div>
 
-                  <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-3">
-                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                  <div className="px-5 py-4 border-b border-[var(--aws-border)] space-y-3">
+                    <div className="text-[12px] font-semibold text-[var(--aws-text-muted)] tracking-normal">
                       Boundary style
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Border Style
                       </label>
                       <SegmentedControl<'solid' | 'dashed' | 'dotted'>
@@ -795,7 +795,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-1">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Accent Color
                       </label>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -805,7 +805,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                           className={`text-[11px] h-6 px-2 rounded-[4px] border cursor-pointer font-medium transition-colors ${
                             !currentNode.data.accentColor
                               ? 'border-[#0972D3] bg-[#0972D3]/10 text-[#0972D3] dark:border-[#539FE5] dark:text-[#539FE5]'
-                              : 'border-[#D5DBDB] dark:border-[#2A3647] text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D]'
+                              : 'border-[var(--aws-control-border)] text-[var(--aws-control-muted-text)] hover:bg-[var(--aws-popover-hover)]'
                           }`}
                         >
                           Default
@@ -835,16 +835,16 @@ export const NodeInspectorDrawer: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => duplicateNode(currentNode.id)}
-                      className="flex-1 h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="flex-1 h-8 px-3 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] hover:bg-[var(--aws-popover-hover)] text-[12px] font-medium text-[var(--aws-field-text)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <CopyPlus className="size-3.5 text-[#0972D3] dark:text-[#539FE5]" />
+                      <CopyPlus className="size-3.5 text-[var(--aws-interactive)]" />
                       <span>Duplicate</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => removeNode(currentNode.id)}
-                      className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[#545B64] dark:text-[#879596] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[var(--aws-control-muted-text)] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Trash2 className="size-3.5" />
                       <span>Delete</span>
@@ -856,13 +856,13 @@ export const NodeInspectorDrawer: React.FC = () => {
               {/* ================= EXTERNAL ACTOR CUSTOMIZER ================= */}
               {currentNode && currentNode.data.isActor && (
                 <>
-                  <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
-                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                  <div className="px-5 py-4 border-b border-[var(--aws-border)] space-y-2.5">
+                    <div className="text-[12px] font-semibold text-[var(--aws-text-muted)] tracking-normal">
                       Actor configuration
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Actor Type
                       </label>
                       <CloudscapeSelect<ExternalActorType>
@@ -877,7 +877,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Title
                       </label>
                       <input
@@ -885,12 +885,12 @@ export const NodeInspectorDrawer: React.FC = () => {
                         value={currentNode.data.customTitle || currentNode.data.label}
                         onChange={(e) => updateNodeProperties(currentNode.id, { customTitle: e.target.value })}
                         placeholder="e.g. Client Web Browser"
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[12px] text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[12px] text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Role / Subtitle
                       </label>
                       <input
@@ -898,7 +898,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                         value={currentNode.data.roleSubtitle || currentNode.data.customNotes || ''}
                         onChange={(e) => updateNodeProperties(currentNode.id, { roleSubtitle: e.target.value })}
                         placeholder="e.g. Next.js SPA / React"
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[11px] font-mono text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
                   </div>
@@ -907,16 +907,16 @@ export const NodeInspectorDrawer: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => duplicateNode(currentNode.id)}
-                      className="flex-1 h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="flex-1 h-8 px-3 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] hover:bg-[var(--aws-popover-hover)] text-[12px] font-medium text-[var(--aws-field-text)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <CopyPlus className="size-3.5 text-[#0972D3] dark:text-[#539FE5]" />
+                      <CopyPlus className="size-3.5 text-[var(--aws-interactive)]" />
                       <span>Duplicate</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => removeNode(currentNode.id)}
-                      className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[#545B64] dark:text-[#879596] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[var(--aws-control-muted-text)] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Trash2 className="size-3.5" />
                       <span>Delete</span>
@@ -928,15 +928,15 @@ export const NodeInspectorDrawer: React.FC = () => {
               {/* ================= STEP BADGE CUSTOMIZER ================= */}
               {currentNode && currentNode.data.isStepBadge && (
                 <>
-                  <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
-                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                  <div className="px-5 py-4 border-b border-[var(--aws-border)] space-y-2.5">
+                    <div className="text-[12px] font-semibold text-[var(--aws-text-muted)] tracking-normal">
                       Flow marker configuration
                     </div>
 
                     {currentNode.data.stepType === 'flow-step' && (
                       <>
                         <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                          <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                          <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                             Step Number
                           </label>
                           <input
@@ -949,12 +949,12 @@ export const NodeInspectorDrawer: React.FC = () => {
                                 stepNumber: Math.max(1, Math.min(99, parseInt(e.target.value, 10) || 1)),
                               })
                             }
-                            className="h-8 w-24 px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[12px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                            className="h-8 w-24 px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[12px] font-mono text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                           />
                         </div>
 
                         <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                          <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                          <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                             Badge Color
                           </label>
                           <SegmentedControl<StepBadgeColor>
@@ -971,7 +971,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                     )}
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Label / Caption
                       </label>
                       <input
@@ -987,7 +987,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                             ? 'e.g. Ingress Bottleneck'
                             : 'Optional step caption...'
                         }
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[12px] text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[12px] text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
                   </div>
@@ -996,16 +996,16 @@ export const NodeInspectorDrawer: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => duplicateNode(currentNode.id)}
-                      className="flex-1 h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="flex-1 h-8 px-3 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] hover:bg-[var(--aws-popover-hover)] text-[12px] font-medium text-[var(--aws-field-text)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <CopyPlus className="size-3.5 text-[#0972D3] dark:text-[#539FE5]" />
+                      <CopyPlus className="size-3.5 text-[var(--aws-interactive)]" />
                       <span>Duplicate</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => removeNode(currentNode.id)}
-                      className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[#545B64] dark:text-[#879596] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[var(--aws-control-muted-text)] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Trash2 className="size-3.5" />
                       <span>Delete</span>
@@ -1017,13 +1017,13 @@ export const NodeInspectorDrawer: React.FC = () => {
               {/* ================= SPEC STAMP (TITLE BLOCK) CUSTOMIZER ================= */}
               {currentNode && currentNode.data.isAnnotation && currentNode.data.isSpecStamp && (
                 <>
-                  <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
-                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                  <div className="px-5 py-4 border-b border-[var(--aws-border)] space-y-2.5">
+                    <div className="text-[12px] font-semibold text-[var(--aws-text-muted)] tracking-normal">
                       Spec stamp configuration
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         System Name
                       </label>
                       <input
@@ -1036,12 +1036,12 @@ export const NodeInspectorDrawer: React.FC = () => {
                           })
                         }
                         placeholder="e.g. Order Processing Platform"
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[12px] text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[12px] text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Revision / Date
                       </label>
                       <input
@@ -1051,12 +1051,12 @@ export const NodeInspectorDrawer: React.FC = () => {
                           updateNodeProperties(currentNode.id, { specRevision: e.target.value })
                         }
                         placeholder="e.g. v2.4 · Nov 2026"
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[11px] font-mono text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Target SLA
                       </label>
                       <input
@@ -1066,12 +1066,12 @@ export const NodeInspectorDrawer: React.FC = () => {
                           updateNodeProperties(currentNode.id, { specTargetSla: e.target.value })
                         }
                         placeholder="e.g. 99.99% (4 nines)"
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[11px] font-mono text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         RPO / RTO
                       </label>
                       <input
@@ -1081,12 +1081,12 @@ export const NodeInspectorDrawer: React.FC = () => {
                           updateNodeProperties(currentNode.id, { specRpoRto: e.target.value })
                         }
                         placeholder="e.g. RPO < 15m · RTO < 1h"
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[11px] font-mono text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Compliance
                       </label>
                       <input
@@ -1096,12 +1096,12 @@ export const NodeInspectorDrawer: React.FC = () => {
                           updateNodeProperties(currentNode.id, { specCompliance: e.target.value })
                         }
                         placeholder="e.g. SOC2 Type II · PCI-DSS"
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[11px] font-mono text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Classification
                       </label>
                       <input
@@ -1111,7 +1111,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                           updateNodeProperties(currentNode.id, { specClassification: e.target.value })
                         }
                         placeholder="e.g. Confidential · Tier-1 Mission Critical"
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[11px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[11px] font-mono text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
                   </div>
@@ -1120,16 +1120,16 @@ export const NodeInspectorDrawer: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => duplicateNode(currentNode.id)}
-                      className="flex-1 h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="flex-1 h-8 px-3 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] hover:bg-[var(--aws-popover-hover)] text-[12px] font-medium text-[var(--aws-field-text)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <CopyPlus className="size-3.5 text-[#0972D3] dark:text-[#539FE5]" />
+                      <CopyPlus className="size-3.5 text-[var(--aws-interactive)]" />
                       <span>Duplicate</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => removeNode(currentNode.id)}
-                      className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[#545B64] dark:text-[#879596] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[var(--aws-control-muted-text)] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Trash2 className="size-3.5" />
                       <span>Delete</span>
@@ -1141,13 +1141,13 @@ export const NodeInspectorDrawer: React.FC = () => {
               {/* ================= ARCHITECTURE NOTE & TEXT BLOCK CUSTOMIZER ================= */}
               {currentNode && currentNode.data.isAnnotation && !currentNode.data.isSpecStamp && (
                 <>
-                  <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
-                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                  <div className="px-5 py-4 border-b border-[var(--aws-border)] space-y-2.5">
+                    <div className="text-[12px] font-semibold text-[var(--aws-text-muted)] tracking-normal">
                       {currentNode.data.isTextOnly ? 'Section header configuration' : 'Note configuration'}
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         {currentNode.data.isTextOnly ? 'Heading Text' : 'Note Title'}
                       </label>
                       <input
@@ -1155,13 +1155,13 @@ export const NodeInspectorDrawer: React.FC = () => {
                         value={currentNode.data.annotationTitle || currentNode.data.label}
                         onChange={(e) => updateNodeProperties(currentNode.id, { annotationTitle: e.target.value, label: e.target.value })}
                         placeholder={currentNode.data.isTextOnly ? 'e.g. Ingress & Edge DMZ Layer' : 'e.g. Architecture Decision Record'}
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[12px] text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[12px] text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
 
                     {currentNode.data.isTextOnly ? (
                       <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                        <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                        <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                           Font Size
                         </label>
                         <input
@@ -1170,13 +1170,13 @@ export const NodeInspectorDrawer: React.FC = () => {
                           max={48}
                           value={currentNode.data.fontSize || 16}
                           onChange={(e) => updateNodeProperties(currentNode.id, { fontSize: parseInt(e.target.value, 10) || 16 })}
-                          className="h-8 w-24 px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[12px] font-mono text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                          className="h-8 w-24 px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[12px] font-mono text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                         />
                       </div>
                     ) : (
                       <>
                         <div className="space-y-1.5 pt-1">
-                          <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                          <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                             Content (Markdown)
                           </label>
                           <textarea
@@ -1184,12 +1184,12 @@ export const NodeInspectorDrawer: React.FC = () => {
                             onChange={(e) => updateNodeProperties(currentNode.id, { annotationContent: e.target.value })}
                             rows={4}
                             placeholder="Write notes, architecture decisions, SLA rules, or gotchas..."
-                            className="w-full p-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[12px] text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] resize-y transition-colors"
+                            className="w-full p-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[12px] text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] resize-y transition-colors"
                           />
                         </div>
 
                         <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-1">
-                          <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                          <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                             Theme Color
                           </label>
                           <SegmentedControl<string>
@@ -1208,16 +1208,16 @@ export const NodeInspectorDrawer: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => duplicateNode(currentNode.id)}
-                      className="flex-1 h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="flex-1 h-8 px-3 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] hover:bg-[var(--aws-popover-hover)] text-[12px] font-medium text-[var(--aws-field-text)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <CopyPlus className="size-3.5 text-[#0972D3] dark:text-[#539FE5]" />
+                      <CopyPlus className="size-3.5 text-[var(--aws-interactive)]" />
                       <span>Duplicate</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => removeNode(currentNode.id)}
-                      className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[#545B64] dark:text-[#879596] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[var(--aws-control-muted-text)] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Trash2 className="size-3.5" />
                       <span>Delete</span>
@@ -1230,13 +1230,13 @@ export const NodeInspectorDrawer: React.FC = () => {
               {currentEdge && (
                 <>
                   {/* 1. Protocol & Label */}
-                  <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-2.5">
-                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                  <div className="px-5 py-4 border-b border-[var(--aws-border)] space-y-2.5">
+                    <div className="text-[12px] font-semibold text-[var(--aws-text-muted)] tracking-normal">
                       Flow &amp; protocol
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Protocol Preset
                       </label>
                       <CloudscapeSelect<EdgeProtocol>
@@ -1247,7 +1247,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Custom Label
                       </label>
                       <input
@@ -1255,19 +1255,19 @@ export const NodeInspectorDrawer: React.FC = () => {
                         value={currentEdge.data?.customLabel || ''}
                         onChange={(e) => updateEdgeProperties(currentEdge.id, { customLabel: e.target.value })}
                         placeholder="e.g. gRPC / JWT Bearer"
-                        className="h-8 w-full px-2.5 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[12px] text-[#16191F] dark:text-[#EAEDED] outline-none focus:border-[#0972D3] dark:focus:border-[#539FE5] transition-colors"
+                        className="h-8 w-full px-2.5 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[12px] text-[var(--aws-field-text)] outline-none focus:border-[var(--aws-interactive)] transition-colors"
                       />
                     </div>
                   </div>
 
                   {/* 2. Line Style, Directionality, and Swatches */}
-                  <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C] space-y-3">
-                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 tracking-normal">
+                  <div className="px-5 py-4 border-b border-[var(--aws-border)] space-y-3">
+                    <div className="text-[12px] font-semibold text-[var(--aws-text-muted)] tracking-normal">
                       Flow appearance
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Line Style
                       </label>
                       <SegmentedControl<EdgeLineStyle>
@@ -1280,7 +1280,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-0.5">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Directionality
                       </label>
                       <SegmentedControl<EdgeDirectionality>
@@ -1293,7 +1293,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-[110px_1fr] items-center gap-2.5 py-1">
-                      <label className="text-[12px] font-medium text-[#545B64] dark:text-[#879596]">
+                      <label className="text-[12px] font-medium text-[var(--aws-control-muted-text)]">
                         Stroke Color
                       </label>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -1303,7 +1303,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                           className={`text-[11px] h-6 px-2 rounded-[4px] border cursor-pointer font-medium transition-colors ${
                             !currentEdge.data?.edgeColor
                               ? 'border-[#0972D3] bg-[#0972D3]/10 text-[#0972D3] dark:border-[#539FE5] dark:text-[#539FE5]'
-                              : 'border-[#D5DBDB] dark:border-[#2A3647] text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D]'
+                              : 'border-[var(--aws-control-border)] text-[var(--aws-control-muted-text)] hover:bg-[var(--aws-popover-hover)]'
                           }`}
                         >
                           Default
@@ -1330,11 +1330,11 @@ export const NodeInspectorDrawer: React.FC = () => {
                   </div>
 
                   {/* 3. Traffic Simulation */}
-                  <div className="px-5 py-4 border-b border-[#EAEDED] dark:border-[#222D3C]">
+                  <div className="px-5 py-4 border-b border-[var(--aws-border)]">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Activity className="size-3.5 text-[#3F8624] dark:text-[#4ADE80]" />
-                        <span className="text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED]">
+                        <span className="text-[12px] font-medium text-[var(--aws-field-text)]">
                           Active Traffic Animation (dashed pulse)
                         </span>
                       </div>
@@ -1351,16 +1351,16 @@ export const NodeInspectorDrawer: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => reverseEdgeDirection(currentEdge.id)}
-                      className="flex-1 h-8 px-3 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] hover:bg-[#EAEDED] dark:hover:bg-[#1E2B3D] text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="flex-1 h-8 px-3 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] hover:bg-[var(--aws-popover-hover)] text-[12px] font-medium text-[var(--aws-field-text)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <ArrowLeftRight className="size-3.5 text-[#0972D3] dark:text-[#539FE5]" />
+                      <ArrowLeftRight className="size-3.5 text-[var(--aws-interactive)]" />
                       <span>Reverse direction</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => removeEdge(currentEdge.id)}
-                      className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[#545B64] dark:text-[#879596] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="h-8 px-3 rounded-[6px] border border-transparent hover:border-[#DD344C]/30 hover:bg-[#DD344C]/10 text-[12px] font-medium text-[var(--aws-control-muted-text)] hover:text-[#DD344C] dark:hover:text-[#F87171] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Trash2 className="size-3.5" />
                       <span>Disconnect</span>
@@ -1437,7 +1437,7 @@ export const NodeInspectorDrawer: React.FC = () => {
                           href={docsUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="group w-full flex items-center justify-center gap-2 px-3 py-2 rounded-[6px] border border-[#D5DBDB] dark:border-[#2A3647] bg-[#F8F9FA] dark:bg-[#0F141A] text-[#16191F] dark:text-[#EAEDED] text-[12px] font-medium hover:border-[#FF9900] hover:text-[#FF9900] transition-colors cursor-pointer shadow-2xs select-none"
+                          className="group w-full flex items-center justify-center gap-2 px-3 py-2 rounded-[6px] border border-[var(--aws-control-border)] bg-[var(--aws-field-bg)] text-[var(--aws-field-text)] text-[12px] font-medium hover:border-[#FF9900] hover:text-[#FF9900] transition-colors cursor-pointer shadow-2xs select-none"
                         >
                           <ExternalLink className="w-3.5 h-3.5 text-[#FF9900]" />
                           <span>Official AWS reference documentation</span>
@@ -1447,9 +1447,9 @@ export const NodeInspectorDrawer: React.FC = () => {
                   </div>
                 </>
               ) : (
-                <div className="text-[#545B64] dark:text-[#879596] text-center py-12 space-y-2">
-                  <Sparkles className="w-6 h-6 mx-auto opacity-50 text-[#0972D3] dark:text-[#539FE5]" />
-                  <p className="text-[13px] font-medium text-[#16191F] dark:text-[#EAEDED]">
+                <div className="text-[var(--aws-control-muted-text)] text-center py-12 space-y-2">
+                  <Sparkles className="w-6 h-6 mx-auto opacity-50 text-[var(--aws-interactive)]" />
+                  <p className="text-[13px] font-medium text-[var(--aws-field-text)]">
                     Architecture Element Reference
                   </p>
                   <p className="text-[12px] max-w-xs mx-auto leading-relaxed">

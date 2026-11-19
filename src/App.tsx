@@ -1,16 +1,23 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { lazy, Suspense, useEffect, useState, useCallback } from 'react';
 import { useCompassStore } from './store/useCompassStore';
 import { useCanvasStore } from './store/useCanvasStore';
 import { Navbar } from './components/layout/Navbar';
-import { ConceptVault } from './components/vault/ConceptVault';
-import { ArchitectureCanvas } from './components/canvas/ArchitectureCanvas';
-import { CommandPalette } from './components/layout/CommandPalette';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { DisableThemeTransitions } from './components/ui/DisableThemeTransitions';
 import { MotionProvider } from './components/ui/MotionProvider';
 import { CompassBootScreen } from './components/ui/CompassBootScreen';
 import { useSettingsStore } from './store/useSettingsStore';
 import { AnimatePresence, m } from 'motion/react';
+
+const ArchitectureCanvas = lazy(() =>
+  import('./components/canvas/ArchitectureCanvas').then(({ ArchitectureCanvas: Canvas }) => ({ default: Canvas }))
+);
+const ConceptVault = lazy(() =>
+  import('./components/vault/ConceptVault').then(({ ConceptVault: Vault }) => ({ default: Vault }))
+);
+const CommandPalette = lazy(() =>
+  import('./components/layout/CommandPalette').then(({ CommandPalette: Palette }) => ({ default: Palette }))
+);
 
 export const App: React.FC = () => {
   const isDbLoaded = useCompassStore((s) => s.isDbLoaded);
@@ -24,11 +31,18 @@ export const App: React.FC = () => {
   const openSettings = useSettingsStore((s) => s.openSettings);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isBootFinished, setIsBootFinished] = useState(false);
+  const [hasVisitedCanvas, setHasVisitedCanvas] = useState(workspaceMode === 'canvas');
 
   useEffect(() => {
     initialize();
-    useCanvasStore.getState().initializeCanvas();
   }, [initialize]);
+
+  useEffect(() => {
+    if (workspaceMode === 'canvas') {
+      setHasVisitedCanvas(true);
+      void useCanvasStore.getState().initializeCanvas();
+    }
+  }, [workspaceMode]);
 
   const isBooting = !isBootFinished;
 
@@ -138,7 +152,19 @@ export const App: React.FC = () => {
                   }`}
                 aria-hidden={workspaceMode !== 'vault'}
               >
-                <ConceptVault />
+                <Suspense
+                  fallback={
+                    <div
+                      role="status"
+                      aria-live="polite"
+                      className="flex h-full w-full items-center justify-center bg-[var(--aws-page-bg)] text-sm text-[var(--aws-text-muted)]"
+                    >
+                      Loading study desk...
+                    </div>
+                  }
+                >
+                  <ConceptVault />
+                </Suspense>
               </div>
 
               {/* Architecture Canvas Workspace */}
@@ -149,15 +175,33 @@ export const App: React.FC = () => {
                   }`}
                 aria-hidden={workspaceMode !== 'canvas'}
               >
-                <ArchitectureCanvas />
+                {hasVisitedCanvas && (
+                  <Suspense
+                    fallback={
+                      <div
+                        role="status"
+                        aria-live="polite"
+                        className="flex h-full w-full items-center justify-center bg-[var(--aws-canvas-bg)] text-sm text-[var(--aws-text-muted)]"
+                      >
+                        Loading architecture canvas...
+                      </div>
+                    }
+                  >
+                    <ArchitectureCanvas />
+                  </Suspense>
+                )}
               </div>
             </main>
 
             {/* Global Command Palette (Ctrl+K) */}
-            <CommandPalette
-              isOpen={isCommandPaletteOpen}
-              onClose={() => setIsCommandPaletteOpen(false)}
-            />
+            {isCommandPaletteOpen && (
+              <Suspense fallback={null}>
+                <CommandPalette
+                  isOpen
+                  onClose={() => setIsCommandPaletteOpen(false)}
+                />
+              </Suspense>
+            )}
 
             {/* Global Settings Modal (Ctrl+,) */}
             < SettingsModal />

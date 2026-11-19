@@ -25,8 +25,6 @@ import {
   saveDiagram as dbSaveDiagram,
 } from '../db/compassDb';
 import type { WorkloadTier } from '../utils/costEstimator';
-import { ARCHITECTURE_TEMPLATES } from '../components/canvas/canvasTemplates';
-import { SEED_BLUEPRINTS } from '../db/seedBlueprints';
 import { getLayoutedElements, resolveOptimalHandles } from '../utils/canvasAutoLayout';
 import { generateDiagramThumbnail } from '../utils/canvasThumbnail';
 
@@ -203,7 +201,7 @@ export interface CanvasState {
   selectAllNodes: () => void;
 
   // Full Blueprint CRUD & Snapshots
-  loadTemplate: (templateId: string) => void;
+  loadTemplate: (templateId: string) => Promise<void>;
   createBlankBlueprint: () => void;
   forkCurrentBlueprint: (customName?: string) => Promise<string>;
   renameBlueprint: (id: string, newName: string) => Promise<void>;
@@ -229,8 +227,8 @@ export interface CanvasState {
 }
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
-  nodes: SEED_BLUEPRINTS['serverless-microservice'].nodes,
-  edges: SEED_BLUEPRINTS['serverless-microservice'].edges,
+  nodes: [],
+  edges: [],
   activeDiagramId: 'serverless-microservice',
   activeDiagramName: 'Serverless Microservice',
   savedDiagrams: [],
@@ -339,6 +337,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   initializeCanvas: async () => {
     if (get().isCanvasInitialized) return;
     try {
+      const { SEED_BLUEPRINTS } = await import('../db/seedBlueprints');
       const allSaved = await dbGetAllDiagrams();
       const userSaved = allSaved.filter((d) => d.id !== 'active-canvas-diagram');
       set({ savedDiagrams: userSaved });
@@ -373,7 +372,14 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
           isCanvasInitialized: true,
         });
       } else {
-        set({ isCanvasInitialized: true });
+        const defaultBlueprint = SEED_BLUEPRINTS['serverless-microservice'];
+        set({
+          nodes: defaultBlueprint.nodes,
+          edges: defaultBlueprint.edges,
+          activeDiagramId: defaultBlueprint.id,
+          activeDiagramName: defaultBlueprint.name,
+          isCanvasInitialized: true,
+        });
       }
     } catch {
       // Fallback to default template
@@ -1348,6 +1354,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     let sourceDiagram: Diagram | undefined = await dbGetDiagramById(id);
     if (!sourceDiagram) {
       // Check seed blueprints
+      const { SEED_BLUEPRINTS } = await import('../db/seedBlueprints');
       const seed = Object.values(SEED_BLUEPRINTS).find((b) => b.id === id);
       if (seed) {
         sourceDiagram = {
@@ -1404,6 +1411,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     // If currently active diagram was deleted, switch back to reference default
     if (get().activeDiagramId === id) {
+      const { SEED_BLUEPRINTS } = await import('../db/seedBlueprints');
       const defaultBp = SEED_BLUEPRINTS['serverless-microservice'];
       set({
         savedDiagrams: userSaved,
@@ -1457,6 +1465,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const id = blueprintId || get().activeDiagramId;
     let target = await dbGetDiagramById(id);
     if (!target) {
+      const { SEED_BLUEPRINTS } = await import('../db/seedBlueprints');
       const seed = Object.values(SEED_BLUEPRINTS).find((b) => b.id === id);
       if (seed) {
         target = {
@@ -1507,7 +1516,11 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     a.remove();
   },
 
-  loadTemplate: (templateId: string) => {
+  loadTemplate: async (templateId: string) => {
+    const [{ SEED_BLUEPRINTS }, { ARCHITECTURE_TEMPLATES }] = await Promise.all([
+      import('../db/seedBlueprints'),
+      import('../components/canvas/canvasTemplates'),
+    ]);
     get().recordSnapshot();
     const canonicalMap: Record<string, string> = {
       'serverless-api': 'serverless-microservice',

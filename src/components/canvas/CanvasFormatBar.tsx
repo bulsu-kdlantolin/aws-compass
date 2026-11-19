@@ -186,7 +186,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
 
   // Common floating dock container styles
   const dockContainerClass =
-    'bottom-5 left-1/2 -translate-x-1/2 absolute z-30 pointer-events-auto h-10 px-2 rounded-[8px] bg-white/95 dark:bg-[#192534]/95 backdrop-blur-md border border-[#D5DBDB] dark:border-[#354150] shadow-[0_12px_32px_-4px_rgba(0,0,0,0.45)] flex items-center gap-1.5 select-none animate-in fade-in zoom-in-95 duration-100 text-[12px] text-[#16191F] dark:text-[#EAEDED]';
+    'bottom-5 left-1/2 -translate-x-1/2 absolute z-30 pointer-events-auto h-10 px-2 rounded-[8px] bg-[var(--aws-card-bg)] backdrop-blur-md border border-[var(--aws-control-border)] shadow-[0_12px_32px_-4px_rgba(0,0,0,0.45)] flex items-center gap-1.5 select-none animate-in fade-in zoom-in-95 duration-100 text-[12px] text-[var(--aws-field-text)]';
 
   // =========================================================================
   // VIEW 1: Multi-Nodes Selected
@@ -194,8 +194,8 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
   if (isMultiNode) {
     return (
       <m.div layout transition={SPRING_SMOOTH} className={dockContainerClass}>
-        <div className="flex items-center gap-1.5 pr-2 border-r border-[#EAEDED] dark:border-[#2A3647]">
-          <Layers className="w-3.5 h-3.5 text-[#0972D3] dark:text-[#539FE5]" />
+        <div className="flex items-center gap-1.5 pr-2 border-r border-[var(--aws-control-border)]">
+          <Layers className="w-3.5 h-3.5 text-[var(--aws-interactive)]" />
           <span className="font-semibold text-[11px] tabular-nums">
             {selectedNodes.length} selected
           </span>
@@ -206,7 +206,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           <button
             type="button"
             onClick={() => alignSelectedNodes('left')}
-            className="p-1.5 rounded-[4px] hover:bg-[#EAEDED] dark:hover:bg-[#2A3647] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] transition-colors cursor-pointer"
+            className="p-1.5 rounded-[4px] hover:bg-[var(--aws-control-hover)] text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)] transition-colors cursor-pointer"
             title="Align Left"
             aria-label="Align Left"
           >
@@ -215,7 +215,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           <button
             type="button"
             onClick={() => alignSelectedNodes('center')}
-            className="p-1.5 rounded-[4px] hover:bg-[#EAEDED] dark:hover:bg-[#2A3647] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] transition-colors cursor-pointer"
+            className="p-1.5 rounded-[4px] hover:bg-[var(--aws-control-hover)] text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)] transition-colors cursor-pointer"
             title="Align Center Horizontally"
             aria-label="Align Center"
           >
@@ -224,7 +224,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           <button
             type="button"
             onClick={() => alignSelectedNodes('right')}
-            className="p-1.5 rounded-[4px] hover:bg-[#EAEDED] dark:hover:bg-[#2A3647] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] transition-colors cursor-pointer"
+            className="p-1.5 rounded-[4px] hover:bg-[var(--aws-control-hover)] text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)] transition-colors cursor-pointer"
             title="Align Right"
             aria-label="Align Right"
           >
@@ -233,7 +233,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           <button
             type="button"
             onClick={() => alignSelectedNodes('top')}
-            className="px-1.5 py-1 text-[11px] font-semibold rounded-[4px] hover:bg-[#EAEDED] dark:hover:bg-[#2A3647] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] transition-colors cursor-pointer"
+            className="px-1.5 py-1 text-[11px] font-semibold rounded-[4px] hover:bg-[var(--aws-control-hover)] text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)] transition-colors cursor-pointer"
             title="Align Top"
           >
             Top
@@ -241,7 +241,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           <button
             type="button"
             onClick={() => alignSelectedNodes('middle')}
-            className="px-1.5 py-1 text-[11px] font-semibold rounded-[4px] hover:bg-[#EAEDED] dark:hover:bg-[#2A3647] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] transition-colors cursor-pointer"
+            className="px-1.5 py-1 text-[11px] font-semibold rounded-[4px] hover:bg-[var(--aws-control-hover)] text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)] transition-colors cursor-pointer"
             title="Align Middle Vertically"
           >
             Mid
@@ -249,21 +249,21 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           <button
             type="button"
             onClick={() => alignSelectedNodes('bottom')}
-            className="px-1.5 py-1 text-[11px] font-semibold rounded-[4px] hover:bg-[#EAEDED] dark:hover:bg-[#2A3647] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] transition-colors cursor-pointer"
+            className="px-1.5 py-1 text-[11px] font-semibold rounded-[4px] hover:bg-[var(--aws-control-hover)] text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)] transition-colors cursor-pointer"
             title="Align Bottom"
           >
             Btm
           </button>
         </div>
 
-        <div className="h-4 w-px bg-[#EAEDED] dark:bg-[#2A3647]" />
+        <div className="h-4 w-px bg-[var(--aws-control-hover)]" />
 
         {/* Distribution Tools */}
         <div className="flex items-center gap-0.5">
           <button
             type="button"
             onClick={() => distributeSelectedNodes('horizontal')}
-            className="p-1.5 rounded-[4px] hover:bg-[#EAEDED] dark:hover:bg-[#2A3647] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] transition-colors cursor-pointer"
+            className="p-1.5 rounded-[4px] hover:bg-[var(--aws-control-hover)] text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)] transition-colors cursor-pointer"
             title="Distribute Horizontally (Equal Spacing)"
             aria-label="Distribute Horizontally"
           >
@@ -272,7 +272,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           <button
             type="button"
             onClick={() => distributeSelectedNodes('vertical')}
-            className="p-1.5 rounded-[4px] hover:bg-[#EAEDED] dark:hover:bg-[#2A3647] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] transition-colors cursor-pointer"
+            className="p-1.5 rounded-[4px] hover:bg-[var(--aws-control-hover)] text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)] transition-colors cursor-pointer"
             title="Distribute Vertically (Equal Spacing)"
             aria-label="Distribute Vertically"
           >
@@ -280,7 +280,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           </button>
         </div>
 
-        <div className="h-4 w-px bg-[#EAEDED] dark:bg-[#2A3647]" />
+        <div className="h-4 w-px bg-[var(--aws-control-hover)]" />
 
         {/* Group Selection */}
         <div className="relative">
@@ -303,7 +303,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
             align="center"
             className="w-56 p-1 space-y-0.5"
           >
-            <div className="px-2 py-1 text-[10px] font-bold text-[#545B64] dark:text-[#879596]">
+            <div className="px-2 py-1 text-[10px] font-bold text-[var(--aws-control-muted-text)]">
               Choose Boundary Container
             </div>
             {BOUNDARY_PRESETS.map((bp) => (
@@ -314,7 +314,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
                   groupSelectedNodes(bp.type);
                   closePopover('dock-group-select');
                 }}
-                className="w-full text-left px-2 py-1.5 rounded-[4px] text-[12px] hover:bg-[#EAEDED]/70 dark:hover:bg-[#1E2B3D] text-[#16191F] dark:text-[#EAEDED] transition-colors flex items-center gap-2 cursor-pointer"
+                className="w-full text-left px-2 py-1.5 rounded-[4px] text-[12px] hover:bg-[var(--aws-popover-hover)] text-[var(--aws-field-text)] transition-colors flex items-center gap-2 cursor-pointer"
               >
                 <BoxSelect className="w-3.5 h-3.5 text-[#8C4FFF]" />
                 <span className="truncate">{bp.label}</span>
@@ -323,14 +323,14 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           </AnimatedPopover>
         </div>
 
-        <div className="h-4 w-px bg-[#EAEDED] dark:bg-[#2A3647]" />
+        <div className="h-4 w-px bg-[var(--aws-control-hover)]" />
 
         {/* Multi-Node Copy & Delete */}
         <div className="flex items-center gap-0.5">
           <button
             type="button"
             onClick={() => copySelection()}
-            className="p-1.5 rounded-[4px] hover:bg-[#EAEDED] dark:hover:bg-[#2A3647] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] transition-colors cursor-pointer"
+            className="p-1.5 rounded-[4px] hover:bg-[var(--aws-control-hover)] text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)] transition-colors cursor-pointer"
             title="Copy Selected (Ctrl+C)"
             aria-label="Copy Selected"
           >
@@ -341,7 +341,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
             onClick={() => {
               selectedNodes.forEach((n) => removeNode(n.id));
             }}
-            className="p-1.5 rounded-[4px] hover:bg-[#DD344C]/10 text-[#545B64] dark:text-[#879596] hover:text-[#DD344C] transition-colors cursor-pointer"
+            className="p-1.5 rounded-[4px] hover:bg-[#DD344C]/10 text-[var(--aws-control-muted-text)] hover:text-[#DD344C] transition-colors cursor-pointer"
             title="Delete Selected (Del)"
             aria-label="Delete Selected"
           >
@@ -362,7 +362,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
 
     return (
       <m.div layout transition={SPRING_SMOOTH} className={dockContainerClass}>
-        <div className="flex items-center gap-1.5 pr-2 border-r border-[#EAEDED] dark:border-[#2A3647] max-w-[140px] truncate">
+        <div className="flex items-center gap-1.5 pr-2 border-r border-[var(--aws-control-border)] max-w-[140px] truncate">
           <span className="font-semibold text-[11px] truncate">
             {singleNode.data?.customTitle || singleNode.data?.label}
           </span>
@@ -372,17 +372,17 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           <>
             {/* Environment Tag with Sunken Track */}
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-medium text-[#545B64] dark:text-[#879596]">
+              <span className="text-[11px] font-medium text-[var(--aws-control-muted-text)]">
                 Env
               </span>
-              < div className="p-0.5 rounded-[6px] bg-[#EAEDED] dark:bg-[#0F141A] border border-[#D5DBDB]/60 dark:border-[#2A3647] flex items-center gap-0.5">
+              < div className="p-0.5 rounded-[6px] bg-[var(--aws-popover-hover)] border border-[var(--aws-control-border)] flex items-center gap-0.5">
                 {(['None', 'Prod', 'Staging', 'Dev'] as NodeEnvironment[]).map((env) => {
                   const isActive = currentEnv === env;
                   const envColors: Record<NodeEnvironment, string> = {
-                    None: 'text-[#545B64] dark:text-[#879596]',
+                    None: 'text-[var(--aws-control-muted-text)]',
                     Prod: 'text-[#DD344C]',
                     Staging: 'text-[#ED7100]',
-                    Dev: 'text-[#0972D3] dark:text-[#539FE5]',
+                    Dev: 'text-[var(--aws-interactive)]',
                   };
                   return (
                     <button
@@ -390,8 +390,8 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
                       type="button"
                       onClick={() => updateNodeProperties(singleNode.id, { env })}
                       className={`h-6 px-1.5 rounded-[4px] text-[11px] font-semibold transition-all cursor-pointer ${isActive
-                        ? `bg-white dark:bg-[#232F3E] shadow-xs ${envColors[env]}`
-                        : 'text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
+                        ? `bg-[var(--aws-control-hover)] shadow-xs ${envColors[env]}`
+                        : 'text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)]'
                         }`}
                     >
                       {env}
@@ -401,14 +401,14 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
               </div>
             </div>
 
-            <div className="h-4 w-px bg-[#EAEDED] dark:bg-[#2A3647]" />
+            <div className="h-4 w-px bg-[var(--aws-control-hover)]" />
 
             {/* AZ Assignment with Sunken Track */}
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-medium text-[#545B64] dark:text-[#879596]">
+              <span className="text-[11px] font-medium text-[var(--aws-control-muted-text)]">
                 AZ
               </span>
-              < div className="p-0.5 rounded-[6px] bg-[#EAEDED] dark:bg-[#0F141A] border border-[#D5DBDB]/60 dark:border-[#2A3647] flex items-center gap-0.5">
+              < div className="p-0.5 rounded-[6px] bg-[var(--aws-popover-hover)] border border-[var(--aws-control-border)] flex items-center gap-0.5">
                 {['Multi-AZ', 'us-east-1a', 'us-east-1b'].map((az) => {
                   const isActive = currentAz === az;
                   return (
@@ -419,8 +419,8 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
                         updateNodeProperties(singleNode.id, { az: isActive ? 'None' : az })
                       }
                       className={`h-6 px-1.5 rounded-[4px] text-[10px] font-mono transition-all cursor-pointer ${isActive
-                        ? 'bg-white dark:bg-[#232F3E] text-[#1D8102] font-semibold shadow-xs'
-                        : 'text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
+                        ? 'bg-[var(--aws-control-hover)] text-[#1D8102] font-semibold shadow-xs'
+                        : 'text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)]'
                         }`}
                     >
                       {az === 'Multi-AZ' ? 'Multi-AZ' : az.slice(-2)}
@@ -430,7 +430,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
               </div>
             </div>
 
-            <div className="h-4 w-px bg-[#EAEDED] dark:bg-[#2A3647]" />
+            <div className="h-4 w-px bg-[var(--aws-control-hover)]" />
           </>
         )}
 
@@ -439,7 +439,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           <button
             type="button"
             onClick={() => reorderNodeZ(singleNode.id, 'front')}
-            className="p-1.5 rounded-[4px] hover:bg-[#EAEDED] dark:hover:bg-[#2A3647] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] transition-colors cursor-pointer"
+            className="p-1.5 rounded-[4px] hover:bg-[var(--aws-control-hover)] text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)] transition-colors cursor-pointer"
             title="Bring to Front"
             aria-label="Bring to Front"
           >
@@ -448,7 +448,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           <button
             type="button"
             onClick={() => reorderNodeZ(singleNode.id, 'back')}
-            className="p-1.5 rounded-[4px] hover:bg-[#EAEDED] dark:hover:bg-[#2A3647] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] transition-colors cursor-pointer"
+            className="p-1.5 rounded-[4px] hover:bg-[var(--aws-control-hover)] text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)] transition-colors cursor-pointer"
             title="Send to Back"
             aria-label="Send to Back"
           >
@@ -456,14 +456,14 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           </button>
         </div>
 
-        <div className="h-4 w-px bg-[#EAEDED] dark:bg-[#2A3647]" />
+        <div className="h-4 w-px bg-[var(--aws-control-hover)]" />
 
         {/* Quick Copy, Duplicate & Delete */}
         <div className="flex items-center gap-0.5">
           <button
             type="button"
             onClick={() => copySelection()}
-            className="p-1.5 rounded-[4px] hover:bg-[#EAEDED] dark:hover:bg-[#2A3647] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] transition-colors cursor-pointer"
+            className="p-1.5 rounded-[4px] hover:bg-[var(--aws-control-hover)] text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)] transition-colors cursor-pointer"
             title="Copy (Ctrl+C)"
             aria-label="Copy"
           >
@@ -472,7 +472,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           <button
             type="button"
             onClick={() => duplicateNode(singleNode.id)}
-            className="p-1.5 rounded-[4px] hover:bg-[#EAEDED] dark:hover:bg-[#2A3647] text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] transition-colors cursor-pointer"
+            className="p-1.5 rounded-[4px] hover:bg-[var(--aws-control-hover)] text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)] transition-colors cursor-pointer"
             title="Duplicate (Ctrl+D)"
             aria-label="Duplicate"
           >
@@ -481,7 +481,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           <button
             type="button"
             onClick={() => removeNode(singleNode.id)}
-            className="p-1.5 rounded-[4px] hover:bg-[#DD344C]/10 text-[#545B64] dark:text-[#879596] hover:text-[#DD344C] transition-colors cursor-pointer"
+            className="p-1.5 rounded-[4px] hover:bg-[#DD344C]/10 text-[var(--aws-control-muted-text)] hover:text-[#DD344C] transition-colors cursor-pointer"
             title="Delete (Del)"
             aria-label="Delete"
           >
@@ -510,11 +510,11 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
       <m.div layout transition={SPRING_SMOOTH} className={dockContainerClass}>
         {/* Routing Style with Workflow Icon & Sunken Track */}
         <div className="flex items-center gap-1.5">
-          <Workflow className="w-3.5 h-3.5 text-[#545B64] dark:text-[#879596]" />
-          <span className="text-[11px] font-medium text-[#545B64] dark:text-[#879596]">
+          <Workflow className="w-3.5 h-3.5 text-[var(--aws-control-muted-text)]" />
+          <span className="text-[11px] font-medium text-[var(--aws-control-muted-text)]">
             Path
           </span>
-          < div className="p-0.5 rounded-[6px] bg-[#EAEDED] dark:bg-[#0F141A] border border-[#D5DBDB]/60 dark:border-[#2A3647] flex items-center gap-0.5">
+          < div className="p-0.5 rounded-[6px] bg-[var(--aws-popover-hover)] border border-[var(--aws-control-border)] flex items-center gap-0.5">
             {[
               { id: 'smoothstep' as const, label: 'Step' },
               { id: 'bezier' as const, label: 'Curved' },
@@ -525,8 +525,8 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
                 type="button"
                 onClick={() => updateEdgeProperties(selectedEdge.id, { routingStyle: r.id })}
                 className={`h-6 px-2 rounded-[4px] text-[11px] font-semibold transition-all cursor-pointer ${currentRouting === r.id
-                  ? 'bg-white dark:bg-[#232F3E] text-[#16191F] dark:text-white shadow-xs'
-                  : 'text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
+                  ? 'bg-[var(--aws-control-hover)] text-[var(--aws-field-text)] shadow-xs'
+                  : 'text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)]'
                   }`}
               >
                 {r.label}
@@ -535,7 +535,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           </div>
         </div>
 
-        <div className="h-4 w-px bg-[#EAEDED] dark:bg-[#2A3647]" />
+        <div className="h-4 w-px bg-[var(--aws-control-hover)]" />
 
         {/* Animated CloudscapeSelect Protocol Selector (No native select) */}
         <div className="w-40 min-w-[140px]">
@@ -551,18 +551,18 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           />
         </div>
 
-        <div className="h-4 w-px bg-[#EAEDED] dark:bg-[#2A3647]" />
+        <div className="h-4 w-px bg-[var(--aws-control-hover)]" />
 
         {/* Stroke Style with Sunken Track */}
-        <div className="p-0.5 rounded-[6px] bg-[#EAEDED] dark:bg-[#0F141A] border border-[#D5DBDB]/60 dark:border-[#2A3647] flex items-center gap-0.5">
+        <div className="p-0.5 rounded-[6px] bg-[var(--aws-popover-hover)] border border-[var(--aws-control-border)] flex items-center gap-0.5">
           {(['solid', 'dashed', 'dotted'] as EdgeLineStyle[]).map((style) => (
             <button
               key={style}
               type="button"
               onClick={() => updateEdgeProperties(selectedEdge.id, { lineStyle: style })}
               className={`h-6 px-1.5 rounded-[4px] text-[10px] capitalize transition-all cursor-pointer ${currentLineStyle === style
-                ? 'bg-white dark:bg-[#232F3E] text-[#16191F] dark:text-white font-semibold shadow-xs'
-                : 'text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
+                ? 'bg-[var(--aws-control-hover)] text-[var(--aws-field-text)] font-semibold shadow-xs'
+                : 'text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)]'
                 }`}
             >
               {style}
@@ -586,7 +586,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
         </div>
 
         {/* Stroke Width Toggle Pill: 1.5px | 2.5px */}
-        <div className="p-0.5 rounded-[6px] bg-[#EAEDED] dark:bg-[#0F141A] border border-[#D5DBDB]/60 dark:border-[#2A3647] flex items-center gap-0.5">
+        <div className="p-0.5 rounded-[6px] bg-[var(--aws-popover-hover)] border border-[var(--aws-control-border)] flex items-center gap-0.5">
           {(['1.5px', '2.5px'] as const).map((widthStr) => {
             const isCurrent = currentStrokeWidth === widthStr;
             const widthNum = widthStr === '1.5px' ? 1.5 : 2.5;
@@ -596,8 +596,8 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
                 type="button"
                 onClick={() => updateEdgeProperties(selectedEdge.id, { strokeWidth: widthNum })}
                 className={`h-6 px-1.5 rounded-[4px] text-[10px] font-mono transition-all cursor-pointer ${isCurrent
-                  ? 'bg-white dark:bg-[#232F3E] text-[#16191F] dark:text-white font-semibold shadow-xs'
-                  : 'text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED]'
+                  ? 'bg-[var(--aws-control-hover)] text-[var(--aws-field-text)] font-semibold shadow-xs'
+                  : 'text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)]'
                   }`}
                 title={`Stroke width: ${widthStr}`}
               >
@@ -607,7 +607,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           })}
         </div>
 
-        <div className="h-4 w-px bg-[#EAEDED] dark:bg-[#2A3647]" />
+        <div className="h-4 w-px bg-[var(--aws-control-hover)]" />
 
         {/* Traffic Flow Pulse Simulation */}
         <button
@@ -615,7 +615,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           onClick={() => updateEdgeProperties(selectedEdge.id, { animated: !isAnimated })}
           className={`h-7 px-2 rounded-[4px] text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${isAnimated
             ? 'bg-[#1D8102]/15 text-[#1D8102]'
-            : 'text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-[#2A3647]'
+            : 'text-[var(--aws-control-muted-text)] hover:bg-[var(--aws-control-hover)]'
             }`}
           title="Toggle Animated Pulse Dots"
         >
@@ -626,7 +626,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
         <button
           type="button"
           onClick={() => removeEdge(selectedEdge.id)}
-          className="p-1.5 rounded-[4px] hover:bg-[#DD344C]/10 text-[#545B64] dark:text-[#879596] hover:text-[#DD344C] transition-colors cursor-pointer"
+          className="p-1.5 rounded-[4px] hover:bg-[#DD344C]/10 text-[var(--aws-control-muted-text)] hover:text-[#DD344C] transition-colors cursor-pointer"
           title="Delete Connection"
         >
           <Trash2 className="w-3.5 h-3.5" />
@@ -665,7 +665,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           side="top"
           className="w-72 p-2 space-y-2"
         >
-          <div className="text-[11px] font-bold text-[#545B64] dark:text-[#879596] border-b border-[#EAEDED] dark:border-[#222D3C] pb-1 px-1">
+          <div className="text-[11px] font-bold text-[var(--aws-control-muted-text)] border-b border-[var(--aws-border)] pb-1 px-1">
             Add AWS service to canvas
           </div>
           <CloudscapeSearchInput
@@ -682,10 +682,10 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
                 key={svc.id}
                 type="button"
                 onClick={() => handleQuickAddService(svc)}
-                className="w-full text-left px-2 py-1.5 rounded-[4px] text-[12px] text-[#16191F] dark:text-[#EAEDED] hover:bg-[#EAEDED]/70 dark:hover:bg-[#1E2B3D] transition-colors flex items-center justify-between cursor-pointer"
+                className="w-full text-left px-2 py-1.5 rounded-[4px] text-[12px] text-[var(--aws-field-text)] hover:bg-[var(--aws-popover-hover)] transition-colors flex items-center justify-between cursor-pointer"
               >
                 <span className="truncate font-medium">{svc.name}</span>
-                <span className="font-mono text-[10px] text-[#545B64] dark:text-[#879596] ml-2 shrink-0">
+                <span className="font-mono text-[10px] text-[var(--aws-control-muted-text)] ml-2 shrink-0">
                   {svc.id}
                 </span>
               </button>
@@ -700,16 +700,16 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           ref={boundaryTriggerRef}
           type="button"
           onClick={() => togglePopover('dock-boundary')}
-          className={`h-7.5 px-2.5 rounded-[6px] border text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] bg-white dark:bg-[#161E2D] hover:bg-[#F8F9FA] dark:hover:bg-[#1E2B3D] flex items-center gap-1.5 transition-all cursor-pointer ${isBoundaryOpen
-            ? 'border-[#0972D3] dark:border-[#539FE5] ring-1 ring-[#0972D3]/20'
-            : 'border-[#D5DBDB] dark:border-[#354150]'
+          className={`h-7.5 px-2.5 rounded-[6px] border text-[12px] font-medium text-[var(--aws-field-text)] bg-[var(--aws-field-bg)] hover:bg-[var(--aws-popover-hover)] flex items-center gap-1.5 transition-all cursor-pointer ${isBoundaryOpen
+            ? 'border-[var(--aws-interactive)] ring-1 ring-[#0972D3]/20'
+            : 'border-[var(--aws-control-border)]'
             }`}
           title="Add architectural group boundary"
         >
           <BoxSelect className="w-3.5 h-3.5 text-[#8C4FFF]" />
           <span>Boundary</span>
           <ChevronDown
-            className="w-3 h-3 text-[#545B64] dark:text-[#879596] transition-transform duration-200"
+            className="w-3 h-3 text-[var(--aws-control-muted-text)] transition-transform duration-200"
             style={{ transform: isBoundaryOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
           />
         </button>
@@ -721,7 +721,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           side="top"
           className="w-68 p-1.5 space-y-0.5"
         >
-          <div className="px-2 py-1 text-[11px] font-bold text-[#545B64] dark:text-[#879596] border-b border-[#EAEDED] dark:border-[#222D3C] mb-1">
+          <div className="px-2 py-1 text-[11px] font-bold text-[var(--aws-control-muted-text)] border-b border-[var(--aws-border)] mb-1">
             Add group boundary
           </div>
           {BOUNDARY_PRESETS.map((b) => (
@@ -729,10 +729,10 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
               key={b.type}
               type="button"
               onClick={() => handleAddBoundary(b.type, b.label)}
-              className="w-full text-left px-2 py-1.5 rounded-[4px] text-[12px] text-[#16191F] dark:text-[#EAEDED] hover:bg-[#EAEDED]/70 dark:hover:bg-[#1E2B3D] transition-colors flex items-center justify-between gap-4 cursor-pointer"
+              className="w-full text-left px-2 py-1.5 rounded-[4px] text-[12px] text-[var(--aws-field-text)] hover:bg-[var(--aws-popover-hover)] transition-colors flex items-center justify-between gap-4 cursor-pointer"
             >
               <span className="font-medium">{b.label}</span>
-              <span className="text-[10px] text-[#545B64] dark:text-[#879596] shrink-0">{b.desc}</span>
+              <span className="text-[10px] text-[var(--aws-control-muted-text)] shrink-0">{b.desc}</span>
             </button>
           ))}
         </AnimatedPopover>
@@ -744,16 +744,16 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           ref={actorNoteTriggerRef}
           type="button"
           onClick={() => togglePopover('dock-actor-note')}
-          className={`h-7.5 px-2.5 rounded-[6px] border text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] bg-white dark:bg-[#161E2D] hover:bg-[#F8F9FA] dark:hover:bg-[#1E2B3D] flex items-center gap-1.5 transition-all cursor-pointer ${isActorNoteOpen
-            ? 'border-[#0972D3] dark:border-[#539FE5] ring-1 ring-[#0972D3]/20'
-            : 'border-[#D5DBDB] dark:border-[#354150]'
+          className={`h-7.5 px-2.5 rounded-[6px] border text-[12px] font-medium text-[var(--aws-field-text)] bg-[var(--aws-field-bg)] hover:bg-[var(--aws-popover-hover)] flex items-center gap-1.5 transition-all cursor-pointer ${isActorNoteOpen
+            ? 'border-[var(--aws-interactive)] ring-1 ring-[#0972D3]/20'
+            : 'border-[var(--aws-control-border)]'
             }`}
           title="Add external clients or callout notes"
         >
-          <Users className="w-3.5 h-3.5 text-[#0972D3] dark:text-[#539FE5]" />
+          <Users className="w-3.5 h-3.5 text-[var(--aws-interactive)]" />
           <span>Actor / Note</span>
           <ChevronDown
-            className="w-3 h-3 text-[#545B64] dark:text-[#879596] transition-transform duration-200"
+            className="w-3 h-3 text-[var(--aws-control-muted-text)] transition-transform duration-200"
             style={{ transform: isActorNoteOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
           />
         </button>
@@ -765,7 +765,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
           side="top"
           className="w-72 p-2 space-y-2"
         >
-          <div className="text-[10px] font-bold text-[#545B64] dark:text-[#879596] px-1">
+          <div className="text-[10px] font-bold text-[var(--aws-control-muted-text)] px-1">
             External Clients & Ingress
           </div>
           <div className="space-y-0.5">
@@ -774,30 +774,30 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
                 key={act.type}
                 type="button"
                 onClick={() => handleQuickAddActor(act.type, act.label)}
-                className="w-full text-left px-2 py-1.5 rounded-[4px] text-[12px] text-[#16191F] dark:text-[#EAEDED] hover:bg-[#EAEDED]/70 dark:hover:bg-[#1E2B3D] transition-colors flex items-center justify-between gap-3 cursor-pointer"
+                className="w-full text-left px-2 py-1.5 rounded-[4px] text-[12px] text-[var(--aws-field-text)] hover:bg-[var(--aws-popover-hover)] transition-colors flex items-center justify-between gap-3 cursor-pointer"
               >
                 <div className="truncate">
                   <div className="font-medium truncate">{act.label}</div>
-                  <div className="text-[10px] text-[#545B64] dark:text-[#879596] truncate">{act.desc}</div>
+                  <div className="text-[10px] text-[var(--aws-control-muted-text)] truncate">{act.desc}</div>
                 </div>
-                <Users className="w-3.5 h-3.5 text-[#0972D3] dark:text-[#539FE5] shrink-0" />
+                <Users className="w-3.5 h-3.5 text-[var(--aws-interactive)] shrink-0" />
               </button>
             ))}
           </div>
 
-          <div className="border-t border-[#EAEDED] dark:border-[#222D3C] pt-1.5">
-            <div className="text-[10px] font-bold text-[#545B64] dark:text-[#879596] px-1 mb-1">
+          <div className="border-t border-[var(--aws-border)] pt-1.5">
+            <div className="text-[10px] font-bold text-[var(--aws-control-muted-text)] px-1 mb-1">
               Architecture Callout Note
             </div>
             <button
               type="button"
               onClick={handleQuickAddNote}
-              className="w-full flex items-center gap-2 p-2 rounded-[4px] border border-dashed border-[#D5DBDB] dark:border-[#354150] hover:border-[#0972D3] dark:hover:border-[#539FE5] hover:bg-[#F8F9FA] dark:hover:bg-[#1E2B3D] text-[#16191F] dark:text-[#EAEDED] cursor-pointer text-left transition-colors"
+              className="w-full flex items-center gap-2 p-2 rounded-[4px] border border-dashed border-[var(--aws-control-border)] hover:border-[#0972D3] dark:hover:border-[#539FE5] hover:bg-[var(--aws-popover-hover)] text-[var(--aws-field-text)] cursor-pointer text-left transition-colors"
             >
               <StickyNote className="w-4 h-4 text-[#ED7100] shrink-0" />
               <div>
                 <div className="text-[12px] font-semibold">Add sticky note</div>
-                <div className="text-[10px] text-[#545B64] dark:text-[#879596]">
+                <div className="text-[10px] text-[var(--aws-control-muted-text)]">
                   Document decisions or SLA targets
                 </div>
               </div>
@@ -806,18 +806,18 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
         </AnimatedPopover>
       </div>
 
-      <div className="h-5 w-px bg-[#D5DBDB] dark:bg-[#354150] mx-0.5" aria-hidden="true" />
+      <div className="h-5 w-px bg-[var(--aws-control-border)] mx-0.5" aria-hidden="true" />
 
       {/* Auto-Layout (LR | TB) */}
-      <div className="flex items-center border border-[#D5DBDB] dark:border-[#354150] rounded-[6px] overflow-hidden h-7.5 bg-white dark:bg-[#161E2D]">
+      <div className="flex items-center border border-[var(--aws-control-border)] rounded-[6px] overflow-hidden h-7.5 bg-[var(--aws-field-bg)]">
         <button
           type="button"
           onClick={() => onAutoLayout?.(layoutDirection)}
           aria-disabled={isArranging ? 'true' : undefined}
-          className="px-2.5 h-full text-[12px] font-medium text-[#16191F] dark:text-[#EAEDED] hover:bg-[#F8F9FA] dark:hover:bg-[#1E2B3D] enabled:active:scale-[0.97] transition-all cursor-pointer flex items-center gap-1.5"
+          className="px-2.5 h-full text-[12px] font-medium text-[var(--aws-field-text)] hover:bg-[var(--aws-popover-hover)] enabled:active:scale-[0.97] transition-all cursor-pointer flex items-center gap-1.5"
           title={`Auto-layout diagram using Dagre (${layoutDirection})`}
         >
-          <LayoutGrid className="w-3.5 h-3.5 text-[#0972D3] dark:text-[#539FE5]" />
+          <LayoutGrid className="w-3.5 h-3.5 text-[var(--aws-interactive)]" />
           <span>Auto-Layout</span>
         </button>
         <button
@@ -828,22 +828,22 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
             onAutoLayout?.(nextDir);
           }}
           aria-disabled={isArranging ? 'true' : undefined}
-          className="px-2 h-full text-[11px] font-mono font-semibold text-[#0972D3] dark:text-[#539FE5] hover:bg-[#F8F9FA] dark:hover:bg-[#1E2B3D] border-l border-[#D5DBDB] dark:border-[#354150] cursor-pointer"
+          className="px-2 h-full text-[11px] font-mono font-semibold text-[var(--aws-interactive)] hover:bg-[var(--aws-popover-hover)] border-l border-[var(--aws-control-border)] cursor-pointer"
           title={`Switch layout direction to ${layoutDirection === 'LR' ? 'Top-to-Bottom (TB)' : 'Left-to-Right (LR)'}`}
         >
           {layoutDirection}
         </button>
       </div>
 
-      <div className="h-5 w-px bg-[#D5DBDB] dark:bg-[#354150] mx-0.5" aria-hidden="true" />
+      <div className="h-5 w-px bg-[var(--aws-control-border)] mx-0.5" aria-hidden="true" />
 
       {/* Snap to Grid (16px) */}
       <button
         type="button"
         onClick={() => setSnapToGrid(!snapToGrid)}
         className={`h-7.5 px-2 rounded-[6px] text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${snapToGrid
-          ? 'bg-[#0972D3]/15 dark:bg-[#539FE5]/20 text-[#0972D3] dark:text-[#539FE5]'
-          : 'text-[#545B64] dark:text-[#879596] hover:bg-[#EAEDED] dark:hover:bg-[#2A3647]'
+          ? 'bg-[#0972D3]/15 dark:bg-[#539FE5]/20 text-[var(--aws-interactive)]'
+          : 'text-[var(--aws-control-muted-text)] hover:bg-[var(--aws-control-hover)]'
           }`}
         title="Snap elements to 16px grid"
       >
@@ -856,7 +856,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
         <button
           type="button"
           onClick={onFitView}
-          className="h-7.5 px-2 rounded-[6px] text-[11px] font-medium text-[#545B64] dark:text-[#879596] hover:text-[#16191F] dark:hover:text-[#EAEDED] hover:bg-[#EAEDED] dark:hover:bg-[#2A3647] flex items-center gap-1.5 cursor-pointer"
+          className="h-7.5 px-2 rounded-[6px] text-[11px] font-medium text-[var(--aws-control-muted-text)] hover:text-[var(--aws-field-text)] hover:bg-[var(--aws-control-hover)] flex items-center gap-1.5 cursor-pointer"
           title="Fit diagram to screen (F)"
         >
           <Maximize2 className="w-3 h-3" />
@@ -864,7 +864,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
         </button>
       )}
 
-      <div className="h-5 w-px bg-[#D5DBDB] dark:bg-[#354150] mx-0.5" aria-hidden="true" />
+      <div className="h-5 w-px bg-[var(--aws-control-border)] mx-0.5" aria-hidden="true" />
 
       {/* Clear Canvas */}
       <button
@@ -874,7 +874,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
             clearCanvas();
           }
         }}
-        className="size-7.5 rounded-[6px] flex items-center justify-center text-[#545B64] dark:text-[#879596] hover:text-[#DD344C] hover:bg-[#DD344C]/10 transition-colors cursor-pointer"
+        className="size-7.5 rounded-[6px] flex items-center justify-center text-[var(--aws-control-muted-text)] hover:text-[#DD344C] hover:bg-[#DD344C]/10 transition-colors cursor-pointer"
         title="Clear canvas"
         aria-label="Clear canvas"
       >

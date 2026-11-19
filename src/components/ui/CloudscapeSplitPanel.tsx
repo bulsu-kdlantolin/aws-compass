@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { AnimatePresence, m } from 'motion/react';
 import { SPRING_SNAPPY } from '../../utils/motionTokens';
@@ -28,51 +28,97 @@ export const CloudscapeSplitPanel: React.FC<CloudscapeSplitPanelProps> = ({
   const [panelWidth, setPanelWidth] = useState(initialWidth);
   const [panelHeight, setPanelHeight] = useState(initialHeight);
   const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef<{ startPos: number; startDim: number }>({ startPos: 0, startDim: 0 });
+  const [isCompactViewport, setIsCompactViewport] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches
+  );
+  const dragStartRef = useRef<{ pointerId: number; startPos: number; startDim: number } | null>(null);
 
-  // Handle Dragging Resize
-  const handleMouseDown = (e: React.MouseEvent) => {
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 640px)');
+    const updateViewport = () => {
+      setIsCompactViewport(media.matches);
+      setPanelWidth((width) => Math.min(width, Math.max(280, window.innerWidth - 300)));
+      setPanelHeight((height) => Math.min(height, Math.max(180, window.innerHeight - 200)));
+    };
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+    return () => window.removeEventListener('resize', updateViewport);
+  }, []);
+
+  useEffect(() => {
+    if (!isDragging) return;
+    const handleWindowBlur = () => {
+      dragStartRef.current = null;
+      setIsDragging(false);
+    };
+    window.addEventListener('blur', handleWindowBlur);
+    return () => window.removeEventListener('blur', handleWindowBlur);
+  }, [isDragging]);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isCompactViewport || !e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
     e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
     setIsDragging(true);
+    const startPos = position === 'side' ? e.clientX : e.clientY;
+    const startDim = position === 'side' ? panelWidth : panelHeight;
+    dragStartRef.current = { pointerId: e.pointerId, startPos, startDim };
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragStartRef.current;
+    if (!isDragging || drag?.pointerId !== e.pointerId) return;
     if (position === 'side') {
-      dragStartRef.current = { startPos: e.clientX, startDim: panelWidth };
+      const maxWidth = Math.max(280, window.innerWidth - 300);
+      const delta = drag.startPos - e.clientX;
+      setPanelWidth(Math.min(Math.max(drag.startDim + delta, Math.min(320, maxWidth)), maxWidth));
     } else {
-      dragStartRef.current = { startPos: e.clientY, startDim: panelHeight };
+      const maxHeight = Math.max(180, window.innerHeight - 200);
+      const delta = drag.startPos - e.clientY;
+      setPanelHeight(Math.min(Math.max(drag.startDim + delta, Math.min(200, maxHeight)), maxHeight));
     }
   };
 
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isDragging) return;
-      if (position === 'side') {
-        const delta = dragStartRef.current.startPos - e.clientX;
-        const newWidth = Math.min(Math.max(dragStartRef.current.startDim + delta, 320), window.innerWidth - 300);
-        setPanelWidth(newWidth);
-      } else {
-        const delta = dragStartRef.current.startPos - e.clientY;
-        const newHeight = Math.min(Math.max(dragStartRef.current.startDim + delta, 200), window.innerHeight - 200);
-        setPanelHeight(newHeight);
+  const finishPointerDrag = (pointerId?: number) => {
+    if (pointerId !== undefined && dragStartRef.current?.pointerId !== pointerId) return;
+    dragStartRef.current = null;
+    setIsDragging(false);
+  };
+
+  const handleResizeKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = e.shiftKey ? 40 : 10;
+    if (position === 'side') {
+      const maxWidth = Math.max(280, window.innerWidth - 300);
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        const direction = e.key === 'ArrowLeft' ? 1 : -1;
+        setPanelWidth(Math.min(Math.max(panelWidth + direction * step, Math.min(320, maxWidth)), maxWidth));
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        setPanelWidth(Math.min(320, maxWidth));
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        setPanelWidth(maxWidth);
       }
-    },
-    [isDragging, position]
-  );
-
-  const handleMouseUp = useCallback(() => {
-    if (isDragging) {
-      setIsDragging(false);
+    } else {
+      const maxHeight = Math.max(180, window.innerHeight - 200);
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        const direction = e.key === 'ArrowUp' ? 1 : -1;
+        setPanelHeight(Math.min(Math.max(panelHeight + direction * step, Math.min(200, maxHeight)), maxHeight));
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        setPanelHeight(Math.min(200, maxHeight));
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        setPanelHeight(maxHeight);
+      }
     }
-  }, [isDragging]);
+  };
 
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+  const currentSize = position === 'side' ? panelWidth : panelHeight;
+  const minSize = position === 'side' ? Math.min(320, Math.max(280, window.innerWidth - 300)) : Math.min(200, Math.max(180, window.innerHeight - 200));
+  const maxSize = position === 'side' ? Math.max(280, window.innerWidth - 300) : Math.max(180, window.innerHeight - 200);
 
   return (
     <AnimatePresence>
@@ -85,7 +131,7 @@ export const CloudscapeSplitPanel: React.FC<CloudscapeSplitPanelProps> = ({
           }
           animate={
             position === 'side'
-              ? { width: panelWidth, opacity: 1, x: 0 }
+              ? { width: isCompactViewport ? 'min(100%, 450px)' : panelWidth, opacity: 1, x: 0 }
               : { height: panelHeight, opacity: 1, y: 0 }
           }
           exit={
@@ -95,27 +141,40 @@ export const CloudscapeSplitPanel: React.FC<CloudscapeSplitPanelProps> = ({
           }
           transition={SPRING_SNAPPY}
           style={{
-            width: position === 'side' ? `${panelWidth}px` : '100%',
+            width: position === 'side' ? (isCompactViewport ? 'min(100%, 450px)' : `${panelWidth}px`) : '100%',
             height: position === 'bottom' ? `${panelHeight}px` : '100%',
           }}
-          className={`relative z-20 flex flex-col rounded-none shrink-0 overflow-hidden select-none bg-white/92 dark:bg-[#111726]/90 backdrop-blur-xl ${position === 'side'
+          className={`${isCompactViewport && position === 'side' ? 'absolute right-0 top-0 bottom-0 !max-w-full' : 'relative'} z-20 flex flex-col rounded-none shrink-0 overflow-hidden select-none bg-white/92 dark:bg-[#111726]/90 backdrop-blur-xl ${position === 'side'
               ? 'border-l border-slate-200/90 dark:border-white/[0.08] h-full shadow-[0_16px_40px_-8px_rgba(0,0,0,0.6)]'
               : 'border-t border-slate-200/90 dark:border-white/[0.08] w-full shadow-[0_16px_40px_-8px_rgba(0,0,0,0.6)]'
             }`}
         >
           {/* Draggable Resize Handle */}
           <div
-            onMouseDown={handleMouseDown}
+            role="separator"
+            aria-label={`Resize ${position === 'side' ? 'side' : 'bottom'} panel`}
+            aria-orientation={position === 'side' ? 'vertical' : 'horizontal'}
+            aria-valuenow={Math.round(currentSize)}
+            aria-valuemin={Math.round(minSize)}
+            aria-valuemax={Math.round(maxSize)}
+            tabIndex={isCompactViewport ? -1 : 0}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={(e) => finishPointerDrag(e.pointerId)}
+            onPointerCancel={(e) => finishPointerDrag(e.pointerId)}
+            onLostPointerCapture={(e) => finishPointerDrag(e.pointerId)}
+            onKeyDown={handleResizeKeyDown}
             style={{
               cursor: position === 'side' ? 'col-resize' : 'row-resize',
-              backgroundColor: isDragging ? 'var(--aws-interactive)' : 'transparent',
             }}
-            className={`absolute z-30 transition-colors hover:bg-[var(--aws-interactive)] ${position === 'side'
-              ? 'top-0 left-0 bottom-0 w-1.5 -ml-1'
-              : 'top-0 left-0 right-0 h-1.5 -mt-1'
+            className={`group absolute z-30 touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--aws-interactive)] ${isCompactViewport ? 'hidden' : ''} ${position === 'side'
+              ? 'top-0 -left-3 bottom-0 w-6'
+              : 'left-0 -top-3 right-0 h-6'
               }`}
             title={`Drag to resize (${position === 'side' ? 'width' : 'height'})`}
-          />
+          >
+            <span className={`absolute bg-[var(--aws-interactive)] transition-opacity ${isDragging ? 'opacity-100' : 'opacity-0 group-hover:opacity-70'} ${position === 'side' ? 'inset-y-0 left-1/2 w-0.5 -translate-x-1/2' : 'inset-x-0 top-1/2 h-0.5 -translate-y-1/2'}`} />
+          </div>
 
           {/* Split Panel Header Band */}
           <div
