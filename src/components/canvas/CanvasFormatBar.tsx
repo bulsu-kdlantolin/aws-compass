@@ -31,6 +31,7 @@ import { usePopoverStore } from '../../store/usePopoverStore';
 import { CloudscapeSelect } from '../ui/CloudscapeSelect';
 import { CloudscapeSearchInput } from '../ui/CloudscapeSearchInput';
 import { AnimatedPopover } from '../ui/AnimatedPopover';
+import { CloudscapeDialog } from '../ui/CloudscapeDialog';
 import type {
   AWSService,
   EdgeProtocol,
@@ -133,6 +134,7 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
   const groupTriggerRef = useRef<HTMLButtonElement>(null);
 
   const [serviceSearch, setServiceSearch] = useState('');
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Active selection detection
   const selectedNodes = nodes.filter((n) => n.selected);
@@ -869,17 +871,26 @@ export const CanvasFormatBar: React.FC<CanvasFormatBarProps> = ({
       {/* Clear Canvas */}
       <button
         type="button"
-        onClick={() => {
-          if (window.confirm('Clear all nodes and edges from canvas?')) {
-            clearCanvas();
-          }
-        }}
+        onClick={() => setShowClearConfirm(true)}
         className="size-7.5 rounded-[6px] flex items-center justify-center text-[var(--aws-control-muted-text)] hover:text-[#DD344C] hover:bg-[#DD344C]/10 transition-colors cursor-pointer"
         title="Clear canvas"
         aria-label="Clear canvas"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
+      {showClearConfirm && (
+        <CloudscapeDialog
+          title="Clear this canvas?"
+          description="This removes all nodes and connections from the current canvas. This action cannot be undone."
+          primaryLabel="Clear canvas"
+          tone="danger"
+          onPrimary={() => {
+            clearCanvas();
+            setShowClearConfirm(false);
+          }}
+          onDismiss={() => setShowClearConfirm(false)}
+        />
+      )}
     </m.div>
   );
 };

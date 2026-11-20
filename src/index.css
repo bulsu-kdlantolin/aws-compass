@@ -382,10 +382,9 @@
   display: none;
 }
 
-/* React Flow custom node resets & hardware acceleration */
+/* Keep canvas nodes on the normal compositor path so labels stay crisp at rest. */
 .react-flow__node {
   font-family: var(--font-sans);
-  will-change: transform;
 }
 
 /* Ensure resize controls always maintain proper resize cursor and generous hitbox */
@@ -703,6 +702,36 @@ body.canvas-global-resizing .react-flow__resize-control * {
   .react-flow :is(input:not([type='checkbox']), textarea) {
     font-size: 16px !important;
   }
+}
+
+/* Keep the pointer consistent across native and custom interactive controls.
+   Explicit cursor utilities remain authoritative for drag, resize, and text states. */
+button:not(:disabled):not([class*="cursor-"]),
+a[href]:not([class*="cursor-"]),
+select:not(:disabled):not([class*="cursor-"]),
+input[type="checkbox"]:not(:disabled):not([class*="cursor-"]),
+input[type="radio"]:not(:disabled):not([class*="cursor-"]),
+input[type="range"]:not(:disabled):not([class*="cursor-"]),
+summary:not([class*="cursor-"]),
+[role="button"]:not([aria-disabled="true"]):not([class*="cursor-"]),
+[role="combobox"]:not([aria-disabled="true"]):not([class*="cursor-"]),
+[role="option"]:not([aria-disabled="true"]):not([class*="cursor-"]),
+[role="menuitem"]:not([aria-disabled="true"]):not([class*="cursor-"]),
+[role="tab"]:not([aria-disabled="true"]):not([class*="cursor-"]),
+[role="switch"]:not([aria-disabled="true"]):not([class*="cursor-"]),
+[role="checkbox"]:not([aria-disabled="true"]):not([class*="cursor-"]),
+[role="radio"]:not([aria-disabled="true"]):not([class*="cursor-"]),
+[role="menuitemcheckbox"]:not([aria-disabled="true"]):not([class*="cursor-"]),
+[role="menuitemradio"]:not([aria-disabled="true"]):not([class*="cursor-"]) {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled,
+input[type="checkbox"]:disabled,
+input[type="radio"]:disabled,
+input[type="range"]:disabled {
+  cursor: not-allowed;
 }
 
 /* Modern 2026 Studio Floating Islands & Glassmorphic Elevation */

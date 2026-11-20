@@ -14,6 +14,7 @@ import {
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { usePopoverStore } from '../../store/usePopoverStore';
 import { AnimatedPopover } from '../ui/AnimatedPopover';
+import { CloudscapeDialog } from '../ui/CloudscapeDialog';
 
 const REFERENCE_TEMPLATES = [
   {
@@ -60,6 +61,7 @@ export const BlueprintManagerDropdown: React.FC = () => {
 
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const handleStartRename = (id: string, currentName: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -96,11 +98,9 @@ export const BlueprintManagerDropdown: React.FC = () => {
     closePopover(popoverId);
   };
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
+  const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('Delete this custom blueprint?')) {
-      await deleteBlueprint(id);
-    }
+    setPendingDeleteId(id);
   };
 
   return (
@@ -318,6 +318,19 @@ export const BlueprintManagerDropdown: React.FC = () => {
             </div>
           </div>
       </AnimatedPopover>
+      {pendingDeleteId && (
+        <CloudscapeDialog
+          title="Delete this blueprint?"
+          description="This custom blueprint will be permanently removed. This action cannot be undone."
+          primaryLabel="Delete blueprint"
+          tone="danger"
+          onPrimary={async () => {
+            await deleteBlueprint(pendingDeleteId);
+            setPendingDeleteId(null);
+          }}
+          onDismiss={() => setPendingDeleteId(null)}
+        />
+      )}
     </div>
   );
 };

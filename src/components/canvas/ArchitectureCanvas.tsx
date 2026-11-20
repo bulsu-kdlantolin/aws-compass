@@ -13,6 +13,7 @@ import {
   SelectionMode,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 
 import {
   Maximize,
@@ -27,6 +28,7 @@ import {
   Undo2,
   Redo2,
   FileSpreadsheet,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { useCompassStore } from '../../store/useCompassStore';
 import { useCanvasStore } from '../../store/useCanvasStore';
@@ -74,6 +76,7 @@ const edgeTypes: EdgeTypes = {
 const ArchitectureCanvasInner: React.FC = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const reactFlowInstance = useReactFlow();
+  const reduceMotion = useReducedMotion();
 
   const theme = useCompassStore((s) => s.theme);
 
@@ -100,6 +103,8 @@ const ArchitectureCanvasInner: React.FC = () => {
   const pasteSelection = useCanvasStore((s) => s.pasteSelection);
   const selectAllNodes = useCanvasStore((s) => s.selectAllNodes);
   const activeDiagramName = useCanvasStore((s) => s.activeDiagramName);
+  const isCanvasSidebarOpen = useCanvasStore((s) => s.isCanvasSidebarOpen);
+  const setIsCanvasSidebarOpen = useCanvasStore((s) => s.setIsCanvasSidebarOpen);
   const saveCurrentAsBlueprint = useCanvasStore((s) => s.saveCurrentAsBlueprint);
   const saveStatus = useCanvasStore((s) => s.saveStatus);
   const canvasWorkloadTier = useCanvasStore((s) => s.canvasWorkloadTier);
@@ -808,7 +813,26 @@ const ArchitectureCanvasInner: React.FC = () => {
       {/* Main Canvas Viewport Area */}
             <div className="flex-1 h-full relative z-0 isolate min-w-0 overflow-hidden">
               {/* Floating Top-Left Blueprint Island */}
-              <div className="absolute top-3 left-3 z-30 h-10 px-2.5 rounded-[12px] studio-island flex items-center gap-2 select-none pointer-events-auto">
+              <div className="absolute top-3 left-3 z-30 flex max-w-[calc(100%-1.5rem)] items-center gap-1.5 select-none pointer-events-auto">
+                <AnimatePresence initial={false}>
+                  {!isCanvasSidebarOpen && (
+                    <motion.button
+                      key="expand-canvas-sidebar"
+                      type="button"
+                      onClick={() => setIsCanvasSidebarOpen(true)}
+                      initial={{ x: reduceMotion ? 0 : -12, opacity: reduceMotion ? 1 : 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: reduceMotion ? 0 : -12, opacity: reduceMotion ? 1 : 0 }}
+                      transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
+                      className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[7px] border border-[var(--aws-control-border)] bg-[var(--aws-popover-bg)] text-[var(--aws-text-muted)] shadow-xs hover:border-[var(--aws-interactive)] hover:text-[var(--aws-interactive)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--aws-interactive)]"
+                      title="Expand canvas sidebar"
+                      aria-label="Expand canvas sidebar"
+                    >
+                      <PanelLeftOpen className="h-4 w-4" />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+
                 <BlueprintManagerDropdown />
 
                   {/* Save As Custom Blueprint Button */}
@@ -900,7 +924,7 @@ const ArchitectureCanvasInner: React.FC = () => {
           </div>
 
             {/* Floating Top-Right Telemetry & Actions Island */}
-            <div className="absolute top-3 right-3 z-30 h-10 px-2 rounded-[12px] studio-island flex items-center gap-1 select-none pointer-events-auto">
+            <div className="absolute top-14 right-3 z-30 h-10 px-2 rounded-[12px] studio-island flex items-center gap-1 select-none pointer-events-auto lg:top-3">
               {/* Undo / Redo Actions */}
               <div className="flex items-center gap-0.5">
                 <button

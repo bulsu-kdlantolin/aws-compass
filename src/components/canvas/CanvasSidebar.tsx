@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
-  ChevronLeft,
-  ChevronRight,
   ChevronDown,
+  PanelLeftClose,
   Layers,
   Shapes,
   StickyNote,
@@ -323,6 +323,27 @@ interface SidebarServiceCardProps {
   onToggleFavorite?: (id: string, e: React.MouseEvent) => void;
 }
 
+interface QuickAddButtonProps {
+  label: string;
+  onAdd: () => void;
+}
+
+const QuickAddButton: React.FC<QuickAddButtonProps> = ({ label, onAdd }) => (
+  <button
+    type="button"
+    onPointerDown={(event) => event.stopPropagation()}
+    onClick={(event) => {
+      event.stopPropagation();
+      onAdd();
+    }}
+    className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded text-slate-400 opacity-0 transition-[opacity,color,background-color] group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-[var(--aws-interactive)]/10 hover:text-[var(--aws-interactive)] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--aws-interactive)]"
+    title={`Add ${label} to canvas`}
+    aria-label={`Add ${label} to canvas`}
+  >
+    <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+  </button>
+);
+
 const SidebarServiceCard = React.memo<SidebarServiceCardProps>(({
   svc,
   onDragStart,
@@ -332,46 +353,54 @@ const SidebarServiceCard = React.memo<SidebarServiceCardProps>(({
   return (
     <div
       draggable
-      onDragStart={(e) =>
+      onDragStart={(e) => {
+        if (e.target instanceof Element && e.target.closest('button')) {
+          e.preventDefault();
+          return;
+        }
         onDragStart(e, {
           type: 'service',
           serviceId: svc.id,
           category: svc.category,
           name: svc.name,
-        })
-      }
-      onClick={() => onQuickAdd(svc)}
+        });
+      }}
       className="group relative h-8 px-2 rounded-[7px] flex items-center gap-2.5 hover:bg-slate-100 dark:hover:bg-white/[0.06] cursor-grab active:cursor-grabbing transition-colors select-none"
-      title={`Drag ${svc.name} (${svc.id}) onto the canvas or click to add`}
+      title={`Drag ${svc.name} (${svc.id}) onto the canvas, or use the + button to add`}
     >
       <div className="shrink-0 flex items-center justify-center">
         <AWSServiceIcon serviceId={svc.id} category={svc.category} size={20} variant="service" />
       </div>
 
-      <span className="text-[12.5px] font-medium text-slate-700 dark:text-slate-200 truncate flex-1 group-hover:text-slate-900 dark:group-hover:text-white">
+      <span className="min-w-0 flex-1 truncate pr-6 group-hover:pr-12 text-[12.5px] font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white">
         {svc.name}
       </span>
 
-      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 shrink-0">
+      <span className="absolute right-[6px] top-1/2 w-[18px] -translate-y-1/2 text-center text-[10px] font-mono text-slate-400 transition-opacity group-hover:opacity-0 dark:text-slate-500">
         T{svc.tier}
       </span>
 
-      {onToggleFavorite && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFavorite(svc.id, e);
-          }}
-          className={`size-6 rounded flex items-center justify-center shrink-0 transition-opacity cursor-pointer ${svc.isFavorite
-            ? 'opacity-100 text-[#FF9900]'
-            : 'opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#FF9900]'
-            }`}
-          title={svc.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-        >
-          <Star className={`w-3.5 h-3.5 ${svc.isFavorite ? 'fill-[#FF9900]' : ''}`} />
-        </button>
-      )}
+      <div className="absolute right-1 top-1/2 z-10 flex -translate-y-1/2 items-center gap-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+        {onToggleFavorite && (
+          <button
+            type="button"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleFavorite(svc.id, event);
+            }}
+            className={`flex size-6 shrink-0 cursor-pointer items-center justify-center rounded transition-colors ${svc.isFavorite
+              ? 'text-[#FF9900]'
+              : 'text-slate-400 hover:text-[#FF9900]'
+              }`}
+            title={svc.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            aria-label={svc.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <Star className={`h-3.5 w-3.5 ${svc.isFavorite ? 'fill-[#FF9900]' : ''}`} />
+          </button>
+        )}
+        <QuickAddButton label={svc.name} onAdd={() => onQuickAdd(svc)} />
+      </div>
     </div>
   );
 });
@@ -389,6 +418,7 @@ export const CanvasSidebar: React.FC = () => {
   const [isActorsOpen, setIsActorsOpen] = useState(true);
   const [isStepBadgesOpen, setIsStepBadgesOpen] = useState(true);
   const [isAnnotationsOpen, setIsAnnotationsOpen] = useState(true);
+  const reduceMotion = useReducedMotion();
 
   const services = useCompassStore((s) => s.services);
   const theme = useCompassStore((s) => s.theme);
@@ -517,6 +547,10 @@ export const CanvasSidebar: React.FC = () => {
   // Drag start handler
   const handleDragStart = useCallback(
     (e: React.DragEvent, stencil: StencilDragData) => {
+      if (e.target instanceof Element && e.target.closest('button')) {
+        e.preventDefault();
+        return;
+      }
       e.dataTransfer.setData('application/aws-stencil', JSON.stringify(stencil));
       e.dataTransfer.effectAllowed = 'copy';
     },
@@ -576,32 +610,18 @@ export const CanvasSidebar: React.FC = () => {
     );
   }, [addAnnotationNode]);
 
-  if (!isCanvasSidebarOpen) {
-    return (
-      <div className="relative z-50 shrink-0">
-        <button
-          type="button"
-          onClick={() => setIsCanvasSidebarOpen(true)}
-          className="absolute left-0 top-16 h-9 pl-2 pr-2.5 rounded-r-[8px] bg-white/92 dark:bg-[#111726]/90 backdrop-blur-xl border-y border-r border-slate-200/90 dark:border-white/[0.08] shadow-md hover:border-[#FF9900] text-slate-500 dark:text-slate-400 hover:text-[#FF9900] flex items-center gap-1.5 transition-all cursor-pointer group z-50"
-          title="Open Canvas Stencils & Catalog"
-          aria-label="Open Canvas Stencils & Catalog"
-        >
-          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-          <span className="text-[11px] font-semibold tracking-wide text-slate-800 dark:text-slate-200">
-            Catalog & Stencils
-          </span>
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <aside
+    <AnimatePresence initial={false}>
+      {isCanvasSidebarOpen && (
+    <motion.aside
+      key="canvas-sidebar"
+      initial={{ x: reduceMotion ? 0 : -20, opacity: reduceMotion ? 1 : 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: reduceMotion ? 0 : -20, opacity: reduceMotion ? 1 : 0 }}
+      transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
       aria-label="AWS Canvas Stencils and Service Catalog"
-      style={{
-        width: `${sidebarWidth}px`,
-      }}
-      className="relative h-full flex flex-col border-r border-slate-200/90 dark:border-white/[0.08] bg-white/92 dark:bg-[#111726]/90 backdrop-blur-xl shrink-0 z-30 select-none animate-in fade-in duration-150"
+      style={{ width: `${sidebarWidth}px` }}
+      className="relative h-full flex flex-col border-r border-slate-200/90 dark:border-white/[0.08] bg-white/92 dark:bg-[#111726]/90 backdrop-blur-xl shrink-0 z-30 select-none"
     >
       {/* Draggable Resize Handle */}
       <SidebarResizeHandle
@@ -622,7 +642,7 @@ export const CanvasSidebar: React.FC = () => {
             title="Collapse Sidebar"
             aria-label="Collapse Sidebar"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <PanelLeftClose className="w-4 h-4" />
           </button>
         </div>
 
@@ -787,9 +807,8 @@ export const CanvasSidebar: React.FC = () => {
                             label: b.label,
                           })
                         }
-                        onClick={() => handleQuickAddBoundary(b)}
                         className="group flex items-center gap-2.5 h-8 px-2.5 rounded-[7px] hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-grab active:cursor-grabbing select-none"
-                        title={`${b.label} — ${b.desc} (Click to add or drag onto canvas)`}
+                        title={`${b.label} — ${b.desc} (Drag to canvas, or use + to add)`}
                       >
                         <div className="shrink-0 flex items-center justify-center">
                           <AWSServiceIcon groupId={b.groupId} size={18} variant="group" />
@@ -802,7 +821,7 @@ export const CanvasSidebar: React.FC = () => {
                             {b.badge}
                           </span>
                         </div>
-                        <Plus className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        <QuickAddButton label={b.label} onAdd={() => handleQuickAddBoundary(b)} />
                       </div>
                     ))}
                   </div>
@@ -838,9 +857,8 @@ export const CanvasSidebar: React.FC = () => {
                             label: p.label,
                           })
                         }
-                        onClick={() => handleQuickAddActor(p.type, p.label)}
                         className="group flex items-center gap-2.5 h-8 px-2.5 rounded-[7px] hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-grab active:cursor-grabbing select-none"
-                        title={`${p.label} — ${p.desc} (Click to add or drag onto canvas)`}
+                        title={`${p.label} — ${p.desc} (Drag to canvas, or use + to add)`}
                       >
                         <div className="shrink-0 flex items-center justify-center">
                           <AWSServiceIcon actorId={p.type} size={18} variant="actor" />
@@ -853,7 +871,7 @@ export const CanvasSidebar: React.FC = () => {
                             {p.badge}
                           </span>
                         </div>
-                        <Plus className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        <QuickAddButton label={p.label} onAdd={() => handleQuickAddActor(p.type, p.label)} />
                       </div>
                     ))}
                   </div>
@@ -889,9 +907,8 @@ export const CanvasSidebar: React.FC = () => {
                             label: act.label,
                           })
                         }
-                        onClick={() => handleQuickAddActor(act.type, act.label)}
                         className="group flex items-center gap-2.5 h-8 px-2.5 rounded-[7px] hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-grab active:cursor-grabbing select-none"
-                        title={`${act.label} — ${act.desc} (Click to add or drag onto canvas)`}
+                        title={`${act.label} — ${act.desc} (Drag to canvas, or use + to add)`}
                       >
                         <div className="shrink-0 flex items-center justify-center">
                           <AWSServiceIcon actorId={act.type} size={18} variant="actor" />
@@ -904,7 +921,7 @@ export const CanvasSidebar: React.FC = () => {
                             {act.badge}
                           </span>
                         </div>
-                        <Plus className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        <QuickAddButton label={act.label} onAdd={() => handleQuickAddActor(act.type, act.label)} />
                       </div>
                     ))}
                   </div>
@@ -940,9 +957,8 @@ export const CanvasSidebar: React.FC = () => {
                             label: sb.label,
                           })
                         }
-                        onClick={() => handleQuickAddStepBadge(sb)}
                         className="group flex items-center gap-2.5 h-8 px-2.5 rounded-[7px] hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-grab active:cursor-grabbing select-none"
-                        title={`${sb.label} — ${sb.desc} (Click to add or drag onto canvas)`}
+                        title={`${sb.label} — ${sb.desc} (Drag to canvas, or use + to add)`}
                       >
                         <div className="shrink-0 flex items-center justify-center">
                           {sb.type === 'flow-step' ? (
@@ -967,7 +983,7 @@ export const CanvasSidebar: React.FC = () => {
                             {sb.badge}
                           </span>
                         </div>
-                        <Plus className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        <QuickAddButton label={sb.label} onAdd={() => handleQuickAddStepBadge(sb)} />
                       </div>
                     ))}
                   </div>
@@ -1012,13 +1028,8 @@ export const CanvasSidebar: React.FC = () => {
                             });
                           }
                         }}
-                        onClick={() => {
-                          if (an.kind === 'note') handleQuickAddNote();
-                          else if (an.kind === 'spec-stamp') handleQuickAddSpecStamp();
-                          else handleQuickAddTextBlock();
-                        }}
                         className="group flex items-center gap-2.5 h-8 px-2.5 rounded-[7px] hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-grab active:cursor-grabbing select-none"
-                        title={`${an.label} — ${an.desc} (Click to add or drag onto canvas)`}
+                        title={`${an.label} — ${an.desc} (Drag to canvas, or use + to add)`}
                       >
                         <div className="shrink-0 flex items-center justify-center">
                           {an.kind === 'note' ? (
@@ -1043,7 +1054,14 @@ export const CanvasSidebar: React.FC = () => {
                             {an.badge}
                           </span>
                         </div>
-                        <Plus className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        <QuickAddButton
+                          label={an.label}
+                          onAdd={() => {
+                            if (an.kind === 'note') handleQuickAddNote();
+                            else if (an.kind === 'spec-stamp') handleQuickAddSpecStamp();
+                            else handleQuickAddTextBlock();
+                          }}
+                        />
                       </div>
                     ))}
                   </div>
@@ -1053,7 +1071,9 @@ export const CanvasSidebar: React.FC = () => {
           )}
         </div>
       )}
-    </aside>
+    </motion.aside>
+      )}
+    </AnimatePresence>
   );
 };
 

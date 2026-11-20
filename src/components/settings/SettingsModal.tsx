@@ -35,6 +35,7 @@ import { SegmentedControl } from '../ui/SegmentedControl';
 import { ToggleSwitch } from '../ui/ToggleSwitch';
 import { ShortcutKeycaps } from '../ui/Kbd';
 import { CompassLoader } from '../ui/CompassBootScreen';
+import { CloudscapeDialog } from '../ui/CloudscapeDialog';
 
 export const SettingsModal: React.FC = () => {
   const isSettingsOpen = useSettingsStore((s) => s.isSettingsOpen);
@@ -85,6 +86,7 @@ export const SettingsModal: React.FC = () => {
   const [factoryResetConfirm, setFactoryResetConfirm] = useState(false);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [errorDialog, setErrorDialog] = useState<{ title: string; message: string } | null>(null);
 
   // Load live DB stats when opening the modal or switching to data tab
   useEffect(() => {
@@ -92,6 +94,7 @@ export const SettingsModal: React.FC = () => {
       setClearFavoritesConfirm(false);
       setFactoryResetConfirm(false);
       setActionSuccessMsg(null);
+      setErrorDialog(null);
       return;
     }
 
@@ -118,7 +121,7 @@ export const SettingsModal: React.FC = () => {
   // Global ESC listener to close modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isSettingsOpen) {
+      if (e.key === 'Escape' && isSettingsOpen && !document.querySelector('[role="alertdialog"]')) {
         closeSettings();
       }
     };
@@ -147,7 +150,7 @@ export const SettingsModal: React.FC = () => {
       URL.revokeObjectURL(url);
       showSuccess('Workspace exported successfully (.json)');
     } catch (err) {
-      alert('Failed to export workspace: ' + (err as Error).message);
+      setErrorDialog({ title: 'Export failed', message: 'Failed to export workspace: ' + (err as Error).message });
     }
   };
 
@@ -163,7 +166,7 @@ export const SettingsModal: React.FC = () => {
       await refreshSavedDiagrams();
       showSuccess(`Imported ${result.servicesCount} services & ${result.diagramsCount} blueprints!`);
     } catch (err) {
-      alert('Failed to import backup: ' + (err as Error).message);
+      setErrorDialog({ title: 'Import failed', message: 'Failed to import backup: ' + (err as Error).message });
     } finally {
       setIsImporting(false);
       e.target.value = '';
@@ -187,7 +190,7 @@ export const SettingsModal: React.FC = () => {
       setClearFavoritesConfirm(false);
       showSuccess('All favorite bookmarks cleared');
     } catch (err) {
-      alert('Failed to clear favorites: ' + (err as Error).message);
+      setErrorDialog({ title: 'Could not clear favorites', message: 'Failed to clear favorites: ' + (err as Error).message });
     }
   };
 
@@ -199,7 +202,7 @@ export const SettingsModal: React.FC = () => {
       setFactoryResetConfirm(false);
       showSuccess('Database restored to original factory defaults');
     } catch (err) {
-      alert('Failed to factory reset: ' + (err as Error).message);
+      setErrorDialog({ title: 'Factory reset failed', message: 'Failed to factory reset: ' + (err as Error).message });
     }
   };
 
@@ -227,6 +230,7 @@ export const SettingsModal: React.FC = () => {
   ];
 
   return (
+    <>
     <div
       role="dialog"
       aria-modal="true"
@@ -662,6 +666,17 @@ export const SettingsModal: React.FC = () => {
                                               </div>
       </div>
                                         </div>
+      {errorDialog && (
+        <CloudscapeDialog
+          title={errorDialog.title}
+          description={errorDialog.message}
+          primaryLabel="Close"
+          secondaryLabel=""
+          onPrimary={() => setErrorDialog(null)}
+          onDismiss={() => setErrorDialog(null)}
+        />
+      )}
+    </>
                                       );
 };
 

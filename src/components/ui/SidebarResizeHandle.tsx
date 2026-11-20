@@ -18,7 +18,12 @@ export const SidebarResizeHandle: React.FC<SidebarResizeHandleProps> = ({
   className = '',
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [liveWidth, setLiveWidth] = useState(sidebarWidth);
   const dragStartRef = useRef<{ pointerId: number; startX: number; startWidth: number } | null>(null);
+  const dragWidthRef = useRef(sidebarWidth);
+  const queuedWidthRef = useRef<number | null>(null);
+  const asideRef = useRef<HTMLElement | null>(null);
+  const frameRef = useRef<number | null>(null);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
@@ -26,6 +31,9 @@ export const SidebarResizeHandle: React.FC<SidebarResizeHandleProps> = ({
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
     setIsDragging(true);
+    dragWidthRef.current = sidebarWidth;
+    asideRef.current = e.currentTarget.closest('aside');
+    setLiveWidth(sidebarWidth);
     dragStartRef.current = {
       pointerId: e.pointerId,
       startX: e.clientX,
@@ -51,19 +59,42 @@ export const SidebarResizeHandle: React.FC<SidebarResizeHandleProps> = ({
       Math.max(drag.startWidth + delta, minWidth),
       maxAvailable
     );
-    onWidthChange(Math.round(targetWidth));
+    const nextWidth = Math.round(targetWidth);
+    dragWidthRef.current = nextWidth;
+    queuedWidthRef.current = nextWidth;
+
+    if (frameRef.current === null) {
+      frameRef.current = window.requestAnimationFrame(() => {
+        frameRef.current = null;
+        const width = queuedWidthRef.current;
+        queuedWidthRef.current = null;
+        if (width === null) return;
+        asideRef.current?.style.setProperty('width', `${width}px`);
+        setLiveWidth(width);
+      });
+    }
   };
 
   const finishPointerDrag = (pointerId?: number) => {
-    if (pointerId !== undefined && dragStartRef.current?.pointerId !== pointerId) return;
+    const drag = dragStartRef.current;
+    if (!drag || (pointerId !== undefined && drag.pointerId !== pointerId)) return;
+
+    if (frameRef.current !== null) {
+      window.cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    queuedWidthRef.current = null;
+    asideRef.current?.style.setProperty('width', `${dragWidthRef.current}px`);
+    onWidthChange(dragWidthRef.current);
+
     dragStartRef.current = null;
+    asideRef.current = null;
     setIsDragging(false);
   };
 
   useEffect(() => {
     const handleWindowBlur = () => {
-      dragStartRef.current = null;
-      setIsDragging(false);
+      finishPointerDrag();
     };
 
     if (isDragging) {
@@ -81,6 +112,13 @@ export const SidebarResizeHandle: React.FC<SidebarResizeHandleProps> = ({
       window.removeEventListener('blur', handleWindowBlur);
     };
   }, [isDragging]);
+
+  useEffect(
+    () => () => {
+      if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
+    },
+    []
+  );
 
   // Keyboard accessibility
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -113,7 +151,7 @@ export const SidebarResizeHandle: React.FC<SidebarResizeHandleProps> = ({
         role="separator"
         aria-orientation="vertical"
         aria-label="Resize sidebar width"
-        aria-valuenow={sidebarWidth}
+        aria-valuenow={isDragging ? liveWidth : sidebarWidth}
         aria-valuemin={minWidth}
         aria-valuemax={Math.min(maxWidth, Math.max(window.innerWidth - 340, minWidth))}
         tabIndex={0}
@@ -129,12 +167,10 @@ export const SidebarResizeHandle: React.FC<SidebarResizeHandleProps> = ({
         } ${className}`}
         title={`Drag to adjust sidebar width (Double-click or Enter to reset to ${defaultWidth}px)`}
       >
-        {/* Glow / Highlight indicator bar on hover or active dragging */}
+        {/* A quiet resize cue that stays out of the way while dragging. */}
         <div
-          className={`w-[2px] h-full ml-auto transition-colors duration-150 ${
-            isDragging
-              ? 'bg-[#FF9900] shadow-[0_0_8px_rgba(255,153,0,0.6)]'
-              : 'bg-transparent group-hover:bg-[#FF9900]/70'
+          className={`ml-auto h-full w-px ${
+            isDragging ? 'bg-[var(--aws-border)]' : 'bg-transparent group-hover:bg-[var(--aws-border)]'
           }`}
         />
       </div>
