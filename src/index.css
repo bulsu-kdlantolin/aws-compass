@@ -734,6 +734,13 @@ input[type="range"]:disabled {
   cursor: not-allowed;
 }
 
+/* Theme changes reveal from the toggle button through the View Transitions API. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
 /* Modern 2026 Studio Floating Islands & Glassmorphic Elevation */
 .studio-island {
   background-color: rgba(255, 255, 255, 0.92);

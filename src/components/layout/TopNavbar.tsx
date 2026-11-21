@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   BookOpen,
   LayoutGrid,
@@ -20,6 +20,7 @@ export interface TopNavbarProps {
 }
 
 export const TopNavbar: React.FC<TopNavbarProps> = React.memo(({ onOpenCommandPalette }) => {
+  const themeToggleRef = useRef<HTMLButtonElement>(null);
   const workspaceMode = useCompassStore((s) => s.workspaceMode);
   const setWorkspaceMode = useCompassStore((s) => s.setWorkspaceMode);
   const favoritesCount = useCompassStore((s) => s.services.filter((svc) => svc.isFavorite).length);
@@ -31,7 +32,45 @@ export const TopNavbar: React.FC<TopNavbarProps> = React.memo(({ onOpenCommandPa
   const setTheme = useSettingsStore((s) => s.setTheme);
 
   const handleToggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    const startViewTransition = (document as Document & {
+      startViewTransition?: (callback: () => void) => { ready: Promise<void> };
+    }).startViewTransition;
+
+    if (!startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setTheme(nextTheme);
+      return;
+    }
+
+    const rect = themeToggleRef.current?.getBoundingClientRect();
+    if (!rect) {
+      setTheme(nextTheme);
+      return;
+    }
+
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const radius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y),
+    );
+    const transition = startViewTransition.call(document, () => setTheme(nextTheme));
+
+    void transition.ready.then(() => {
+      document.documentElement.animate(
+        [
+          { clipPath: `circle(0px at ${x}px ${y}px)` },
+          { clipPath: `circle(${radius}px at ${x}px ${y}px)` },
+        ],
+        {
+          duration: 620,
+          easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+          pseudoElement: '::view-transition-new(root)',
+        },
+      );
+    }).catch(() => {
+      // The theme has already changed; an unsupported transition can safely end there.
+    });
   };
 
   return (
@@ -173,6 +212,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = React.memo(({ onOpenCommandPa
         {/* 3. Quick Theme Toggle Icon Button (size-8 borderless ghost button) */}
         <button
           type="button"
+          ref={themeToggleRef}
           onClick={handleToggleTheme}
           className="size-8 rounded-[6px] flex items-center justify-center text-[#879596] hover:text-white hover:bg-white/8 cursor-pointer enabled:active:scale-[0.96] transition-[background-color,color,transform] duration-150 ease-out"
           title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}

@@ -841,16 +841,16 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = memo(({
                       </div>
 
                         {/* Right: Code Editor with Line Numbers */}
-                        <div className="flex flex-col h-full bg-[#0F172A] overflow-hidden">
-                          <div className="h-8 px-4 border-b border-white/[0.08] text-[11px] font-medium flex items-center justify-between text-slate-400 bg-[#0B1120] shrink-0 select-none">
-                            <span className="font-semibold text-slate-200">Markdown Source</span>
+                        <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0F172A] overflow-hidden">
+                          <div className="h-8 px-4 border-b border-slate-200/80 dark:border-white/[0.08] text-[11px] font-medium flex items-center justify-between text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-[#0B1120] shrink-0 select-none">
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">Markdown Source</span>
                             <span>Supports Mermaid & CLI</span>
                           </div>
                           <div className="aws-mobile-readable-editor flex-1 flex min-h-0 overflow-hidden relative">
                             {/* Line Numbers Column */}
                             <div
                               ref={lineNumbersRef}
-                              className="aws-mobile-editor-line-number w-11 py-4 pr-3 text-right font-mono text-[13px] leading-[1.65] text-slate-600 select-none bg-[#0B1120] border-r border-white/[0.06] overflow-hidden shrink-0"
+                              className="aws-mobile-editor-line-number w-11 py-4 pr-3 text-right font-mono text-[13px] leading-[1.65] text-slate-500 dark:text-slate-600 select-none bg-slate-100 dark:bg-[#0B1120] border-r border-slate-200/80 dark:border-white/[0.06] overflow-hidden shrink-0"
                             >
                               {Array.from({ length: lineCount }, (_, i) => (
                                 <div key={i + 1}>{i + 1}</div>
@@ -867,7 +867,7 @@ const ServiceDossierContent: React.FC<ServiceDossierContentProps> = memo(({
                               }}
                               placeholder="Enter markdown document with mermaid diagrams..."
                               spellCheck={false}
-                              className="flex-1 h-full bg-transparent text-slate-100 font-mono text-[13px] leading-[1.65] p-4 resize-none outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--aws-interactive)] selection:bg-[#3B82F6]/30 overflow-y-auto scrollbar-thin custom-scrollbar border-0"
+                              className="flex-1 h-full bg-transparent text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 caret-[var(--aws-interactive)] font-mono text-[13px] leading-[1.65] p-4 resize-none outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--aws-interactive)] selection:bg-[#0972D3]/20 dark:selection:bg-[#3B82F6]/30 overflow-y-auto scrollbar-thin custom-scrollbar border-0"
                             />
                           </div>
                         </div>
